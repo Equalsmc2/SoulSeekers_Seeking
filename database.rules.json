@@ -1,0 +1,35 @@
+{
+  "rules": {
+    "rooms": {
+      "$room": {
+        "meta": {
+          ".read": "auth != null",
+          ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() == auth.uid) || (data.child('hostUid').val() == auth.uid && newData.child('hostUid').val() == auth.uid))",
+          ".validate": "newData.hasChildren(['hostUid', 'status', 'createdAt']) && newData.child('hostUid').isString() && newData.child('status').isString() && newData.child('createdAt').isNumber()"
+        },
+        "state": {
+          ".read": "auth != null",
+          ".write": "auth != null && root.child('rooms').child($room).child('meta').child('hostUid').val() == auth.uid"
+        },
+        "slots": {
+          ".read": "auth != null",
+          "$slot": {
+            ".read": "auth != null",
+            ".write": "auth != null && ((!data.exists() && newData.child('uid').val() == auth.uid) || (data.child('uid').val() == auth.uid && (!newData.exists() || newData.child('uid').val() == auth.uid)))",
+            ".validate": "newData.hasChildren(['uid', 'name']) && newData.child('uid').isString() && newData.child('name').isString() && newData.child('name').val().length <= 24"
+          }
+        },
+        "inputs": {
+          ".read": "auth != null",
+          "$uid": {
+            ".read": "auth != null",
+            ".write": "auth != null && auth.uid == $uid",
+            ".validate": "newData.hasChildren(['mx', 'my', 'aimX', 'aimY']) && newData.child('mx').isNumber() && newData.child('my').isNumber() && newData.child('aimX').isNumber() && newData.child('aimY').isNumber()"
+          }
+        }
+      }
+    },
+    ".read": false,
+    ".write": false
+  }
+}

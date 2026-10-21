@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1016"><title>SOULSEEKERS / SEEKING</title>
+<link rel="stylesheet" href="./style.css"></head>
+<body>
+<div id="app">
+<header class="mast">
+  <div class="brand"><div class="sigil">Ø</div><div><div class="eyebrow">A SOULSEEKERS EXPERIENCE <span class="test-tag">PROTOTYPE 01</span></div><h1>SEEKING<span class="dot">.</span></h1></div></div>
+  <div class="topmeta"><span class="pulse"></span><span id="connection">OFFLINE TRAINING</span><span class="separator">/</span><span id="roomLabel">BOSTON // BLACKOUT</span></div>
+  <button class="outline tiny" id="menuButton">MAIN MENU</button>
+</header>
+<div class="game-layout">
+  <main class="viewport" id="viewport">
+    <canvas id="gameCanvas" aria-label="Top-down game world"></canvas>
+    <div class="world-title"><span class="eyebrow">OPERATION 001</span><strong>BOSTON BLACKOUT</strong></div>
+    <div class="hud hud-left"><div class="mini-label">OPERATION CLOCK</div><strong id="clock">20:00</strong><div class="tiny-text" id="victoryRule">Destroy 4 forts to expose the Tower</div></div>
+    <div class="hud hud-right"><div class="mini-label">TOWER INTEGRITY</div><strong id="towerHp">SHIELDED</strong><div class="bar"><div id="towerBar"></div></div></div>
+    <div class="crosshair" id="crosshair">✛</div>
+    <div id="toast" class="toast"></div>
+    <div id="endOverlay" class="end-overlay hidden"><span class="eyebrow">OPERATION COMPLETE</span><div id="endTitle" class="end-title"></div><button class="primary" id="endRestart">BACK TO MENU</button></div>
+  </main>
+  <aside class="side-panel" id="sidePanel">
+    <div class="side-head"><span id="roleBadge" class="role-badge">PARTY OPERATIVE</span><span class="eyebrow">FIELD TERMINAL / 01</span></div>
+    <div id="playerPanel">
+      <div class="hero-overline" id="heroTitle">THE DEAD FREQUENCY</div><div class="hero-name" id="heroName">ASYA</div>
+      <div class="stat-row"><span>HEALTH</span><b id="hpText">160/160</b></div><div class="bar thick"><div id="hpBar" class="hp-color"></div></div>
+      <div class="stats-three"><div><span>LV</span><strong id="level">01</strong></div><div><span>GOLD</span><strong id="gold">80</strong></div><div><span>KILLS</span><strong id="kills">0</strong></div></div>
+      <div class="stat-row"><span>EXPERIENCE</span><b id="xpText">0 / 90</b></div><div class="bar"><div id="xpBar" class="xp-color"></div></div>
+      <div class="panel-section-title">LOADOUT <button id="toggleInventory" class="text-btn">[ I ] INVENTORY</button></div>
+      <div id="inventoryWrap"><div class="inv-note">Click an item, then an empty cell to move it. Press R to rotate the selected item.</div><div class="inv-grid" id="invGrid"></div><div class="item-description" id="itemInfo">Select an item for details.</div><button id="useItemButton" class="outline tiny" disabled>USE SELECTED ITEM</button></div>
+      <div class="panel-section-title">JUNGLE MARKET <span class="eyebrow" id="shopRange">OUT OF RANGE</span></div>
+      <div id="shopItems" class="shop-items"></div>
+    </div>
+    <div id="dmPanel" class="hidden">
+      <div class="hero-overline">THE OPPOSITION</div><div class="hero-name">DUNGEON MASTER</div>
+      <div class="stats-three"><div><span>THREAT</span><strong id="threat">42</strong></div><div><span>ARMY</span><strong id="armySize">0</strong></div><div><span>FORTS</span><strong id="fortCount">6</strong></div></div>
+      <div class="panel-section-title">SELECT THE FRONT</div>
+      <div class="lane-select"><button class="lane active" data-lane="0">NORTH</button><button class="lane" data-lane="1">CENTER</button><button class="lane" data-lane="2">SOUTH</button></div>
+      <div class="panel-section-title">SUMMON REINFORCEMENTS</div><div id="dmUnits" class="dm-units"></div>
+      <p class="dm-tip">Choose a reinforcement, then click anywhere in eligible DM territory on the map to deploy it. Click an enemy on the field to possess it. WASD to move; hold left mouse to shoot. Press ESC to release. Right-click the battlefield to issue a move order.</p>
+      <div class="possession" id="possession">NO UNIT POSSESSED</div>
+    </div>
+    <div class="panel-section-title log-heading">COMBAT FEED</div><div id="log" class="combat-log"></div>
+  </aside>
+</div>
+<footer class="bottom-hud"><div class="controls" id="controls">WASD MOVE <b>·</b> MOUSE AIM / FIRE <b>·</b> Q SPELL <b>·</b> E ECHO <b>·</b> SPACE DASH <b>·</b> F OPEN CHEST <b>·</b> B SHOP <b>·</b> I INVENTORY</div><div class="statusline"><span id="onlineRoster">TRAINING SIMULATION</span><span>© SOULSEEKERS</span></div></footer>
+</div>
+<div class="menu-layer" id="menuLayer"><div class="menu-sheen"></div><div class="menu-box">
+  <div class="menu-eyebrow">SOULSEEKERS PROJECT / FIELD ACCESS</div>
+  <div class="menu-title">SEEKING<span>.</span></div>
+  <p class="menu-subtitle">SIX SEEKERS ENTER A BROKEN BOSTON. ONE DUNGEON MASTER CONTROLS EVERYTHING STANDING IN THEIR WAY.</p>
+  <div class="menu-divider"><span>SELECT YOUR CHARACTER</span><span>01 / 06</span></div><div id="heroChoices" class="hero-choices"></div>
+  <div class="mode-grid"><button class="mode-choice" id="soloParty"><span>01 — TRAINING</span><strong>PLAY AS PARTY</strong><small>Solo practice with five AI allies. No setup.</small></button>
+    <button class="mode-choice" id="soloDM"><span>02 — TRAINING</span><strong>PLAY AS DM</strong><small>Command enemies against six AI Seekers.</small></button></div>
+  <div class="menu-divider"><span>ONLINE MATCH // FIREBASE REALTIME DATABASE</span><span id="firebaseStatus">NOT CONFIGURED</span></div>
+  <div class="online-menu"><button class="primary" id="hostOnline">HOST AS DM</button><div class="join-row"><input id="roomCodeInput" maxlength="6" placeholder="ROOM CODE" aria-label="Six character room code"><input id="playerName" maxlength="24" placeholder="YOUR NAME" aria-label="Your display name"><button class="outline" id="joinOnline">JOIN AS PARTY</button></div></div>
+  <div id="menuMessage" class="menu-message">Choose a training mode to begin immediately. Online play requires Firebase setup.</div>
+</div></div>
+<script type="module" src="./src/main.js"></script></body></html>
