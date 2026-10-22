@@ -1,14 +1,14 @@
 // Offline gameplay must NOT depend on Firebase modules loading successfully.
 // Versioned imports also avoid mixing fresh GitHub Pages JS with stale cached modules.
-import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,clamp,dist} from './data.js?v=R015';
-import {createGame,tick,dmSpawn,serialize,teamHasShop,towerExposed} from './engine.js?v=R015';
+import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,clamp,dist} from './data.js?v=R016';
+import {createGame,tick,dmSpawn,serialize,teamHasShop,towerExposed} from './engine.js?v=R016';
 let networkApi=null;
 let networkLoading=null;
 function normalizeRoomCode(code){return String(code??'').trim().toUpperCase().replace(/[\s-]/g,'');}
 function describeNetworkError(error){return networkApi?.describeNetworkError?.(error) || String(error?.message || 'Network connection failed. Try again.');}
 async function getNetwork(){
   if(!networkLoading){
-    networkLoading=import('./network.js?v=R015').then(module=>{
+    networkLoading=import('./network.js?v=R016').then(module=>{
       networkApi=module;
       if(!module.hasFirebase)throw new Error('Firebase configuration is missing from firebase-config.js.');
       return module;
@@ -18,7 +18,7 @@ async function getNetwork(){
 }
 async function checkFirebaseConfig(){
   try{
-    const {firebaseConfig}=await import('../firebase-config.js?v=R015');
+    const {firebaseConfig}=await import('../firebase-config.js?v=R016');
     const ready=Boolean(firebaseConfig?.apiKey && firebaseConfig?.projectId && firebaseConfig?.databaseURL);
     $('firebaseStatus').textContent=ready?'CONFIGURED / READY TO CONNECT':'FIREBASE CONFIG MISSING';
     if(!ready)menuMessage('Offline training is ready. Online play requires Firebase configuration.',true);
@@ -30,14 +30,16 @@ async function checkFirebaseConfig(){
 }
 
 const $=id=>document.getElementById(id);
-const canvas=$('gameCanvas'),ctx=canvas.getContext('2d');
+const canvas=$('gameCanvas');let ctx=canvas.getContext('2d');const screenCtx=ctx;
+let worldCache=null;
 let game=null,mode='menu',net=null,activeSlot=0,selectedHero=0,lane=1,possessed=null,placementType=null;
 let netInputs={},netSlots={},selectedItem=null,inventoryVisible=true,renderedWinner=null;
 let actionSeq=0,pendingAction=null,lastTime=performance.now(),lastPublish=0,lastInputSend=0,lastUI=0;
 let toastTimeout=null,chosenMouse={x:0,y:0,down:false,worldX:0,worldY:0},keys=new Set();
 const camera={x:WORLD.partyX+280,y:1000,zoom:.95},smoothPositions=new Map();
-let width=1000,height=700,frameId=null;
-const INPUT_RATE=95,PUBLISH_RATE=150;
+let width=1000,height=700,frameId=null,simTimer=null,lastSimTime=performance.now();
+let receivedStateAt=0,lastInputFingerprint='',inventoryFingerprint='',lastRenderTime=performance.now();
+const INPUT_RATE=95, INPUT_HEARTBEAT=450, PUBLISH_RATE=160;
 function notify(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>$('toast').classList.remove('visible'),2400);}
 function menuMessage(text,isError=false){
   $('menuMessage').textContent=text;
@@ -81,7 +83,7 @@ function setupChoices(){
       menuMessage('Signing in and creating a Firebase room...');
       const g=createGame();
       net=await hostRoom(serialize(g),slots=>{netSlots=slots;},inputs=>{netInputs=inputs;},liveNetworkError);
-      mode='onlineDM';game=g;camera.x=5790;camera.y=1000;
+      mode='onlineDM';game=g;camera.x=5790;camera.y=1000;startSimulation();
       $('connection').textContent='FIREBASE CONNECTED';$('roomLabel').textContent=`ROOM ${net.code} · SHARE THIS CODE`;
       setRoomCode(net.code);
       leaveMenu();notify(`Room ${net.code} created. Copy and share it with your Party.`);
@@ -97,10 +99,10 @@ function setupChoices(){
       menuMessage('Signing in to Firebase...');
       let latestState=null;
       net=await joinRoom(code,selectedHero,$('playerName').value||HEROES[selectedHero].name,
-        next=>{latestState=next;game=next;},slots=>{netSlots=slots;},
+        next=>{latestState=next;game=next;receivedStateAt=performance.now();},slots=>{netSlots=slots;},
         step=>menuMessage(step),liveNetworkError);
       if(!latestState)throw new Error('Firebase did not provide a game state.');
-      activeSlot=selectedHero;mode='onlineParty';camera.x=WORLD.partyX+250;camera.y=WORLD.lanes[selectedHero%3];
+      activeSlot=selectedHero;mode='onlineParty';camera.x=WORLD.partyX+250;camera.y=WORLD.lanes[selectedHero%3];startSimulation();
       $('connection').textContent='FIREBASE CONNECTED';$('roomLabel').textContent=`ROOM ${net.code}`;
       leaveMenu();notify('Connected to DM host. Advance with your party!');
     }catch(e){menuMessage(describeNetworkError(e),true);console.error('Join failed:',e);}
@@ -116,6 +118,7 @@ function isHost(){return mode==='party'||mode==='dm'||mode==='onlineDM';}
 function startLocal(role){mode=role;game=createGame();activeSlot=0;
   if(role==='party' && selectedHero!==0){game.players[0].hero=selectedHero;game.players[selectedHero].hero=0;}
   camera.x=role==='dm'?5790:WORLD.partyX+250;camera.y=role==='dm'?1000:game.players[0].y;
+  inventoryFingerprint='';startSimulation();
   leaveMenu();notify(role==='dm'?'The field is yours. Choose a unit to possess.':'Push the lane. Kill bosses to expose their forts.');
 }
 function queueAction(a){if(isDM()||mode==='menu')return;pendingAction=a;actionSeq++;}
@@ -132,28 +135,58 @@ function resize(){const r=canvas.getBoundingClientRect(),dpr=Math.min(window.dev
 function scrToWorld(sx,sy){return {x:(sx-width/2)/camera.zoom+camera.x,y:(sy-height/2)/camera.zoom+camera.y};}
 function mouseWorld(e){const r=canvas.getBoundingClientRect();const x=e.clientX-r.left,y=e.clientY-r.top;const w=scrToWorld(x,y);chosenMouse.x=x;chosenMouse.y=y;chosenMouse.worldX=w.x;chosenMouse.worldY=w.y;}
 function updateCamera(dt){if(!game)return;let tx=camera.x,ty=camera.y;
-  if(!isDM()){const p=game.players?.[activeSlot];if(p){tx=p.x;ty=p.y;}}
+  if(!isDM()){const p=game.players?.[activeSlot];if(p){const display=entityPosition(p);tx=display.x;ty=display.y;}}
   else if(possessed){const e=game.enemies?.find(v=>v.id===possessed&&v.hp>0);if(e){tx=e.x;ty=e.y;}else {possessed=null;notify('Possessed unit eliminated.');}}
   else{const v=530*dt/camera.zoom;camera.x+=(Number(keys.has('arrowright'))-Number(keys.has('arrowleft')))*v;camera.y+=(Number(keys.has('arrowdown'))-Number(keys.has('arrowup')))*v;}
   if(!isDM()||possessed){const f=Math.min(1,dt*7);camera.x+=(tx-camera.x)*f;camera.y+=(ty-camera.y)*f;}
   camera.x=clamp(camera.x,0,WORLD.width);camera.y=clamp(camera.y,0,WORLD.height);
 }
-function update(dt,now){if(!game)return;
+// Simulation runs separately from requestAnimationFrame. Background tabs stop
+// rendering but can keep ticking; catch-up covers typical browser timer clamps.
+function startSimulation(){
+  lastSimTime=performance.now();
+  if(simTimer===null && typeof window.setInterval==='function'){
+    simTimer=window.setInterval(simulationPulse,33);
+  }
+}
+function simulationPulse(){
+  if(!game)return;
+  const now=performance.now();
+  const elapsed=Math.max(0,(now-lastSimTime)/1000);
+  lastSimTime=now;
   if(isHost()){
+    // The engine clamps large dt; divide delayed pulses into safe increments.
+    const simTime=Math.min(elapsed,1);
+    const count=Math.max(1,Math.ceil(simTime/.055));
+    const step=simTime/count;
     const inputs={};
     if(mode==='party')inputs[0]=currentInput();
     if(mode==='onlineDM'){
-      for(const [slot,s] of Object.entries(netSlots)){const i=Number(slot);if(Number.isInteger(i)&&i>=0&&i<6 && s?.uid && netInputs[s.uid])inputs[i]=netInputs[s.uid];}
+      for(const [slot,s] of Object.entries(netSlots)){
+        const i=Number(slot);
+        if(Number.isInteger(i)&&i>=0&&i<6 && s?.uid && netInputs[s.uid])inputs[i]=netInputs[s.uid];
+      }
     }
-    tick(game,dt,inputs,isDM()?dmInput():null);
-    if(mode==='onlineDM'&&now-lastPublish>=PUBLISH_RATE){lastPublish=now;net.publish(serialize(game)).catch(e=>notify(`Sync error: ${e.message}`));}
-  } else if(mode==='onlineParty'&&net&&now-lastInputSend>=INPUT_RATE){
-    lastInputSend=now;net.send(currentInput()).catch(e=>notify(`Input sync error: ${e.message}`));
+    for(let i=0;i<count;i++)tick(game,step,inputs,isDM()?dmInput():null);
+    if(mode==='onlineDM'&&now-lastPublish>=PUBLISH_RATE){
+      lastPublish=now;net.publish(serialize(game));
+    }
+  }else if(mode==='onlineParty'&&net){
+    const input=currentInput();
+    const fingerprint=JSON.stringify(input);
+    if(now-lastInputSend>=INPUT_RATE && (fingerprint!==lastInputFingerprint || now-lastInputSend>=INPUT_HEARTBEAT)){
+      lastInputSend=now;lastInputFingerprint=fingerprint;net.send(input);
+    }
   }
-  updateCamera(dt);
-  if(now-lastUI>=140){lastUI=now;refreshUI();}
-  if(game.status==='finished'&&renderedWinner!==game.winner){renderedWinner=game.winner;
-    $('endOverlay').classList.remove('hidden');$('endTitle').textContent=game.winner==='party'?'PARTY VICTORY':'DM VICTORY';$('endTitle').style.color=game.winner==='party'?'#79e5d4':'#e88f9c';}
+  // Hidden DM tabs still update their simulation, without spending CPU drawing.
+  updateCamera(Math.min(elapsed,.07));
+  if(!document.hidden && now-lastUI>=170){lastUI=now;refreshUI();}
+  if(game.status==='finished'&&renderedWinner!==game.winner){
+    renderedWinner=game.winner;
+    $('endOverlay').classList.remove('hidden');
+    $('endTitle').textContent=game.winner==='party'?'PARTY VICTORY':'DM VICTORY';
+    $('endTitle').style.color=game.winner==='party'?'#79e5d4':'#e88f9c';
+  }
 }
 function refreshUI(){if(!game)return;
   const t=Math.max(0,Math.ceil(game.time||0));$('clock').textContent=`${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;
@@ -174,11 +207,20 @@ function refreshUI(){if(!game)return;
     refreshInventory(p);
   }
   $('log').innerHTML=(game.log||[]).slice(0,6).map(msg=>`<div>${escapeHTML(msg)}</div>`).join('');
+  if(mode==='onlineParty'){
+    const age=performance.now()-receivedStateAt;
+    if(age>1800){$('connection').textContent='SYNC DELAYED / HOST TAB?';}
+    else {$('connection').textContent=`FIREBASE / ${Math.round(age)}ms SNAPSHOT AGE`;}
+  }
   const present=Object.entries(netSlots).length;
   $('onlineRoster').textContent=mode==='onlineDM'?`ROOM ${net?.code||''} / ${present} OF 6 PLAYERS JOINED`:mode==='onlineParty'?`ROOM ${net?.code||''} / ${present} PLAYERS`:'LOCAL TRAINING / AI TEAMMATES';
 }
 function escapeHTML(s){return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');}
-function refreshInventory(p){const grid=$('invGrid');grid.replaceChildren();
+function refreshInventory(p){
+  const nextFingerprint=activeSlot+'|'+selectedItem+'|'+JSON.stringify(p.inventory||[]);
+  if(inventoryFingerprint===nextFingerprint)return;
+  inventoryFingerprint=nextFingerprint;
+  const grid=$('invGrid');grid.replaceChildren();
   for(let y=0;y<5;y++)for(let x=0;x<8;x++){
     const cell=document.createElement('div');cell.className='inv-cell';cell.style.gridColumn=String(x+1);cell.style.gridRow=String(y+1);
     cell.onclick=()=>{
@@ -255,7 +297,10 @@ function drawTower(){const x=WORLD.dmX,y=1000,open=towerExposed(game);ctx.save()
 function entityPosition(entity){if(mode!=='onlineParty')return entity;
   let sm=smoothPositions.get(entity.id);if(!sm){sm={x:entity.x,y:entity.y};smoothPositions.set(entity.id,sm);}
   if(Math.hypot(entity.x-sm.x,entity.y-sm.y)>340){sm.x=entity.x;sm.y=entity.y;}
-  else{sm.x+=(entity.x-sm.x)*.18;sm.y+=(entity.y-sm.y)*.18;}
+  else{
+    const a=1-Math.exp(-Math.min(.08,(performance.now()-lastRenderTime)/1000||.016)*13);
+    sm.x+=(entity.x-sm.x)*a;sm.y+=(entity.y-sm.y)*a;
+  }
   return sm;
 }
 function drawCharacter(p){if(p.hp<=0)return;const h=HEROES[p.hero]||HEROES[0],v=entityPosition(p);
@@ -290,17 +335,52 @@ function drawMinimap(){if(!game)return;const w=210,h=125,x=width-w-18,y=height-h
   ctx.fillStyle='#f77a8a';ctx.beginPath();ctx.arc(x+WORLD.dmX/WORLD.width*w,y+h/2,6,0,Math.PI*2);ctx.fill();
   ctx.strokeStyle='#d4f2eb';ctx.lineWidth=1.4;ctx.strokeRect(x+(camera.x-width/2/camera.zoom)/WORLD.width*w,y+(camera.y-height/2/camera.zoom)/WORLD.height*h,(width/camera.zoom)/WORLD.width*w,(height/camera.zoom)/WORLD.height*h);
   ctx.restore();}
+function cachedWorld(){
+  if(worldCache!==null)return worldCache;
+  try{
+    const cache=document.createElement('canvas');
+    cache.width=WORLD.width;cache.height=WORLD.height;
+    const worldCtx=cache.getContext('2d');
+    if(!worldCtx)return null;
+    ctx=worldCtx;
+    try{drawWorld();}finally{ctx=screenCtx;}
+    worldCache=cache;
+  }catch(error){
+    ctx=screenCtx;
+    console.warn('World caching unavailable; drawing background directly:',error);
+    return null;
+  }
+  return worldCache;
+}
+function drawCachedWorld(){
+  const cache=cachedWorld();
+  if(!cache){drawWorld();return;}
+  const halfW=width/(2*camera.zoom),halfH=height/(2*camera.zoom);
+  const x=Math.max(0,Math.floor(camera.x-halfW-5));
+  const y=Math.max(0,Math.floor(camera.y-halfH-5));
+  const w=Math.min(WORLD.width-x,Math.ceil(2*halfW+10));
+  const h=Math.min(WORLD.height-y,Math.ceil(2*halfH+10));
+  if(w>0&&h>0)ctx.drawImage(cache,x,y,w,h,x,y,w,h);
+}
+function inView(e,pad=125){
+  return Math.abs(e.x-camera.x)<width/(2*camera.zoom)+pad &&
+         Math.abs(e.y-camera.y)<height/(2*camera.zoom)+pad;
+}
 function render(){if(!width||!height)return;const dpr=canvas.width/width;ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.fillStyle='#091219';ctx.fillRect(0,0,width,height);
   if(!game){ctx.textAlign='center';ctx.font='bold 33px Segoe UI';ctx.fillStyle='#537f80';ctx.fillText('SEEKING // STANDBY',width/2,height/2);ctx.textAlign='left';return;}
   ctx.save();ctx.translate(width/2,height/2);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-camera.x,-camera.y);
-  drawWorld();for(const c of game.chests||[])drawChest(c);for(const f of game.forts||[])drawFort(f);drawTower();
-  for(const e of game.enemies||[])drawEnemy(e);for(const p of game.players||[])drawCharacter(p);
-  for(const b of game.bullets||[]){ctx.fillStyle=b.color||'#fff';shapeCircle(b.x,b.y,b.r,ctx.fillStyle,ctx.fillStyle,0);}
-  for(const fx of game.effects||[])drawFX(fx);ctx.restore();drawMinimap();
+  drawCachedWorld();for(const c of game.chests||[])if(inView(c))drawChest(c);
+  for(const f of game.forts||[])if(inView(f))drawFort(f);
+  if(inView({x:WORLD.dmX,y:1000},200))drawTower();
+  for(const e of game.enemies||[])if(inView(e))drawEnemy(e);
+  for(const p of game.players||[])if(inView(p))drawCharacter(p);
+  for(const b of game.bullets||[])if(inView(b)){ctx.fillStyle=b.color||'#fff';shapeCircle(b.x,b.y,b.r,ctx.fillStyle,ctx.fillStyle,0);}
+  for(const fx of game.effects||[])if(inView(fx))drawFX(fx);
+  ctx.restore();drawMinimap();
   if(mode==='onlineParty' && game.players?.[activeSlot]?.respawn>0){ctx.fillStyle='#f1d9db';ctx.textAlign='center';ctx.font='bold 28px Segoe UI';ctx.fillText(`REDEPLOY ${Math.ceil(game.players[activeSlot].respawn)}s`,width/2,height/2);ctx.textAlign='left';}
 }
-function frame(now){const dt=Math.min((now-lastTime)/1000,.05);lastTime=now;update(dt,now);render();frameId=requestAnimationFrame(frame);}
+function frame(now){render();lastRenderTime=now;lastTime=now;frameId=requestAnimationFrame(frame);}
 function events(){window.addEventListener('resize',resize);window.addEventListener('keydown',e=>{
   const tag=document.activeElement?.tagName;if(tag==='INPUT'||tag==='TEXTAREA')return;
   const k=e.key.toLowerCase();keys.add(k);if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();

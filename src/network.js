@@ -1,4 +1,5 @@
-import {firebaseConfig} from '../firebase-config.js?v=R015';
+import {firebaseConfig} from '../firebase-config.js?v=R016';
+import {makeLatestOnlySender} from './sync.js?v=R016';
 
 export const hasFirebase=Boolean(firebaseConfig.apiKey && firebaseConfig.databaseURL && firebaseConfig.projectId);
 let sdkPromise=null;
@@ -78,12 +79,15 @@ export async function hostRoomWithClient(s,initialState,handleSlots,handleInputs
   }
   const unsubSlots=s.onValue(s.ref(s.db,`${base}/slots`),snap=>handleSlots(snap.val()||{}),onError);
   const unsubInputs=s.onValue(s.ref(s.db,`${base}/inputs`),snap=>handleInputs(snap.val()||{}),onError);
+  // At most one large state upload at a time, even if network latency spikes.
+  const stateSender=makeLatestOnlySender(state=>s.set(s.ref(s.db,`${base}/state`),state),onError);
   const disconnect=s.onDisconnect(s.ref(s.db,`${base}/meta/status`));
   try{await disconnect.set('disconnected');}catch(e){onError(e);}
   return {
     code,uid:s.uid,
-    async publish(state){return s.set(s.ref(s.db,`${base}/state`),state);},
-    close(){unsubSlots();unsubInputs();disconnect.cancel().catch(()=>{});},
+    publish(state){stateSender.queue(state);},
+    getSyncStats(){return stateSender.stats();},
+    close(){stateSender.close();unsubSlots();unsubInputs();disconnect.cancel().catch(()=>{});},
   };
 }
 
@@ -128,10 +132,13 @@ export async function joinRoomWithClient(s,enteredCode,slot,name,onState,onSlots
       const state=snap.val();if(state)onState(state);
     },onError));
     stopFns.push(s.onValue(s.ref(s.db,`${base}/slots`),snap=>onSlots(snap.val()||{}),onError));
+    const inputSender=makeLatestOnlySender(input=>s.set(inputRef,input),onError);
     return {
       code,uid:s.uid,
-      async send(input){return s.set(inputRef,input);},
+      send(input){inputSender.queue(input);},
+      getSyncStats(){return inputSender.stats();},
       async leave(){
+        inputSender.close();
         for(const fn of stopFns)fn();
         await Promise.allSettled([s.remove(slotRef),s.remove(inputRef),slotDisconnect.cancel(),inputDisconnect.cancel()]);
       },

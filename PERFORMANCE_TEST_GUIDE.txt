@@ -1,0 +1,15 @@
+SoulSeekers: Seeking R01.6 — Two-tab performance test
+
+1) Extract ZIP -> run SYNC_TO_GITHUB.bat -> in GitHub Desktop commit and Push origin.
+2) Ctrl+Shift+R in both Zen tabs. Verify the top bar says R01.6.
+3) Separate the DM and Party into two visible windows (drag one tab out).
+   If the DM tab is hidden, Zen may throttle it despite this patch.
+4) DM HOST AS DM -> copy the newly generated 6-character code.
+5) Player JOIN AS PARTY with that code and an unused character.
+6) Walk and shoot. Watch the Player connection label: if snapshot age stays
+   over ~1800 ms, the host or network is stalled.
+7) Test again with DM and Party on two devices, if available.
+
+No need to change Firebase settings from R01.5.
+The prototype is still browser-hosted, and using Firebase as the realtime
+transport is not appropriate as a final high-speed competitive netcode.

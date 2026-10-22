@@ -1,3 +1,14 @@
+# R01.6 — Browser performance and Firebase sync (experimental)
+
+- Decoupled DM authority simulation from animation frames: switching to the Party tab no longer inherently stops the host simulation due to requestAnimationFrame pausing.
+- Added simulation catch-up for typical background-tab timer throttling, up to 1 second per pulse. Extended suspension/sleep and severe browser throttling cannot be solved without a dedicated server.
+- Coalesced Firebase state and input writes: only one outstanding write for each stream; replace waiting old data with newest snapshot, rather than stacking stale queued updates.
+- Cached the whole static Boston map into one canvas and only draw the visible viewport; distant units/effects are culled.
+- Avoided regenerating the 40-cell inventory DOM every HUD update when equipment did not change.
+- Party HUD displays snapshot age; warning if DM is no longer transmitting state.
+- Core game modes, Firebase config, database rules, and fixed GitHub sync BAT preserved. **No Firebase Console changes required from R01.5**.
+- Known limitation: the host is still a browser tab. Keep both game windows visible, or host on a different computer, for the most reliable test. Two tabs in one window inherently fight focus and background scheduling.
+
 # R01.5 — Startup recovery / cache-bust (October 21, 2026)
 
 - Fixed dependency coupling: **offline training no longer requires Firebase modules to load** before main menu buttons work.

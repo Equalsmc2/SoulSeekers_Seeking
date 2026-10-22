@@ -1,8 +1,8 @@
-# SOULSEEKERS: SEEKING — R01.5
+# SOULSEEKERS: SEEKING — R01.6
 
 A playable **prototype** of a browser-based, six-Party-vs-one-Dungeon-Master, top-down Boston-themed shooter. It is a **separate project** from the SoulSeekers companion website.
 
-**Status:** R01.5 includes improved lobby diagnostics. Offline training mode and the core game loop are implemented. Firebase online room code is wired for a prototype, but needs your own Firebase configuration, deployed Realtime Database rules, and multi-device testing. This is NOT production-grade netcode or a finished content-complete game.
+**Status:** R01.6 adds renderer caching and transport backpressure on top of the improved lobby diagnostics. Offline training mode and the core game loop are implemented. Firebase online room code is wired for a prototype, but needs your own Firebase configuration, deployed Realtime Database rules, and multi-device testing. This is NOT production-grade netcode or a finished content-complete game.
 
 ## 1. Run locally first (no login / no Firebase needed)
 
@@ -149,3 +149,12 @@ If the online menu still says **NOT CONFIGURED** and no character cards appear, 
 5. Host a fresh room as DM and share that new six-character code with a Party player.
 
 If a JS module still fails entirely, the page displays a `STARTUP ERROR` diagnostic rather than silently leaving the menu inert. If Firebase is unreachable, offline modes continue to work. Existing published Realtime Database rules and anonymous authentication still need to be configured.
+
+## R01.6 lag/desynchronization improvements
+
+- The DM sim runs on a 33 ms timer independent of the drawing loop. Even if a Zen/Firefox tab stops drawing, simulation can continue when browser timers still run. The browser is **not** a guaranteed dedicated game server: background throttling, sleep, tab suspension and poor network still cause delays.
+- Firebase sends approximately six state snapshots a second, now with **one in-flight write per channel** and queued-latest replacement to avoid stale updates accumulating. Input is sent when changed, plus a heartbeat.
+- The large Boston background is prerendered and clipped to the viewport. Player inventory no longer rebuilds dozens of DOM nodes several times per second.
+- The Party HUD reports Firebase snapshot age. A sustained >1.8s delay indicates stalled host updates, browser throttling, or network trouble.
+- Test using two **separate windows visible side-by-side**, or two devices. Start a **new room** after both have updated to R01.6.
+- Browser-hosted simulations are prototypes; reliable 6v1 multiplayer ultimately needs a server-authoritative simulation.
