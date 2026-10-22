@@ -59,14 +59,14 @@ This is placeholder/vector art, not yet your existing SoulSeekers character port
 | Jump to position | Click minimap (not possessed) |
 | Zoom camera | Mouse wheel |
 
-## 4. Optional: enable Firebase multiplayer
+## 4. Firebase multiplayer (Web App already configured in R01.3)
 
 You may use an entirely new Firebase project to avoid accidental interaction with the SoulSeekers companion site's existing Auth/Firestore data and security rules. GitHub Pages hosts the static HTML/CSS/JS. Firebase supplies auth, room membership, state snapshots, and player inputs.
 
 1. In the [Firebase Console](https://console.firebase.google.com/), create a project and register a **Web App**.
 2. In **Authentication → Sign-in method**, enable **Anonymous**. This R01 design treats whoever **creates the room** as its DM, rather than using your companion site's global DM-role permissions.
 3. In **Build → Realtime Database**, create a database, copy its exact `databaseURL` (including region), and paste the whole contents of `database.rules.json` into **Realtime Database → Rules**; then **Publish**. Do not publish these rules to Firestore instead. This is a distinct service.
-4. In `firebase-config.js`, copy your Web App `apiKey`, `authDomain`, `projectId`, `appId`, and your Realtime Database's `databaseURL`. These Web App identifiers are normal public config values; database security must come from authentication/rules, **never** from hiding the config.
+4. **R01.3 already has your Firebase Web App configuration** inside `firebase-config.js` for project `soulseekers-seeking`; you do not need to paste anything. Web App identifiers are normal public config values; database security must come from authentication/rules, **never** from hiding the config. You still need to enable Anonymous authentication and publish `database.rules.json` in **Realtime Database → Rules**.
 5. Restart Live Preview. Choose **Host as DM** to create a six-character code. On up to six other computers/browsers, open the same published site, each select a different hero, enter the room code and join as Party.
 6. **Keep the DM host's tab open.** At this prototype stage, the DM browser runs the authoritative game simulation and publishes snapshots roughly 6–7 times per second; Party clients send input around 10 times per second. This means actions and movement can look/feel delayed online compared with local training.
 
@@ -97,7 +97,7 @@ Assets and module references are **relative**, making the site safe under GitHub
 SoulSeekers_Seeking/
   index.html             Main browser game and menus
   style.css              Responsive UI
-  firebase-config.js     Your Firebase Web App config (initially empty)
+  firebase-config.js     Your Firebase Web App config (pre-filled in R01.3)
   database.rules.json    Prototype RTDB rules (publish manually)
   src/data.js            Roster, prices, world layout
   src/engine.js          Combat, waves, AI, loot, levels, towers, inventory

@@ -1,3 +1,10 @@
+## R01.3 — Firebase Web App connected (configuration only)
+
+- Pre-filled `firebase-config.js` with the user-provided SoulSeekers-Seeking Firebase settings, including Realtime Database URL.
+- Preserved corrected R01.2 `SYNC_TO_GITHUB.bat` and existing gameplay unchanged.
+- Firebase Console setup (Anonymous Auth and publishing Realtime Database rules) must still be completed independently; this update cannot apply console settings.
+- Web SDK uses client-side config; no analytics initialization has been added.
+
 ## R01.2 - GitHub Sync Fix
 - Fixed Windows Robocopy path quoting when the extracted ZIP source directory ends in a backslash.
 - No gameplay changes.
