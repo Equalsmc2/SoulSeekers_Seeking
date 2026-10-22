@@ -1,8 +1,8 @@
-# SOULSEEKERS: SEEKING — R01
+# SOULSEEKERS: SEEKING — R01.4
 
 A playable **prototype** of a browser-based, six-Party-vs-one-Dungeon-Master, top-down Boston-themed shooter. It is a **separate project** from the SoulSeekers companion website.
 
-**Status:** Offline training mode and the core game loop are implemented. Firebase online room code is wired for a prototype, but needs your own Firebase configuration, deployed Realtime Database rules, and multi-device testing. This is NOT production-grade netcode or a finished content-complete game.
+**Status:** R01.4 includes improved lobby diagnostics. Offline training mode and the core game loop are implemented. Firebase online room code is wired for a prototype, but needs your own Firebase configuration, deployed Realtime Database rules, and multi-device testing. This is NOT production-grade netcode or a finished content-complete game.
 
 ## 1. Run locally first (no login / no Firebase needed)
 
@@ -125,3 +125,15 @@ SoulSeekers_Seeking/
 ## 8. Self-checks
 
 `node tests/engine.test.mjs` executes deterministic rule/system tests; `node --check src/main.js` and equivalent checks ensure JavaScript syntax is valid. A real browser visual QA test, Firebase credentials, hosting deployment, and cross-device online load test **must still be performed on your machine**.
+
+## R01.4 multiplayer join troubleshooting
+
+- The DM should choose HOST AS DM, then click the **ROOM ABCDEF · COPY** button in the top header. Share the *six-character auto-generated code*, not a chosen password.
+- Party members need to open the **same current site** (after GitHub Pages deploys), choose a different hero per player, paste the code, provide their name, then press JOIN AS PARTY.
+- If a Party cannot join, the R01.4 menu now displays exactly which stage fails and an actionable message. The red error is persistent; take a screenshot and share it for debugging.
+- **Permission denied**: In Firebase console go to **Realtime Database → Rules** and replace the rules with the project's `database.rules.json`, then Publish. Cloud Firestore is a different database.
+- **Anonymous Authentication disabled**: Firebase Authentication → Sign-in method → Anonymous → Enable.
+- **Room missing**: The DM must leave the browser open, host a fresh match, and copy its newest code.
+- **Slot occupied**: Choose a different character; each Hero slot is unique.
+- **Cached old build**: Refresh both the Party and DM page with Ctrl+Shift+R after GitHub Pages deployment; verify the title shows R01.4.
+- This release was regression-tested with a mock RTDB client; real network access and Firebase Console security rule publication cannot be simulated from this ZIP.

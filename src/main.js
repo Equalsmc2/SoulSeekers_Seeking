@@ -1,6 +1,6 @@
 import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,clamp,dist} from './data.js';
 import {createGame,tick,dmSpawn,serialize,teamHasShop,towerExposed} from './engine.js';
-import {hasFirebase,hostRoom,joinRoom} from './network.js';
+import {hasFirebase,hostRoom,joinRoom,describeNetworkError,normalizeRoomCode} from './network.js';
 const $=id=>document.getElementById(id);
 const canvas=$('gameCanvas'),ctx=canvas.getContext('2d');
 let game=null,mode='menu',net=null,activeSlot=0,selectedHero=0,lane=1,possessed=null,placementType=null;
@@ -11,12 +11,31 @@ const camera={x:WORLD.partyX+280,y:1000,zoom:.95},smoothPositions=new Map();
 let width=1000,height=700,frameId=null;
 const INPUT_RATE=95,PUBLISH_RATE=150;
 function notify(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>$('toast').classList.remove('visible'),2400);}
-function menuMessage(text){$('menuMessage').textContent=text;}
+function menuMessage(text,isError=false){
+  $('menuMessage').textContent=text;
+  $('menuMessage').classList.toggle('error',isError);
+}
+function liveNetworkError(error){
+  const message=describeNetworkError(error);
+  $('syncAlert').textContent=`MULTIPLAYER CONNECTION: ${message}`;
+  $('syncAlert').classList.remove('hidden');
+  $('connection').textContent='MULTIPLAYER SYNC ERROR';
+  console.error('SoulSeekers online sync error:',error);
+}
+function setRoomCode(code){
+  $('copyRoomCode').textContent=`ROOM ${code} · COPY`;
+  $('copyRoomCode').classList.remove('hidden');
+}
+
 function setupChoices(){
   HEROES.forEach((h,i)=>{const b=document.createElement('button');b.type='button';b.className='hero-choice'+(i===selectedHero?' chosen':'');b.style.setProperty('--hero',h.color);
     b.innerHTML=`<div class="hero-icon">${['Ø','☾','Ⅲ','◇','✛','✦'][i]}</div><b>${h.name.toUpperCase()}</b><small>${h.role}</small>`;
     b.onclick=()=>{selectedHero=i;document.querySelectorAll('.hero-choice').forEach((el,j)=>el.classList.toggle('chosen',i===j));};$('heroChoices').append(b);});
-  $('firebaseStatus').textContent=hasFirebase?'READY':'SETUP REQUIRED';
+  $('firebaseStatus').textContent=hasFirebase?'CONFIGURED / NOT YET CONNECTED':'SETUP REQUIRED';
+  $('roomCodeInput').addEventListener('input',e=>{e.target.value=normalizeRoomCode(e.target.value);});
+  $('roomCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('joinOnline').click();});
+  $('playerName').addEventListener('keydown',e=>{if(e.key==='Enter')$('joinOnline').click();});
+  $('copyRoomCode').onclick=async()=>{if(!net?.code)return;try{await navigator.clipboard.writeText(net.code);notify(`Copied room ${net.code}`);}catch{window.prompt('Copy the room code:',net.code);}};
   $('dmUnits').innerHTML=[['grunt','GRUNT',12],['brute','BRUTE',30],['sniper','SNIPER',24]].map(([id,n,c])=>`<button class="dm-unit" data-unit="${id}"><span>${n}</span><b>${c} THREAT +</b></button>`).join('');
   $('dmUnits').querySelectorAll('button').forEach(b=>b.onclick=()=>{if(!game)return;placementType=b.dataset.unit;possessed=null;notify(`Click the battlefield to deploy a ${placementType.toUpperCase()}. ESC cancels.`);});
   $('shopItems').innerHTML=Object.entries(ITEMS).map(([id,d])=>`<button class="shop-card" data-buy="${id}"><b>${d.icon} ${d.name}</b><span>${d.price} GOLD</span></button>`).join('');
@@ -27,22 +46,35 @@ function setupChoices(){
   $('soloParty').onclick=()=>startLocal('party');$('soloDM').onclick=()=>startLocal('dm');
   $('menuButton').onclick=()=>location.reload();$('endRestart').onclick=()=>location.reload();
   $('hostOnline').onclick=async()=>{
-    if(!hasFirebase){menuMessage('Set up Firebase first using README.md, then reload the page.');return;}
-    try{menuMessage('Connecting to Firebase...');const g=createGame();
-      net=await hostRoom(serialize(g),slots=>{netSlots=slots;},inputs=>{netInputs=inputs;});
+    if(!hasFirebase){menuMessage('Set up Firebase first using README.md, then reload the page.',true);return;}
+    $('hostOnline').disabled=true;
+    try{
+      menuMessage('Signing in and creating a Firebase room...');
+      const g=createGame();
+      net=await hostRoom(serialize(g),slots=>{netSlots=slots;},inputs=>{netInputs=inputs;},liveNetworkError);
       mode='onlineDM';game=g;camera.x=5790;camera.y=1000;
       $('connection').textContent='FIREBASE CONNECTED';$('roomLabel').textContent=`ROOM ${net.code} · SHARE THIS CODE`;
-      leaveMenu();notify(`Room ${net.code} created. Share it with up to six players.`);
-    }catch(e){menuMessage(e.message);console.error(e);}
+      setRoomCode(net.code);
+      leaveMenu();notify(`Room ${net.code} created. Copy and share it with your Party.`);
+    }catch(e){menuMessage(describeNetworkError(e),true);console.error('Host failed:',e);}
+    finally{$('hostOnline').disabled=false;}
   };
   $('joinOnline').onclick=async()=>{
-    if(!hasFirebase){menuMessage('First configure Firebase in firebase-config.js.');return;}
-    try{menuMessage('Joining room...');const code=$('roomCodeInput').value;
+    if(!hasFirebase){menuMessage('First configure Firebase in firebase-config.js.',true);return;}
+    const code=normalizeRoomCode($('roomCodeInput').value);
+    $('joinOnline').disabled=true;
+    try{
+      menuMessage('Signing in to Firebase...');
+      let latestState=null;
       net=await joinRoom(code,selectedHero,$('playerName').value||HEROES[selectedHero].name,
-        next=>{game=next;},slots=>{netSlots=slots;});
+        next=>{latestState=next;game=next;},slots=>{netSlots=slots;},
+        step=>menuMessage(step),liveNetworkError);
+      if(!latestState)throw new Error('Firebase did not provide a game state.');
       activeSlot=selectedHero;mode='onlineParty';camera.x=WORLD.partyX+250;camera.y=WORLD.lanes[selectedHero%3];
-      $('connection').textContent='FIREBASE CONNECTED';$('roomLabel').textContent=`ROOM ${net.code}`;leaveMenu();notify('Connected to DM host. Advance with your party!');
-    }catch(e){menuMessage(e.message);console.error(e);}
+      $('connection').textContent='FIREBASE CONNECTED';$('roomLabel').textContent=`ROOM ${net.code}`;
+      leaveMenu();notify('Connected to DM host. Advance with your party!');
+    }catch(e){menuMessage(describeNetworkError(e),true);console.error('Join failed:',e);}
+    finally{$('joinOnline').disabled=false;}
   };
 }
 function leaveMenu(){ $('menuLayer').classList.add('hidden');$('roleBadge').textContent=isDM()?'DUNGEON MASTER':'PARTY OPERATIVE';

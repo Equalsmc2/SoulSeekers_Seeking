@@ -5,9 +5,9 @@
 <body>
 <div id="app">
 <header class="mast">
-  <div class="brand"><div class="sigil">Ø</div><div><div class="eyebrow">A SOULSEEKERS EXPERIENCE <span class="test-tag">PROTOTYPE 01</span></div><h1>SEEKING<span class="dot">.</span></h1></div></div>
+  <div class="brand"><div class="sigil">Ø</div><div><div class="eyebrow">A SOULSEEKERS EXPERIENCE <span class="test-tag">PROTOTYPE R01.4</span></div><h1>SEEKING<span class="dot">.</span></h1></div></div>
   <div class="topmeta"><span class="pulse"></span><span id="connection">OFFLINE TRAINING</span><span class="separator">/</span><span id="roomLabel">BOSTON // BLACKOUT</span></div>
-  <button class="outline tiny" id="menuButton">MAIN MENU</button>
+  <button class="outline tiny hidden" id="copyRoomCode" title="Click to copy the 6-character room code">COPY ROOM CODE</button><button class="outline tiny" id="menuButton">MAIN MENU</button>
 </header>
 <div class="game-layout">
   <main class="viewport" id="viewport">
@@ -16,7 +16,7 @@
     <div class="hud hud-left"><div class="mini-label">OPERATION CLOCK</div><strong id="clock">20:00</strong><div class="tiny-text" id="victoryRule">Destroy 4 forts to expose the Tower</div></div>
     <div class="hud hud-right"><div class="mini-label">TOWER INTEGRITY</div><strong id="towerHp">SHIELDED</strong><div class="bar"><div id="towerBar"></div></div></div>
     <div class="crosshair" id="crosshair">✛</div>
-    <div id="toast" class="toast"></div>
+    <div id="toast" class="toast"></div><div id="syncAlert" class="sync-alert hidden" role="alert"></div>
     <div id="endOverlay" class="end-overlay hidden"><span class="eyebrow">OPERATION COMPLETE</span><div id="endTitle" class="end-title"></div><button class="primary" id="endRestart">BACK TO MENU</button></div>
   </main>
   <aside class="side-panel" id="sidePanel">
@@ -53,7 +53,8 @@
   <div class="mode-grid"><button class="mode-choice" id="soloParty"><span>01 — TRAINING</span><strong>PLAY AS PARTY</strong><small>Solo practice with five AI allies. No setup.</small></button>
     <button class="mode-choice" id="soloDM"><span>02 — TRAINING</span><strong>PLAY AS DM</strong><small>Command enemies against six AI Seekers.</small></button></div>
   <div class="menu-divider"><span>ONLINE MATCH // FIREBASE REALTIME DATABASE</span><span id="firebaseStatus">NOT CONFIGURED</span></div>
-  <div class="online-menu"><button class="primary" id="hostOnline">HOST AS DM</button><div class="join-row"><input id="roomCodeInput" maxlength="6" placeholder="ROOM CODE" aria-label="Six character room code"><input id="playerName" maxlength="24" placeholder="YOUR NAME" aria-label="Your display name"><button class="outline" id="joinOnline">JOIN AS PARTY</button></div></div>
-  <div id="menuMessage" class="menu-message">Choose a training mode to begin immediately. Online play requires Firebase setup.</div>
+  <div class="online-menu"><button class="primary" id="hostOnline">HOST AS DM</button><div class="join-row"><input id="roomCodeInput" maxlength="6" placeholder="DM ROOM CODE" autocomplete="off" spellcheck="false" aria-label="Six-character room code from the DM"><input id="playerName" maxlength="24" placeholder="YOUR NAME" aria-label="Your display name"><button class="outline" id="joinOnline">JOIN AS PARTY</button></div></div>
+  <div class="join-hint">Party members: select an available character, enter the DM's 6-character room code and your name, then join. This is a room code, not a password. Use the same deployed website version.</div>
+  <div id="menuMessage" class="menu-message" role="status" aria-live="polite">Choose a training mode to begin immediately. Online play requires Firebase setup.</div>
 </div></div>
-<script type="module" src="./src/main.js"></script></body></html>
+<script type="module" src="./src/main.js?v=R014"></script></body></html>

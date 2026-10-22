@@ -1,3 +1,17 @@
+## R01.4 — Lobby connection diagnostics and join fixes
+
+- R01.3 configured Firebase app retained unchanged.
+- Party join now checks the host room and reads a valid initial game state before declaring the player connected and hiding the menu.
+- Network failures are translated into visible and actionable messages (room missing, occupied slot, rules/permissions, anonymous auth, network errors).
+- Persistent in-game warning for live snapshot/roster listener failures.
+- Room-code normalization (spaces/dashes/case), keyboard Enter to join, and a visible Copy Room Code button for the DM.
+- Safe Firebase initialization promise; a failed authentication attempt can be retried.
+- Lobby joins can continue even if Firebase declines onDisconnect cleanup registration; failures are reported in the developer console.
+- Regression tests added for valid joins, missing rooms, occupied slots, unauthorized rules, and live input routing with a mock database.
+- Corrected GitHub sync BAT retained from R01.2. Gameplay rules and Boston prototype map unchanged.
+
+**Live Firebase testing** still requires two independent browser sessions and the RTDB rules to be deployed in the user's project.
+
 ## R01.3 — Firebase Web App connected (configuration only)
 
 - Pre-filled `firebase-config.js` with the user-provided SoulSeekers-Seeking Firebase settings, including Realtime Database URL.

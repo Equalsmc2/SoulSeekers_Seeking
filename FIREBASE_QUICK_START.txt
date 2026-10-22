@@ -21,3 +21,11 @@ IMPORTANT:
 - Existing gameplay and map are unchanged in this configuration-only patch.
 - Internet access is required for Firebase multiplayer; offline training still works without Firebase.
 - The Firebase project must remain accessible and within its service limits.
+
+R01.4 JOIN INSTRUCTIONS
+------------------------
+1. Ensure Anonymous Auth is enabled and `database.rules.json` is published in Realtime Database Rules.
+2. DM hosts; use the new ROOM ... COPY button to copy the generated 6-character code.
+3. Party chooses an unoccupied character, pastes the code and their name, then presses JOIN AS PARTY.
+4. If it fails, the join menu gives the exact cause. Screenshot the red message.
+5. Test on 2 independent browsers, and hard-refresh after GitHub Pages deploys.
