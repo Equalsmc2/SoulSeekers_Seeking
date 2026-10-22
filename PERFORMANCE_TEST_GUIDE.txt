@@ -1,15 +1,10 @@
-SoulSeekers: Seeking R01.6 — Two-tab performance test
-
-1) Extract ZIP -> run SYNC_TO_GITHUB.bat -> in GitHub Desktop commit and Push origin.
-2) Ctrl+Shift+R in both Zen tabs. Verify the top bar says R01.6.
-3) Separate the DM and Party into two visible windows (drag one tab out).
-   If the DM tab is hidden, Zen may throttle it despite this patch.
-4) DM HOST AS DM -> copy the newly generated 6-character code.
-5) Player JOIN AS PARTY with that code and an unused character.
-6) Walk and shoot. Watch the Player connection label: if snapshot age stays
-   over ~1800 ms, the host or network is stalled.
-7) Test again with DM and Party on two devices, if available.
-
-No need to change Firebase settings from R01.5.
-The prototype is still browser-hosted, and using Firebase as the realtime
-transport is not appropriate as a final high-speed competitive netcode.
+R01.7 multiplayer test
+1. Unzip, run SYNC_TO_GITHUB.bat, commit and push from GitHub Desktop.
+2. Hard reload both browsers (Ctrl + Shift + R) and host a NEW room.
+3. Keep DM and Party in two VISIBLE browser windows side-by-side (not two hidden tabs).
+4. Move the Party character with WASD. Local movement should be immediate.
+5. Check the DM window shows Party movement after a short delay.
+6. Aim and fire. Hits/health are still authoritative and can lag with network round trips.
+7. Check the Party HUD says FIREBASE / <...>ms SNAPSHOT AGE. If it repeatedly says SYNC DELAYED, the DM or network is throttled.
+8. For comparison, also test separate computers/devices.
+Known limitation: a hidden DM browser cannot guarantee real-time simulation with Firebase as the only backend.

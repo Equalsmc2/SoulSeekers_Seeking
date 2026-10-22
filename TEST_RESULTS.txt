@@ -1,0 +1,70 @@
+TAP version 13
+# ✓ Battlefield has 6 heroes, 6 forts and 6 bosses
+# ✓ Tower is shielded until 4 forts are destroyed
+# ✓ Grid inventory enforces shape, rotations and boundaries
+# ✓ Shop purchase requires proximity, gold and open inventory space
+# ✓ Chests open once, award gold and XP
+# ✓ DM summons cost threat and must avoid western spawn and buildings
+# ✓ Match advances, bullets and waves work, and timer gives DM victory
+# ✓ AI training can reach and destroy the Tower without a human
+# All engine tests passed.
+# Subtest: /mnt/data/SoulSeekers_Seeking_R01_7_Network_Responsiveness_Fix/tests/engine.test.mjs
+ok 1 - /mnt/data/SoulSeekers_Seeking_R01_7_Network_Responsiveness_Fix/tests/engine.test.mjs
+  ---
+  duration_ms: 155.554629
+  type: 'test'
+  ...
+# ✓ Six-character room code excludes confusing letters/numbers and normalizes paste
+# ✓ DM creates a match; Party can join from a different Firebase UID and get initial state
+# ✓ Two different players can choose unique character slots
+# ✓ Wrong room code, invalid code and disconnected DM give meaningful errors
+# ✓ Permission problem is exposed BEFORE saying player is connected
+# ✓ A missing initial state blocks joins even if DM room exists
+# All network mock tests passed.
+# Subtest: /mnt/data/SoulSeekers_Seeking_R01_7_Network_Responsiveness_Fix/tests/network.test.mjs
+ok 2 - /mnt/data/SoulSeekers_Seeking_R01_7_Network_Responsiveness_Fix/tests/network.test.mjs
+  ---
+  duration_ms: 54.586508
+  type: 'test'
+  ...
+# ✓ Background catch-up simulation step calculation
+# ✓ Firebase writes never queue stale snapshots; latest snapshot wins
+# ✓ Failed writes report errors without retry storms
+# Subtest: /mnt/data/SoulSeekers_Seeking_R01_7_Network_Responsiveness_Fix/tests/performance.test.mjs
+ok 3 - /mnt/data/SoulSeekers_Seeking_R01_7_Network_Responsiveness_Fix/tests/performance.test.mjs
+  ---
+  duration_ms: 63.302072
+  type: 'test'
+  ...
+# ✓ Prediction is immediate and render-only; remote snapshots interpolate
+# ✓ Network payload 4393 → 2855 bytes (35% smaller)
+# Subtest: /mnt/data/SoulSeekers_Seeking_R01_7_Network_Responsiveness_Fix/tests/prediction.test.mjs
+ok 4 - /mnt/data/SoulSeekers_Seeking_R01_7_Network_Responsiveness_Fix/tests/prediction.test.mjs
+  ---
+  duration_ms: 58.517705
+  type: 'test'
+  ...
+# ✓ Actual game render draws cached map without JS exceptions
+# Subtest: /mnt/data/SoulSeekers_Seeking_R01_7_Network_Responsiveness_Fix/tests/render.test.mjs
+ok 5 - /mnt/data/SoulSeekers_Seeking_R01_7_Network_Responsiveness_Fix/tests/render.test.mjs
+  ---
+  duration_ms: 2445.814753
+  type: 'test'
+  ...
+# ✓ All six character choices appear; offline Party and DM start even without network.js
+# ✓ Bundled Firebase config is independently recognized without starting the network
+# Subtest: /mnt/data/SoulSeekers_Seeking_R01_7_Network_Responsiveness_Fix/tests/startup.test.mjs
+ok 6 - /mnt/data/SoulSeekers_Seeking_R01_7_Network_Responsiveness_Fix/tests/startup.test.mjs
+  ---
+  duration_ms: 2447.882153
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2577.327596

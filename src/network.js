@@ -1,5 +1,5 @@
-import {firebaseConfig} from '../firebase-config.js?v=R016';
-import {makeLatestOnlySender} from './sync.js?v=R016';
+import {firebaseConfig} from '../firebase-config.js?v=R017';
+import {makeLatestOnlySender} from './sync.js?v=R017';
 
 export const hasFirebase=Boolean(firebaseConfig.apiKey && firebaseConfig.databaseURL && firebaseConfig.projectId);
 let sdkPromise=null;

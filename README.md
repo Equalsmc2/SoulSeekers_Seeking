@@ -158,3 +158,10 @@ If a JS module still fails entirely, the page displays a `STARTUP ERROR` diagnos
 - The Party HUD reports Firebase snapshot age. A sustained >1.8s delay indicates stalled host updates, browser throttling, or network trouble.
 - Test using two **separate windows visible side-by-side**, or two devices. Start a **new room** after both have updated to R01.6.
 - Browser-hosted simulations are prototypes; reliable 6v1 multiplayer ultimately needs a server-authoritative simulation.
+
+
+## R01.7 responsiveness notes
+- Party movement now responds locally while the DM server-authoritative copy catches up. The authoritative host remains the source of truth for damage, loot, and boss fights.
+- Remote units animate between received snapshots; the camera no longer advances the same interpolation twice.
+- Network snapshots omit simulation internals and projectile velocities, reducing Firebase bandwidth per update.
+- **Known limitation:** Firebase Realtime Database plus a browser-hosted simulation is still not a low-latency shooter backend. A DM browser tab may be throttled when hidden. Keep DM and Party windows visible side-by-side during testing, or use separate devices. Competitive multiplayer will need a dedicated authoritative game server eventually.

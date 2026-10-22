@@ -9,7 +9,7 @@ const root=join(dirname(fileURLToPath(import.meta.url)),'..');
 const tmp=mkdtempSync(join(tmpdir(),'seeking-startup-'));
 function copy(rel){const out=join(tmp,rel);mkdirSync(dirname(out),{recursive:true});copyFileSync(join(root,rel),out);}
 try {
-  for (const f of ['src/main.js','src/data.js','src/engine.js','firebase-config.js'])copy(f);
+  for (const f of ['src/main.js','src/data.js','src/engine.js','src/sync.js','src/prediction.js','firebase-config.js'])copy(f);
   // Without network.js on disk, an accidental static import would fail startup.
   const elements=new Map();
   function el(){

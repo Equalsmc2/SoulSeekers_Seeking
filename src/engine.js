@@ -1,4 +1,4 @@
-import { WORLD, MATCH_SECONDS, HEROES, ITEMS, BUILDINGS, SHOPS, CHEST_SPOTS, clamp, dist, makeId } from './data.js?v=R016';
+import { WORLD, MATCH_SECONDS, HEROES, ITEMS, BUILDINGS, SHOPS, CHEST_SPOTS, clamp, dist, makeId } from './data.js?v=R017';
 const INV_W=8, INV_H=5;
 const shortest=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 

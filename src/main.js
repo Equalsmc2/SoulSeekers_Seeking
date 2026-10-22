@@ -1,14 +1,16 @@
 // Offline gameplay must NOT depend on Firebase modules loading successfully.
 // Versioned imports also avoid mixing fresh GitHub Pages JS with stale cached modules.
-import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,clamp,dist} from './data.js?v=R016';
-import {createGame,tick,dmSpawn,serialize,teamHasShop,towerExposed} from './engine.js?v=R016';
+import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,clamp,dist} from './data.js?v=R017';
+import {createGame,tick,dmSpawn,serialize,teamHasShop,towerExposed} from './engine.js?v=R017';
+import {networkSnapshot} from './sync.js?v=R017';
+import {newPrediction,predictStep,reconcilePrediction,tweenPosition,receiveEntityMotion} from './prediction.js?v=R017';
 let networkApi=null;
 let networkLoading=null;
 function normalizeRoomCode(code){return String(code??'').trim().toUpperCase().replace(/[\s-]/g,'');}
 function describeNetworkError(error){return networkApi?.describeNetworkError?.(error) || String(error?.message || 'Network connection failed. Try again.');}
 async function getNetwork(){
   if(!networkLoading){
-    networkLoading=import('./network.js?v=R016').then(module=>{
+    networkLoading=import('./network.js?v=R017').then(module=>{
       networkApi=module;
       if(!module.hasFirebase)throw new Error('Firebase configuration is missing from firebase-config.js.');
       return module;
@@ -18,7 +20,7 @@ async function getNetwork(){
 }
 async function checkFirebaseConfig(){
   try{
-    const {firebaseConfig}=await import('../firebase-config.js?v=R016');
+    const {firebaseConfig}=await import('../firebase-config.js?v=R017');
     const ready=Boolean(firebaseConfig?.apiKey && firebaseConfig?.projectId && firebaseConfig?.databaseURL);
     $('firebaseStatus').textContent=ready?'CONFIGURED / READY TO CONNECT':'FIREBASE CONFIG MISSING';
     if(!ready)menuMessage('Offline training is ready. Online play requires Firebase configuration.',true);
@@ -36,10 +38,11 @@ let game=null,mode='menu',net=null,activeSlot=0,selectedHero=0,lane=1,possessed=
 let netInputs={},netSlots={},selectedItem=null,inventoryVisible=true,renderedWinner=null;
 let actionSeq=0,pendingAction=null,lastTime=performance.now(),lastPublish=0,lastInputSend=0,lastUI=0;
 let toastTimeout=null,chosenMouse={x:0,y:0,down:false,worldX:0,worldY:0},keys=new Set();
-const camera={x:WORLD.partyX+280,y:1000,zoom:.95},smoothPositions=new Map();
+const camera={x:WORLD.partyX+280,y:1000,zoom:.95},remotePositions=new Map();
+let predictedPlayer=null,renderClock=performance.now();
 let width=1000,height=700,frameId=null,simTimer=null,lastSimTime=performance.now();
 let receivedStateAt=0,lastInputFingerprint='',inventoryFingerprint='',lastRenderTime=performance.now();
-const INPUT_RATE=95, INPUT_HEARTBEAT=450, PUBLISH_RATE=160;
+const INPUT_RATE=55, INPUT_HEARTBEAT=240, PUBLISH_RATE=160;
 function notify(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>$('toast').classList.remove('visible'),2400);}
 function menuMessage(text,isError=false){
   $('menuMessage').textContent=text;
@@ -98,8 +101,9 @@ function setupChoices(){
       const {joinRoom}=await getNetwork();
       menuMessage('Signing in to Firebase...');
       let latestState=null;
+      activeSlot=selectedHero;predictedPlayer=null;remotePositions.clear();
       net=await joinRoom(code,selectedHero,$('playerName').value||HEROES[selectedHero].name,
-        next=>{latestState=next;game=next;receivedStateAt=performance.now();},slots=>{netSlots=slots;},
+        next=>{latestState=next;acceptNetworkState(next);},slots=>{netSlots=slots;},
         step=>menuMessage(step),liveNetworkError);
       if(!latestState)throw new Error('Firebase did not provide a game state.');
       activeSlot=selectedHero;mode='onlineParty';camera.x=WORLD.partyX+250;camera.y=WORLD.lanes[selectedHero%3];startSimulation();
@@ -113,9 +117,20 @@ function leaveMenu(){ $('menuLayer').classList.add('hidden');$('roleBadge').text
   $('dmPanel').classList.toggle('hidden',!isDM());$('playerPanel').classList.toggle('hidden',isDM());
   $('controls').innerHTML=isDM()?'WASD POSSESSED ENEMY <b>·</b> CLICK ENEMY TO POSSESS <b>·</b> MOUSE FIRE <b>·</b> RIGHT CLICK TO COMMAND <b>·</b> ARROWS PAN <b>·</b> ESC RELEASE':'WASD MOVE <b>·</b> MOUSE FIRE <b>·</b> Q SPELL <b>·</b> E ECHO <b>·</b> SPACE DASH <b>·</b> F CHEST <b>·</b> B SHOP <b>·</b> I INVENTORY';
 }
+function acceptNetworkState(state){
+  const time=performance.now();
+  receivedStateAt=time;
+  game=state;
+  receiveEntityMotion(remotePositions,[...(state.players||[]),...(state.enemies||[])],time);
+  const server=state.players?.[activeSlot];
+  if(server){
+    const control=currentInput();
+    predictedPlayer=reconcilePrediction(predictedPlayer,server,!!(control.mx||control.my));
+  }
+}
 function isDM(){return mode==='dm'||mode==='onlineDM';}
 function isHost(){return mode==='party'||mode==='dm'||mode==='onlineDM';}
-function startLocal(role){mode=role;game=createGame();activeSlot=0;
+function startLocal(role){mode=role;game=createGame();activeSlot=0;predictedPlayer=null;remotePositions.clear();
   if(role==='party' && selectedHero!==0){game.players[0].hero=selectedHero;game.players[selectedHero].hero=0;}
   camera.x=role==='dm'?5790:WORLD.partyX+250;camera.y=role==='dm'?1000:game.players[0].y;
   inventoryFingerprint='';startSimulation();
@@ -133,7 +148,8 @@ function dmInput(){return {possess:possessed,mx:Number(keys.has('d'))-Number(key
   my:Number(keys.has('s'))-Number(keys.has('w')),aimX:chosenMouse.worldX,aimY:chosenMouse.worldY,fire:chosenMouse.down};}
 function resize(){const r=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);width=Math.max(1,r.width);height=Math.max(1,r.height);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
 function scrToWorld(sx,sy){return {x:(sx-width/2)/camera.zoom+camera.x,y:(sy-height/2)/camera.zoom+camera.y};}
-function mouseWorld(e){const r=canvas.getBoundingClientRect();const x=e.clientX-r.left,y=e.clientY-r.top;const w=scrToWorld(x,y);chosenMouse.x=x;chosenMouse.y=y;chosenMouse.worldX=w.x;chosenMouse.worldY=w.y;}
+function refreshPointerAim(){const w=scrToWorld(chosenMouse.x,chosenMouse.y);chosenMouse.worldX=w.x;chosenMouse.worldY=w.y;}
+function mouseWorld(e){const r=canvas.getBoundingClientRect();chosenMouse.x=e.clientX-r.left;chosenMouse.y=e.clientY-r.top;refreshPointerAim();}
 function updateCamera(dt){if(!game)return;let tx=camera.x,ty=camera.y;
   if(!isDM()){const p=game.players?.[activeSlot];if(p){const display=entityPosition(p);tx=display.x;ty=display.y;}}
   else if(possessed){const e=game.enemies?.find(v=>v.id===possessed&&v.hp>0);if(e){tx=e.x;ty=e.y;}else {possessed=null;notify('Possessed unit eliminated.');}}
@@ -152,6 +168,7 @@ function startSimulation(){
 function simulationPulse(){
   if(!game)return;
   const now=performance.now();
+  refreshPointerAim();
   const elapsed=Math.max(0,(now-lastSimTime)/1000);
   lastSimTime=now;
   if(isHost()){
@@ -169,17 +186,18 @@ function simulationPulse(){
     }
     for(let i=0;i<count;i++)tick(game,step,inputs,isDM()?dmInput():null);
     if(mode==='onlineDM'&&now-lastPublish>=PUBLISH_RATE){
-      lastPublish=now;net.publish(serialize(game));
+      lastPublish=now;net.publish(networkSnapshot(game));
     }
   }else if(mode==='onlineParty'&&net){
     const input=currentInput();
+    const player=game.players?.[activeSlot];
+    if(player&&predictedPlayer)predictStep(predictedPlayer,player,input,Math.min(elapsed,.08));
     const fingerprint=JSON.stringify(input);
     if(now-lastInputSend>=INPUT_RATE && (fingerprint!==lastInputFingerprint || now-lastInputSend>=INPUT_HEARTBEAT)){
       lastInputSend=now;lastInputFingerprint=fingerprint;net.send(input);
     }
   }
   // Hidden DM tabs still update their simulation, without spending CPU drawing.
-  updateCamera(Math.min(elapsed,.07));
   if(!document.hidden && now-lastUI>=170){lastUI=now;refreshUI();}
   if(game.status==='finished'&&renderedWinner!==game.winner){
     renderedWinner=game.winner;
@@ -211,6 +229,10 @@ function refreshUI(){if(!game)return;
     const age=performance.now()-receivedStateAt;
     if(age>1800){$('connection').textContent='SYNC DELAYED / HOST TAB?';}
     else {$('connection').textContent=`FIREBASE / ${Math.round(age)}ms SNAPSHOT AGE`;}
+  }
+  if(mode==='onlineDM'&&net){
+    const stats=net.getSyncStats?.();
+    $('connection').textContent=stats?.queued?'FIREBASE / UPLOAD QUEUED':'FIREBASE / HOST ACTIVE';
   }
   const present=Object.entries(netSlots).length;
   $('onlineRoster').textContent=mode==='onlineDM'?`ROOM ${net?.code||''} / ${present} OF 6 PLAYERS JOINED`:mode==='onlineParty'?`ROOM ${net?.code||''} / ${present} PLAYERS`:'LOCAL TRAINING / AI TEAMMATES';
@@ -294,14 +316,10 @@ function drawTower(){const x=WORLD.dmX,y=1000,open=towerExposed(game);ctx.save()
   ctx.fillStyle='#fff3f4';ctx.font='bold 17px Segoe UI';ctx.textAlign='center';ctx.fillText('DM',0,5);ctx.fillText(open?'TOWER EXPOSED':'SEALED TOWER',0,-108);
   hpBar(0,-95,156,(game.towerHp??4200)/(game.towerMaxHp??4200),open?'#f69aaa':'#6c8d9e');ctx.restore();
 }
-function entityPosition(entity){if(mode!=='onlineParty')return entity;
-  let sm=smoothPositions.get(entity.id);if(!sm){sm={x:entity.x,y:entity.y};smoothPositions.set(entity.id,sm);}
-  if(Math.hypot(entity.x-sm.x,entity.y-sm.y)>340){sm.x=entity.x;sm.y=entity.y;}
-  else{
-    const a=1-Math.exp(-Math.min(.08,(performance.now()-lastRenderTime)/1000||.016)*13);
-    sm.x+=(entity.x-sm.x)*a;sm.y+=(entity.y-sm.y)*a;
-  }
-  return sm;
+function entityPosition(entity){
+  if(mode!=='onlineParty')return entity;
+  if(entity.slot===activeSlot&&predictedPlayer)return predictedPlayer;
+  return tweenPosition(remotePositions.get(entity.id),renderClock)||entity;
 }
 function drawCharacter(p){if(p.hp<=0)return;const h=HEROES[p.hero]||HEROES[0],v=entityPosition(p);
   ctx.fillStyle='#070c10aa';ctx.beginPath();ctx.ellipse(v.x+6,v.y+11,p.r+5,p.r*.55,0,0,Math.PI*2);ctx.fill();
@@ -380,7 +398,11 @@ function render(){if(!width||!height)return;const dpr=canvas.width/width;ctx.set
   ctx.restore();drawMinimap();
   if(mode==='onlineParty' && game.players?.[activeSlot]?.respawn>0){ctx.fillStyle='#f1d9db';ctx.textAlign='center';ctx.font='bold 28px Segoe UI';ctx.fillText(`REDEPLOY ${Math.ceil(game.players[activeSlot].respawn)}s`,width/2,height/2);ctx.textAlign='left';}
 }
-function frame(now){render();lastRenderTime=now;lastTime=now;frameId=requestAnimationFrame(frame);}
+function frame(now){
+  renderClock=now;
+  updateCamera(Math.min(.05,Math.max(0,(now-lastRenderTime)/1000)));
+  render();lastRenderTime=now;lastTime=now;frameId=requestAnimationFrame(frame);
+}
 function events(){window.addEventListener('resize',resize);window.addEventListener('keydown',e=>{
   const tag=document.activeElement?.tagName;if(tag==='INPUT'||tag==='TEXTAREA')return;
   const k=e.key.toLowerCase();keys.add(k);if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();

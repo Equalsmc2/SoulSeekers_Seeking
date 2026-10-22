@@ -25,7 +25,7 @@ function el(tag='div'){
  return obj;
 }
 try{
- for(const f of ['src/main.js','src/data.js','src/engine.js','firebase-config.js']){
+ for(const f of ['src/main.js','src/data.js','src/engine.js','src/sync.js','src/prediction.js','firebase-config.js']){
   const dest=join(tmp,f);mkdirSync(dirname(dest),{recursive:true});copyFileSync(join(root,f),dest);
  }
  const elements=new Map();

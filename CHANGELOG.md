@@ -1,3 +1,13 @@
+# R01.7 — Multiplayer responsiveness and network size
+
+- Client-side prediction for the local Party member (render-only; DM still authoritative).
+- Smooth remote entity motion between snapshots rather than mutating interpolation during camera and draw.
+- Camera follows the local predicted position once per animation frame.
+- Compact Firebase published snapshots remove unnecessary internal enemy/projectile data.
+- Faster input upload cadence; existing latest-only upload backpressure retained.
+- Added tests for prediction, network payload, and snapshot interpolation.
+- Caveat: browsers can still throttle a hidden DM tab, and Realtime Database is not a real-time authoritative game server.
+
 # R01.6 — Browser performance and Firebase sync (experimental)
 
 - Decoupled DM authority simulation from animation frames: switching to the Party tab no longer inherently stops the host simulation due to requestAnimationFrame pausing.
