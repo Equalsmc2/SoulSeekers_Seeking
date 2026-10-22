@@ -1,6 +1,34 @@
-import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,clamp,dist} from './data.js';
-import {createGame,tick,dmSpawn,serialize,teamHasShop,towerExposed} from './engine.js';
-import {hasFirebase,hostRoom,joinRoom,describeNetworkError,normalizeRoomCode} from './network.js';
+// Offline gameplay must NOT depend on Firebase modules loading successfully.
+// Versioned imports also avoid mixing fresh GitHub Pages JS with stale cached modules.
+import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,clamp,dist} from './data.js?v=R015';
+import {createGame,tick,dmSpawn,serialize,teamHasShop,towerExposed} from './engine.js?v=R015';
+let networkApi=null;
+let networkLoading=null;
+function normalizeRoomCode(code){return String(code??'').trim().toUpperCase().replace(/[\s-]/g,'');}
+function describeNetworkError(error){return networkApi?.describeNetworkError?.(error) || String(error?.message || 'Network connection failed. Try again.');}
+async function getNetwork(){
+  if(!networkLoading){
+    networkLoading=import('./network.js?v=R015').then(module=>{
+      networkApi=module;
+      if(!module.hasFirebase)throw new Error('Firebase configuration is missing from firebase-config.js.');
+      return module;
+    }).catch(error=>{networkLoading=null;throw error;});
+  }
+  return networkLoading;
+}
+async function checkFirebaseConfig(){
+  try{
+    const {firebaseConfig}=await import('../firebase-config.js?v=R015');
+    const ready=Boolean(firebaseConfig?.apiKey && firebaseConfig?.projectId && firebaseConfig?.databaseURL);
+    $('firebaseStatus').textContent=ready?'CONFIGURED / READY TO CONNECT':'FIREBASE CONFIG MISSING';
+    if(!ready)menuMessage('Offline training is ready. Online play requires Firebase configuration.',true);
+  }catch(error){
+    $('firebaseStatus').textContent='CONFIG ERROR / OFFLINE OK';
+    console.error('Firebase configuration file could not be loaded:',error);
+    menuMessage('Offline training is ready. Firebase config failed to load: '+error.message,true);
+  }
+}
+
 const $=id=>document.getElementById(id);
 const canvas=$('gameCanvas'),ctx=canvas.getContext('2d');
 let game=null,mode='menu',net=null,activeSlot=0,selectedHero=0,lane=1,possessed=null,placementType=null;
@@ -31,7 +59,7 @@ function setupChoices(){
   HEROES.forEach((h,i)=>{const b=document.createElement('button');b.type='button';b.className='hero-choice'+(i===selectedHero?' chosen':'');b.style.setProperty('--hero',h.color);
     b.innerHTML=`<div class="hero-icon">${['Ø','☾','Ⅲ','◇','✛','✦'][i]}</div><b>${h.name.toUpperCase()}</b><small>${h.role}</small>`;
     b.onclick=()=>{selectedHero=i;document.querySelectorAll('.hero-choice').forEach((el,j)=>el.classList.toggle('chosen',i===j));};$('heroChoices').append(b);});
-  $('firebaseStatus').textContent=hasFirebase?'CONFIGURED / NOT YET CONNECTED':'SETUP REQUIRED';
+  $('firebaseStatus').textContent='CHECKING CONFIG / OFFLINE READY';
   $('roomCodeInput').addEventListener('input',e=>{e.target.value=normalizeRoomCode(e.target.value);});
   $('roomCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('joinOnline').click();});
   $('playerName').addEventListener('keydown',e=>{if(e.key==='Enter')$('joinOnline').click();});
@@ -46,9 +74,10 @@ function setupChoices(){
   $('soloParty').onclick=()=>startLocal('party');$('soloDM').onclick=()=>startLocal('dm');
   $('menuButton').onclick=()=>location.reload();$('endRestart').onclick=()=>location.reload();
   $('hostOnline').onclick=async()=>{
-    if(!hasFirebase){menuMessage('Set up Firebase first using README.md, then reload the page.',true);return;}
     $('hostOnline').disabled=true;
     try{
+      menuMessage('Loading online connection...');
+      const {hostRoom}=await getNetwork();
       menuMessage('Signing in and creating a Firebase room...');
       const g=createGame();
       net=await hostRoom(serialize(g),slots=>{netSlots=slots;},inputs=>{netInputs=inputs;},liveNetworkError);
@@ -60,10 +89,11 @@ function setupChoices(){
     finally{$('hostOnline').disabled=false;}
   };
   $('joinOnline').onclick=async()=>{
-    if(!hasFirebase){menuMessage('First configure Firebase in firebase-config.js.',true);return;}
     const code=normalizeRoomCode($('roomCodeInput').value);
     $('joinOnline').disabled=true;
     try{
+      menuMessage('Loading online connection...');
+      const {joinRoom}=await getNetwork();
       menuMessage('Signing in to Firebase...');
       let latestState=null;
       net=await joinRoom(code,selectedHero,$('playerName').value||HEROES[selectedHero].name,
@@ -303,4 +333,16 @@ function events(){window.addEventListener('resize',resize);window.addEventListen
     if(px>=x&&px<=x+w&&py>=y&&py<=y+h){camera.x=(px-x)/w*WORLD.width;camera.y=(py-y)/h*WORLD.height;}
   });
 }
-setupChoices();events();resize();requestAnimationFrame(frame);
+try{
+  setupChoices();events();resize();
+  window.__SEEKING_BOOTSTRAPPED__=true;
+  requestAnimationFrame(frame);
+  // Deliberately not awaited: offline training remains playable without Firebase.
+  checkFirebaseConfig();
+}catch(error){
+  console.error('SoulSeekers startup error:',error);
+  $('firebaseStatus').textContent='STARTUP FAILED';
+  menuMessage(`Game startup failed: ${error.message}. Take a screenshot of this message.`,true);
+  window.__SEEKING_BOOTSTRAPPED__=false;
+}
+

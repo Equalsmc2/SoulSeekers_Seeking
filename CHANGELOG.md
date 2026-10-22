@@ -1,3 +1,12 @@
+# R01.5 — Startup recovery / cache-bust (October 21, 2026)
+
+- Fixed dependency coupling: **offline training no longer requires Firebase modules to load** before main menu buttons work.
+- Cache-busted `main.js`, `network.js`, `engine.js`, `data.js`, and `firebase-config.js`, avoiding old/new module version mismatches after GitHub Pages deployment.
+- Added a plain JavaScript startup watchdog: missing JS modules now produce a visible message instead of a nonfunctional, unpopulated menu.
+- Added readable initialization failures and separate `CONFIGURED / READY TO CONNECT` vs live-connected statuses.
+- Kept Firebase project configuration, RTDB rules, gameplay, and corrected GitHub sync BAT unchanged otherwise.
+- No Deadlock-map redesign in this stabilization release.
+
 ## R01.4 — Lobby connection diagnostics and join fixes
 
 - R01.3 configured Firebase app retained unchanged.

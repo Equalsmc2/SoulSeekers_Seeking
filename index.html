@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0b1016"><title>SOULSEEKERS / SEEKING</title>
-<link rel="stylesheet" href="./style.css"></head>
+<link rel="stylesheet" href="./style.css?v=R015"></head>
 <body>
 <div id="app">
 <header class="mast">
-  <div class="brand"><div class="sigil">Ø</div><div><div class="eyebrow">A SOULSEEKERS EXPERIENCE <span class="test-tag">PROTOTYPE R01.4</span></div><h1>SEEKING<span class="dot">.</span></h1></div></div>
+  <div class="brand"><div class="sigil">Ø</div><div><div class="eyebrow">A SOULSEEKERS EXPERIENCE <span class="test-tag">PROTOTYPE R01.5</span></div><h1>SEEKING<span class="dot">.</span></h1></div></div>
   <div class="topmeta"><span class="pulse"></span><span id="connection">OFFLINE TRAINING</span><span class="separator">/</span><span id="roomLabel">BOSTON // BLACKOUT</span></div>
   <button class="outline tiny hidden" id="copyRoomCode" title="Click to copy the 6-character room code">COPY ROOM CODE</button><button class="outline tiny" id="menuButton">MAIN MENU</button>
 </header>
@@ -57,4 +57,19 @@
   <div class="join-hint">Party members: select an available character, enter the DM's 6-character room code and your name, then join. This is a room code, not a password. Use the same deployed website version.</div>
   <div id="menuMessage" class="menu-message" role="status" aria-live="polite">Choose a training mode to begin immediately. Online play requires Firebase setup.</div>
 </div></div>
-<script type="module" src="./src/main.js?v=R014"></script></body></html>
+<script>
+// Runs without JS modules, so the menu can explain a startup failure to players.
+window.__SEEKING_BOOTSTRAPPED__=false;
+(function(){
+  let startupError='';
+  window.addEventListener('error', function(e){if(!window.__SEEKING_BOOTSTRAPPED__)startupError=String(e.message||'A game file did not load.');},true);
+  window.addEventListener('unhandledrejection',function(e){if(!window.__SEEKING_BOOTSTRAPPED__)startupError=String(e.reason?.message||e.reason||'A game module failed.');});
+  setTimeout(function(){
+    if(window.__SEEKING_BOOTSTRAPPED__)return;
+    const status=document.getElementById('firebaseStatus'),message=document.getElementById('menuMessage');
+    if(status)status.textContent='STARTUP ERROR';
+    if(message){message.textContent='Game startup did not finish. '+startupError+' Refresh with Ctrl + Shift + R. If it persists, send a screenshot of this message.';message.classList.add('error');}
+  },2400);
+})();
+</script>
+<script type="module" src="./src/main.js?v=R015"></script></body></html>

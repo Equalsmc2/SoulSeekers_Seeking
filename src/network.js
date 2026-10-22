@@ -1,4 +1,4 @@
-import {firebaseConfig} from '../firebase-config.js';
+import {firebaseConfig} from '../firebase-config.js?v=R015';
 
 export const hasFirebase=Boolean(firebaseConfig.apiKey && firebaseConfig.databaseURL && firebaseConfig.projectId);
 let sdkPromise=null;
