@@ -1,6 +1,6 @@
 {
   "name": "soulseekers-seeking",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "description": "SoulSeekers: Seeking R02 dedicated WebSocket simulation server",

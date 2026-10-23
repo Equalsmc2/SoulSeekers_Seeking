@@ -1,12 +1,23 @@
-# SoulSeekers: Seeking — R02 / Dedicated Game Server
+# SoulSeekers: Seeking — R02.1 / Smooth Multiplayer
 
-**R02 is a complete source-code update to the SoulSeekers: Seeking browser prototype.** It replaces Firebase Realtime Database combat snapshots and the DM browser-hosted game loop with a Node.js/WebSocket simulation server. Offline practice is preserved. The game is still a prototype, not a finished competitive MOBA or a proven low-latency production deployment.
+**R02.1 is a complete source-code update to the SoulSeekers: Seeking browser prototype.** It replaces Firebase Realtime Database combat snapshots and the DM browser-hosted game loop with a Node.js/WebSocket simulation server. Offline practice is preserved. The game is still a prototype, not a finished competitive MOBA or a proven low-latency production deployment.
+
+## R02.1 smoothing update
+
+- Predicts your own character on **every animation frame** (rather than a 30Hz browser timer). The server remains authoritative for damage, movement and purchases.
+- Buffers and interpolates other players, bosses, possessed units, and bullets; caps extrapolation if updates stop.
+- Raises snapshot send rate from 12Hz to **20Hz**, but sends Party clients only nearby enemies, projectiles and effects. The DM still receives the full world.
+- Includes a **live performance overlay** showing FPS, network snapshot rate, ping/RTT and network update jitter. A sustained low FPS automatically lowers internal canvas resolution to reduce drawing load.
+- Fixes snapshot sequence handling before the first Party member joins and reduces unnecessary small-packet compression work.
+- R02.1 is a continuation of the existing R02 server. If Render is already deployed and linked to your GitHub repository, **just push this ZIP with `SYNC_TO_GITHUB.bat` and let Render redeploy**; you do not need a second Render service or Firebase project.
+
+Read `R02_1_PERFORMANCE_TEST.md` for the diagnostic procedure. **Local unit and simulated-socket tests passed; actual live Render/Zen performance still needs your test.**
 
 ## Play it
 
 ### Easiest online route — Render (browser only after deployment)
 
-1. Extract R02, run `SYNC_TO_GITHUB.bat` and push using GitHub Desktop as usual.
+1. Extract R02.1, run `SYNC_TO_GITHUB.bat` and push using GitHub Desktop as usual.
 2. Follow [`R02_SERVER_SETUP.md`](R02_SERVER_SETUP.md) to connect the same GitHub repo to a **Render Web Service**. Build command `npm install --omit=dev`; start command `npm start`.
 3. Render gives you a URL like `https://soulseekers-seeking-server.onrender.com`. **Open this URL directly to play**: the Node server also serves the browser game. It automatically knows its own WebSocket address.
 4. DM clicks **HOST AS DM** and **COPY INVITE LINK**; Party players open the link, select a unique character, enter a name and click **JOIN AS PARTY**. The room code is generated, not a password.
@@ -28,7 +39,7 @@
 
 - **Node WebSocket game server** (`server/`) simulates movement, enemy AI, effects, damage, waves, XP, gold, boss and fort states, DM Tower victory conditions at 30 ticks/second.
 - **Clients send inputs and authenticated-by-room-session commands** over WebSocket, no Firebase writes per-frame.
-- **Twelve compressed server snapshots per second** with visual interpolation and immediate client-side visual movement prediction, keeping the R01.7 renderer.
+- **Twenty interest-filtered server snapshots per second** with visual interpolation and immediate client-side visual movement prediction, keeping the R01.7 renderer.
 - **Server-bound Party slots:** up to six unique characters; DM can issue orders, possess enemies and deploy units; Party clients cannot use DM command packets.
 - **Automatic socket reconnection** with a server-issued session token, including reclaiming a Party seat after refreshing the same browser tab (server match memory is temporary).
 - **Room clock waits** until at least one Party member joins. Server simulation continues even if the DM tab disconnects.

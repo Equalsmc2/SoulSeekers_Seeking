@@ -1,9 +1,11 @@
-# R02 — Set up the online game server (Windows + GitHub Desktop + Render)
+**Already running R02 on Render?** Do not create another service. Extract R02.1, run `SYNC_TO_GITHUB.bat`, then commit and push through GitHub Desktop. Your existing Render Web Service should rebuild automatically if Auto-Deploy is enabled. If not, select **Manual Deploy → Deploy latest commit** in Render. Wait for the service to show **Live**, hard-refresh both browser windows, then create a **new DM room**. Rooms do not survive a server redeploy. Firebase does not need changes.
+
+# R02.1 — Set up the online game server (Windows + GitHub Desktop + Render)
 
 You have **not** made a mistake with Firebase. R01's architecture was the source of the large combat sync delays. R02 stops treating Firebase Realtime Database as a shooter transport.
 
 ## 1. Push R02 to GitHub (same as before)
-1. Download and extract the R02 ZIP.
+1. Download and extract the R02.1 ZIP.
 2. Double-click **`SYNC_TO_GITHUB.bat`**.
 3. Press Y, choose **1** for GitHub Desktop.
 4. In GitHub Desktop commit and **Push origin**. Make sure `server/index.mjs`, `package.json` and `render.yaml` appear in the committed files.

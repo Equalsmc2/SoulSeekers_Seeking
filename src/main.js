@@ -1,8 +1,8 @@
 // R02: dedicated Node/WebSocket server owns online gameplay. Offline training is standalone.
-import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,clamp,dist} from './data.js?v=R020';
-import {createGame,tick,dmSpawn,teamHasShop,towerExposed} from './engine.js?v=R020';
-import {newPrediction,predictStep,reconcilePrediction,tweenPosition,receiveEntityMotion} from './prediction.js?v=R020';
-import {connectMatch,normalizeEndpoint,describeSocketError} from './socket-network.js?v=R020';
+import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,clamp,dist} from './data.js?v=R021';
+import {createGame,tick,dmSpawn,teamHasShop,towerExposed} from './engine.js?v=R021';
+import {newPrediction,predictStep,reconcilePrediction,tweenPosition,receiveEntityMotion} from './prediction.js?v=R021';
+import {connectMatch,normalizeEndpoint,describeSocketError} from './socket-network.js?v=R021';
 function normalizeRoomCode(code){return String(code??'').trim().toUpperCase().replace(/[\s-]/g,'');}
 function describeNetworkError(error){return describeSocketError(error);}
 function getServerAddress(){return $('gameServerUrl').value.trim();}
@@ -31,9 +31,10 @@ let actionSeq=0,pendingAction=null,lastTime=performance.now(),lastInputSend=0,la
 let toastTimeout=null,chosenMouse={x:0,y:0,down:false,worldX:0,worldY:0},keys=new Set();
 const camera={x:WORLD.partyX+280,y:1000,zoom:.95},remotePositions=new Map();
 let predictedPlayer=null,renderClock=performance.now();
+let frameCount=0,frameWindowStarted=performance.now(),displayFps=0,qualityScale=1,slowFrames=0,fastFrames=0;
 let width=1000,height=700,frameId=null,simTimer=null,lastSimTime=performance.now();
 let receivedStateAt=0,lastInputFingerprint='',lastDMFingerprint='',lastDMSend=0,inventoryFingerprint='',lastRenderTime=performance.now();
-const INPUT_RATE=40, INPUT_HEARTBEAT=180;
+const INPUT_RATE=33, INPUT_HEARTBEAT=170;
 function notify(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>$('toast').classList.remove('visible'),2400);}
 function menuMessage(text,isError=false){
   $('menuMessage').textContent=text;
@@ -111,7 +112,7 @@ function acceptNetworkState(state){
   const time=performance.now();
   receivedStateAt=time;
   game=state;
-  receiveEntityMotion(remotePositions,[...(state.players||[]),...(state.enemies||[])],time);
+  receiveEntityMotion(remotePositions,[...(state.players||[]),...(state.enemies||[]),...(state.bullets||[])],time);
   const server=state.players?.[activeSlot];
   if(server){
     const control=currentInput();
@@ -136,13 +137,13 @@ function currentInput(){
 }
 function dmInput(){return {possess:possessed,mx:Number(keys.has('d'))-Number(keys.has('a')),
   my:Number(keys.has('s'))-Number(keys.has('w')),aimX:chosenMouse.worldX,aimY:chosenMouse.worldY,fire:chosenMouse.down};}
-function resize(){const r=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);width=Math.max(1,r.width);height=Math.max(1,r.height);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
+function resize(){const r=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,1.5)*qualityScale;width=Math.max(1,r.width);height=Math.max(1,r.height);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
 function scrToWorld(sx,sy){return {x:(sx-width/2)/camera.zoom+camera.x,y:(sy-height/2)/camera.zoom+camera.y};}
 function refreshPointerAim(){const w=scrToWorld(chosenMouse.x,chosenMouse.y);chosenMouse.worldX=w.x;chosenMouse.worldY=w.y;}
 function mouseWorld(e){const r=canvas.getBoundingClientRect();chosenMouse.x=e.clientX-r.left;chosenMouse.y=e.clientY-r.top;refreshPointerAim();}
 function updateCamera(dt){if(!game)return;let tx=camera.x,ty=camera.y;
   if(!isDM()){const p=game.players?.[activeSlot];if(p){const display=entityPosition(p);tx=display.x;ty=display.y;}}
-  else if(possessed){const e=game.enemies?.find(v=>v.id===possessed&&v.hp>0);if(e){tx=e.x;ty=e.y;}else {possessed=null;notify('Possessed unit eliminated.');}}
+  else if(possessed){const e=game.enemies?.find(v=>v.id===possessed&&v.hp>0);if(e){const display=entityPosition(e);tx=display.x;ty=display.y;}else {possessed=null;notify('Possessed unit eliminated.');}}
   else{const v=530*dt/camera.zoom;camera.x+=(Number(keys.has('arrowright'))-Number(keys.has('arrowleft')))*v;camera.y+=(Number(keys.has('arrowdown'))-Number(keys.has('arrowup')))*v;}
   if(!isDM()||possessed){const f=Math.min(1,dt*7);camera.x+=(tx-camera.x)*f;camera.y+=(ty-camera.y)*f;}
   camera.x=clamp(camera.x,0,WORLD.width);camera.y=clamp(camera.y,0,WORLD.height);
@@ -151,6 +152,7 @@ function updateCamera(dt){if(!game)return;let tx=camera.x,ty=camera.y;
 // The browser's interval only samples inputs and updates UI.
 function startSimulation(){
   lastSimTime=performance.now();
+  frameWindowStarted=lastSimTime;frameCount=0;displayFps=0;
   if(simTimer===null && typeof window.setInterval==='function'){
     simTimer=window.setInterval(simulationPulse,33);
   }
@@ -177,7 +179,6 @@ function simulationPulse(){
   }else if(mode==='onlineParty'&&net){
     const input=currentInput();
     const player=game.players?.[activeSlot];
-    if(player&&predictedPlayer)predictStep(predictedPlayer,player,input,Math.min(elapsed,.08));
     const fingerprint=JSON.stringify(input);
     if(now-lastInputSend>=INPUT_RATE && (fingerprint!==lastInputFingerprint || now-lastInputSend>=INPUT_HEARTBEAT)){
       lastInputSend=now;lastInputFingerprint=fingerprint;net.sendInput(input);
@@ -198,7 +199,7 @@ function refreshUI(){if(!game)return;
   $('towerBar').style.width=`${100*(game.towerHp??4200)/(game.towerMaxHp??4200)}%`;
   $('victoryRule').textContent=towerExposed(game)?'The DM Tower can now take damage':'Destroy 4 of 6 forts to expose the Tower';
   const alive=(game.forts||[]).filter(f=>!f.broken).length;
-  $('threat').textContent=Math.floor(game.threat||0);$('armySize').textContent=game.enemies?.length||0;$('fortCount').textContent=alive;
+  $('threat').textContent=Math.floor(game.threat||0);$('armySize').textContent=game.enemyCount??game.enemies?.length??0;$('fortCount').textContent=alive;
   $('possession').textContent=possessed?`POSSESSED: ${possessed.toUpperCase()}`:'NO UNIT POSSESSED';
   for(const b of $('dmUnits').querySelectorAll('button')){const cost={grunt:12,brute:30,sniper:24}[b.dataset.unit];b.disabled=!isDM()||game.threat<cost;}
   const p=game.players?.[activeSlot];
@@ -221,7 +222,17 @@ function refreshUI(){if(!game)return;
     $('connection').textContent=age>1600?'SERVER UPDATES DELAYED / RECONNECTING':`SERVER / DM ACTIVE · ${net.latency||0}ms RTT`;
   }
   const present=Array.isArray(netSlots)?netSlots.filter(s=>s.connected).length:0;
-  $('onlineRoster').textContent=mode==='onlineDM'?`ROOM ${net?.code||''} / ${present} OF 6 PLAYERS JOINED`:mode==='onlineParty'?`ROOM ${net?.code||''} / ${present} PLAYERS`:'LOCAL TRAINING / AI TEAMMATES';
+  const perf=$('perfStats');
+  if(perf){
+    const fps=displayFps||'–',rtt=net?.latency||0,rate=net?.snapshotRate||0,jitter=net?.jitter||0;
+    const flags=[];
+    if(displayFps>0&&displayFps<42)flags.push('LOW FPS');
+    if(rate>0&&rate<12)flags.push('SLOW SERVER UPDATES');
+    if(jitter>30)flags.push('UNEVEN NETWORK');
+    perf.textContent=`${fps} FPS · ${isHost()?'OFFLINE':rate+' NET/s · '+rtt+'ms RTT · '+jitter+'ms JITTER'}${flags.length?' · '+flags.join(' / '):''}`;
+    perf.classList.toggle('warning',flags.length>0);
+  }
+  $('onlineRoster').textContent=mode==='onlineDM' ?`ROOM ${net?.code||''} / ${present} OF 6 PLAYERS JOINED`:mode==='onlineParty'?`ROOM ${net?.code||''} / ${present} PLAYERS`:'LOCAL TRAINING / AI TEAMMATES';
 }
 function escapeHTML(s){return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');}
 function refreshInventory(p){
@@ -379,15 +390,35 @@ function render(){if(!width||!height)return;const dpr=canvas.width/width;ctx.set
   if(inView({x:WORLD.dmX,y:1000},200))drawTower();
   for(const e of game.enemies||[])if(inView(e))drawEnemy(e);
   for(const p of game.players||[])if(inView(p))drawCharacter(p);
-  for(const b of game.bullets||[])if(inView(b)){ctx.fillStyle=b.color||'#fff';shapeCircle(b.x,b.y,b.r,ctx.fillStyle,ctx.fillStyle,0);}
+  for(const b of game.bullets||[])if(inView(b)){ctx.fillStyle=b.color||'#fff';const v=entityPosition(b);shapeCircle(v.x,v.y,b.r,ctx.fillStyle,ctx.fillStyle,0);}
   for(const fx of game.effects||[])if(inView(fx))drawFX(fx);
   ctx.restore();drawMinimap();
   if(mode==='onlineParty' && game.players?.[activeSlot]?.respawn>0){ctx.fillStyle='#f1d9db';ctx.textAlign='center';ctx.font='bold 28px Segoe UI';ctx.fillText(`REDEPLOY ${Math.ceil(game.players[activeSlot].respawn)}s`,width/2,height/2);ctx.textAlign='left';}
 }
 function frame(now){
   renderClock=now;
-  updateCamera(Math.min(.05,Math.max(0,(now-lastRenderTime)/1000)));
-  render();lastRenderTime=now;lastTime=now;frameId=requestAnimationFrame(frame);
+  const rawDelta=Math.max(0,(now-lastRenderTime)/1000);
+  const dt=Math.min(.05,rawDelta);
+  // Animate local movement at display refresh rate, not at 30Hz setInterval.
+  // This is visual-only; server still simulates actual movement and collision.
+  if(mode==='onlineParty'&&game?.players?.[activeSlot]&&predictedPlayer)
+    predictStep(predictedPlayer,game.players[activeSlot],currentInput(),dt);
+  updateCamera(dt);
+  render();lastRenderTime=now;lastTime=now;
+  if(!document.hidden&&mode!=='menu'){
+    frameCount++;
+    if(now-frameWindowStarted>=1100){
+      displayFps=Math.round(frameCount*1000/Math.max(1,now-frameWindowStarted));
+      frameCount=0;frameWindowStarted=now;
+      // Auto-quality steps down only after sustained low FPS, and restores slowly.
+      if(displayFps<40){slowFrames++;fastFrames=0;}
+      else if(displayFps>56){fastFrames++;slowFrames=0;}
+      else {slowFrames=0;fastFrames=0;}
+      if(slowFrames>=3&&qualityScale>0.7){qualityScale=.7;slowFrames=0;resize();notify('Low FPS: reduced canvas resolution to keep movement smooth.');}
+      else if(fastFrames>=12&&qualityScale<1){qualityScale=1;fastFrames=0;resize();}
+    }
+  }else{frameCount=0;frameWindowStarted=now;}
+  frameId=requestAnimationFrame(frame);
 }
 function events(){window.addEventListener('resize',resize);window.addEventListener('keydown',e=>{
   const tag=document.activeElement?.tagName;if(tag==='INPUT'||tag==='TEXTAREA')return;

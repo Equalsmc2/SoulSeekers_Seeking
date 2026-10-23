@@ -55,7 +55,7 @@ export function networkSnapshot(g) {
     forts:g.forts.map(f=>({id:f.id,lane:f.lane,tier:f.tier,x:f.x,y:f.y,
       hp:n(f.hp),maxHp:f.maxHp,broken:f.broken,bossId:f.bossId})),
     chests:g.chests.map(c=>({id:c.id,x:c.x,y:c.y,opened:c.opened})),
-    bullets:g.bullets.map(b=>({x:n(b.x),y:n(b.y),r:b.r,color:b.color})),
+    bullets:g.bullets.map(b=>({id:b.id,x:n(b.x),y:n(b.y),r:b.r,color:b.color})),
     effects:g.effects.map(e=>({x:n(e.x),y:n(e.y),type:e.type,ttl:n(e.ttl)})),
   };
 }

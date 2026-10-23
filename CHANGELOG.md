@@ -1,17 +1,25 @@
-# SoulSeekers: Seeking — R02 / Server-authoritative networking
+# SoulSeekers: Seeking — R02.1 / Smooth Multiplayer
 
-## R02 new architecture
-- Removed Firebase RTDB world writes from online play and the DM-browser authoritative simulation.
-- Added Node.js authoritative simulation at 30Hz, with WebSocket inputs and 12 snapshot updates/second.
-- Added server-validated Party slots and DM-only control, enemy deployment, commands, boss possession, anti-stale snapshot send queue.
-- Added reconnect tokens, roster update, room codes, server URL field, shareable invite links and `/health` endpoint.
-- Host browser can close without freezing simulation (session may be reclaimed while server process lives).
-- Server match clock waits for first Party member to join.
-- Preserved offline modes, map, mechanics and GitHub Desktop BAT workflow.
-- Retained Firebase config for future account/persistent lobby integration; no longer a live match dependency.
+## Changes since R02
 
-## Limitations and test status
-- Rooms are memory-only, cleared on server restart; no hardened authentication, multi-server routing or persistence.
-- Unit engine, game start/render, client socket protocol, permissions and disconnect/reclaim tested locally with mock sockets.
-- `ws` package must be installed with `npm install`; live service and actual cross-device latency not yet verified in this environment.
-- Deadlock-inspired branching Boston map is intentionally deferred to a later separate update.
+- Local character prediction now advances in `requestAnimationFrame` so rendered movement is no longer limited by a 30Hz input timer.
+- Remote heroes, enemies, DM possession and projectiles interpolate from a bounded history of arriving snapshots, with at most 55ms extrapolation.
+- Network update rate increased from 12 to 20 snapshots/second; simulation stays at 30 ticks/second to limit server CPU usage.
+- Server sends each Party client enemies/projectiles/effects from around their position rather than the entire map. DM continues receiving full battlefield state. Army counter remains global.
+- Server snapshot sequence advances even before combat begins; client discards old or duplicate packets.
+- Added in-game performance HUD: browser FPS, network updates/second, RTT and update jitter, including warning flags.
+- Auto quality scaling adjusts canvas pixel density after sustained low FPS and restores it only after sustained high FPS.
+- Increased threshold for per-message compression; favors consistent response time on small messages.
+- Preserves all R02 gameplay, Firebase config, Render server, offline modes and GitHub sync BAT.
+
+## Tests
+
+7 local test suites pass: engine, prediction, rendering mock, dedicated server, network protocol, offline startup, and new smoothing/interest-filter tests. No public Render or real Zen two-window network benchmark was performed in this environment.
+
+## Deployment
+
+Push the ZIP through GitHub Desktop as usual. If you already deployed the Render Web Service and enabled auto deploy, that existing service will rebuild from the new commit. Render restarts clear active match rooms in this prototype, so make a **new room** after the update.
+
+## Unchanged limitation
+
+A Render free instance may have variable resources/latency. No client patch can guarantee 60fps on every device or eliminate real network delays. The diagnostic readout is intended to identify what is still limiting smoothness in live tests.

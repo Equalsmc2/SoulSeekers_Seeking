@@ -37,7 +37,7 @@ export function createMatchService({now=()=>Date.now(),logger=console,autoTimers
   let tickTimer=null,sendTimer=null,cleanupTimer=null,lastTick=now();
   const members=room=>room.party.map((p,slot)=>p?({slot,name:p.name,connected:ready(p.ws)}):null).filter(Boolean);
   function welcome(ws,room,role,slot,secret){
-    send(ws,{type:'welcome',code:room.code,role,slot,token:secret,state:networkSnapshot(room.game),slots:members(room),tickRate:30,snapshotRate:12});
+    send(ws,{type:'welcome',code:room.code,role,slot,token:secret,state:networkSnapshot(room.game),slots:members(room),tickRate:30,snapshotRate:20,seq:room.snapshotSeq||0});
     notifyRoster(room);
   }
   function notifyRoster(room){const packet={type:'roster',slots:members(room),dmConnected:ready(room.dm.ws)};
@@ -56,7 +56,7 @@ export function createMatchService({now=()=>Date.now(),logger=console,autoTimers
     if(ws._seeking)return send(ws,{type:'error',message:'Already in a match.'});
     if(rooms.size>=ROOMS_MAX)return send(ws,{type:'error',message:'Game server is full. Try again later.'});
     let id;do{id=code();}while(rooms.has(id));
-    const secret=token(),room={code:id,game:createGame(),dm:{token:secret,ws,lastSeen:now()},party:Array(6).fill(null),inputs:{},dmInput:null,createdAt:now(),lastMemberAt:now(),ticks:0,started:false};
+    const secret=token(),room={code:id,game:createGame(),dm:{token:secret,ws,lastSeen:now()},party:Array(6).fill(null),inputs:{},dmInput:null,createdAt:now(),lastMemberAt:now(),ticks:0,snapshotSeq:0,started:false};
     rooms.set(id,room);ws._seeking={code:id,role:'dm'};welcome(ws,room,'dm',null,secret);
     send(ws,{type:'event',message:'Room created. Match clock starts when the first Party member joins.'});
     logger.info?.(`[rooms] ${id} created`);
@@ -123,7 +123,7 @@ export function createMatchService({now=()=>Date.now(),logger=console,autoTimers
     clients.add(ws);ws.on('message',raw=>accept(ws,raw));
     ws.on('close',()=>{detach(ws);clients.delete(ws);});
     ws.on('error',()=>{ /* close handler performs cleanup */ });
-    send(ws,{type:'hello',version:'R02'});
+    send(ws,{type:'hello',version:'R02.1'});
   }
   function step(delta=1/30){
     const dt=clamp(delta,0,0.08);
@@ -137,12 +137,22 @@ export function createMatchService({now=()=>Date.now(),logger=console,autoTimers
   }
   function broadcast(){
     for(const room of rooms.values()){
-      const packet={type:'snapshot',seq:room.ticks,state:networkSnapshot(room.game)};
-      const encoded=JSON.stringify(packet);
-      for(const ws of [room.dm.ws,...room.party.map(p=>p?.ws)])if(ready(ws)){
-        // Never queue megabytes of stale snapshots for a slow player.
-        if((ws.bufferedAmount||0)>128000)continue;
-        try{ws.send(encoded);}catch{}
+      const full=networkSnapshot(room.game),seq=++room.snapshotSeq;
+      // The DM needs the complete battlefield. Each Party player only needs
+      // nearby projectiles/enemies/effects; retain every player and fort globally.
+      const encode=(state)=>JSON.stringify({type:'snapshot',seq,state});
+      const dmPacket=encode(full);
+      if(ready(room.dm.ws)&&(room.dm.ws.bufferedAmount||0)<128000){
+        try{room.dm.ws.send(dmPacket);}catch{}
+      }
+      for(let i=0;i<room.party.length;i++){
+        const ws=room.party[i]?.ws;
+        if(!ready(ws)||(ws.bufferedAmount||0)>128000)continue;
+        const hero=room.game.players[i];
+        const near=o=>Math.abs(o.x-hero.x)<1800&&Math.abs(o.y-hero.y)<1300;
+        const state={...full,enemyCount:full.enemies.length,
+          enemies:full.enemies.filter(near),bullets:full.bullets.filter(near),effects:full.effects.filter(near)};
+        try{ws.send(encode(state));}catch{}
       }
     }
   }
@@ -158,7 +168,7 @@ export function createMatchService({now=()=>Date.now(),logger=console,autoTimers
       // Fixed 30Hz, bounded catch-up after load/sleep; never spiral out of control.
       const n=Math.max(1,Math.min(3,Math.ceil(delta/(1/30))));for(let i=0;i<n;i++)step(Math.min(1/30,delta/n));
     },1000/30);
-    sendTimer=setInterval(broadcast,1000/12);
+    sendTimer=setInterval(broadcast,1000/20);
     cleanupTimer=setInterval(cleanup,5000);
   }
   function stop(){for(const t of [tickTimer,sendTimer,cleanupTimer])if(t)clearInterval(t);tickTimer=sendTimer=cleanupTimer=null;}

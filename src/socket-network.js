@@ -27,9 +27,17 @@ export function connectMatch({endpoint,role,code='',slot=0,name='Seeker',onState
   // A refresh in the same tab may reclaim a previously reserved Party seat.
   if(role==='party'&&code){try{authToken=sessionStorage.getItem(`seeking-seat-${code}-${slot}`)||'';}catch{}}
   let rejectFirst,resolveFirst,connectTimer=null,reconnectTimer=null,lastPing=0,lastPong=0;
+  let lastSnapshotSeq=-1,lastSnapshotAt=0,snapshotIntervals=[];
   const connection={
     get code(){return roomCode;},get token(){return authToken;},get slot(){return selectedSlot;},get ready(){return ws?.readyState===1&&resolved;},
     get latency(){return lastPong||0;},get endpoint(){return url;},
+    get snapshotRate(){if(!snapshotIntervals.length)return 0;
+      const mean=snapshotIntervals.reduce((a,b)=>a+b,0)/snapshotIntervals.length;
+      return Math.round(1000/mean);},
+    get jitter(){if(snapshotIntervals.length<2)return 0;
+      const mean=snapshotIntervals.reduce((a,b)=>a+b,0)/snapshotIntervals.length;
+      return Math.round(Math.sqrt(snapshotIntervals.reduce((sum,n)=>sum+(n-mean)**2,0)/snapshotIntervals.length));},
+    get networkAge(){return lastSnapshotAt?Math.round(performance.now()-lastSnapshotAt):0;},
     sendInput(input){send({type:'input',input});},
     sendDMInput(input){send({type:'dmInput',input});},
     spawn(kind,lane,x,y){send({type:'dmSpawn',kind,lane,x,y});},
@@ -58,13 +66,20 @@ export function connectMatch({endpoint,role,code='',slot=0,name='Seeker',onState
       if(msg.type==='welcome'){
         roomCode=msg.code;authToken=msg.token;selectedSlot=msg.slot??selectedSlot;
         if(role==='party')try{sessionStorage.setItem(`seeking-seat-${roomCode}-${selectedSlot}`,authToken);}catch{}
-        retries=0;onState(msg.state);onRoster(msg.slots||[]);
+        retries=0;lastSnapshotSeq=Number(msg.seq??-1);lastSnapshotAt=performance.now();snapshotIntervals=[];
+        onState(msg.state);onRoster(msg.slots||[]);
         onConnection('CONNECTED / DEDICATED SERVER');
         if(!resolved){resolved=true;resolveFirst(connection);}
-      }else if(msg.type==='snapshot'){onState(msg.state);}
+      }else if(msg.type==='snapshot'){
+        if(typeof msg.seq==='number'&&msg.seq<=lastSnapshotSeq)return;
+        if(typeof msg.seq==='number')lastSnapshotSeq=msg.seq;
+        const recv=performance.now(),interval=recv-lastSnapshotAt;
+        if(lastSnapshotAt && interval>5 && interval<2000){snapshotIntervals.push(interval);if(snapshotIntervals.length>30)snapshotIntervals.shift();}
+        lastSnapshotAt=recv;onState(msg.state);
+      }
       else if(msg.type==='roster'){onRoster(msg.slots||[]);}
       else if(msg.type==='event'){onEvent(msg.message);}
-      else if(msg.type==='pong'){lastPong=Math.max(0,Date.now()-lastPing);}
+      else if(msg.type==='pong'){lastPong=Math.max(0,Date.now()-Number(msg.at??lastPing));}
       else if(msg.type==='error'){
         onEvent(msg.message);
         if(!resolved){closed=true;rejectFirst(new Error(msg.message));socket.close();}
@@ -82,7 +97,7 @@ export function connectMatch({endpoint,role,code='',slot=0,name='Seeker',onState
   }
   open();
   // Keep a live channel active on hosts that may spin down during long quiet periods.
-  const timer=setInterval(()=>{if(closed){clearInterval(timer);return;}if(ws?.readyState===1){lastPing=Date.now();send({type:'ping',at:lastPing});}},8000);
+  const timer=setInterval(()=>{if(closed){clearInterval(timer);return;}if(ws?.readyState===1){lastPing=Date.now();send({type:'ping',at:lastPing});}},3000);
   const originalClose=connection.close;connection.close=()=>{clearInterval(timer);originalClose();};
   return first;
 }

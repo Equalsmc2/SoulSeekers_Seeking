@@ -1,9 +1,16 @@
-R02 MULTIPLAYER PERFORMANCE TEST
+SOULSEEKERS: SEEKING R02.1 — SMOOTHNESS TEST
 
-1. Confirm game server /health responds and both browsers connect to the same Render service.
-2. Open DM and Party in separate Zen windows. Host as DM, then join using COPY INVITE LINK.
-3. Move Party with WASD, turn on mouse fire, order DM enemy, possess enemy.
-4. Check SERVER / ... ms RTT near header. Observe client prediction vs visible remote interpolation.
-5. Try foregrounding just Player while DM is hidden; server match clock should still progress.
-6. Compare offline training vs online: stutter in both indicates client rendering, online-only desync indicates network/transport.
-7. Note server hosted region, ms RTT and whether Render was waking up.
+1. Extract the ZIP and run SYNC_TO_GITHUB.bat.
+2. Commit + Push origin in GitHub Desktop. Let your EXISTING Render web service redeploy and show Live. Do not create a new Render service.
+3. Open two VISIBLE Zen windows side by side (DM in one, Party in the other). Hard-refresh both (Ctrl+Shift+R) so you see PROTOTYPE R02.1.
+4. Host a NEW room on the DM, join with the Party. Move continuously for 20-30 seconds, shoot, have the DM spawn several enemies, and possess an enemy.
+5. Watch the new performance readout:
+   FPS: graphical frames per second (goal: around your monitor refresh rate, often 60).
+   NET/s: snapshots per second arriving from the game server (target about 20 while active).
+   RTT: network ping round-trip, lower is better.
+   JITTER: variation in snapshot arrival spacing, lower is better.
+6. If FPS is low in BOTH online and offline practice, the issue is rendering/device/browser rather than just the server. Try a separate browser window without screen recording and close demanding background apps.
+7. If FPS is high but NET/s falls far below 20 or JITTER frequently spikes, suspect server or network stalls. Check Render service logs/CPU and your internet connection.
+8. If both FPS and NET/s are healthy but characters still rubber-band, record a short sample with the performance readout visible and report which role (DM/player) it affects.
+
+No settings change is necessary in Firebase. R02.1 is tested locally with simulated sockets, not a proof of public multi-user performance.

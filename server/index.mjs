@@ -13,7 +13,7 @@ const server=http.createServer((req,res)=>{
   const pathname=new URL(req.url,'http://localhost').pathname;
   if(pathname==='/health'){
     res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});
-    return res.end(JSON.stringify({status:'ok',game:'seeking',version:'R02'}));
+    return res.end(JSON.stringify({status:'ok',game:'seeking',version:'R02.1'}));
   }
   let decoded;
   try{decoded=decodeURIComponent(pathname);}catch{res.writeHead(400);return res.end('Bad URL');}
@@ -27,12 +27,12 @@ const server=http.createServer((req,res)=>{
     fs.createReadStream(full).pipe(res);
   });
 });
-const wss=new WebSocketServer({noServer:true,maxPayload:8192,perMessageDeflate:{threshold:1024,serverNoContextTakeover:true,clientNoContextTakeover:true,concurrencyLimit:8,zlibDeflateOptions:{level:3}}});
+const wss=new WebSocketServer({noServer:true,maxPayload:8192,perMessageDeflate:{threshold:8192,serverNoContextTakeover:true,clientNoContextTakeover:true,concurrencyLimit:2,zlibDeflateOptions:{level:1}}});
 const service=createMatchService();
 server.on('upgrade',(req,socket,head)=>{
   if(new URL(req.url,'http://localhost').pathname!=='/ws'){socket.destroy();return;}
   wss.handleUpgrade(req,socket,head,ws=>service.attach(ws));
 });
-server.listen(port,host,()=>console.log(`SoulSeekers R02 game server running at http://localhost:${port} (WebSocket /ws)`));
+server.listen(port,host,()=>console.log(`SoulSeekers R02.1 game server running at http://localhost:${port} (WebSocket /ws)`));
 function shutdown(){service.stop();for(const c of service.clients)try{c.close(1001,'Server restarting');}catch{}server.close(()=>process.exit(0));setTimeout(()=>process.exit(0),1500).unref();}
 process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);

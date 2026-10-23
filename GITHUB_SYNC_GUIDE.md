@@ -21,7 +21,7 @@ Download and extract a **newer** SoulSeekers: Seeking ZIP, then run its `SYNC_TO
 
 On GitHub, open repository **Settings → Pages**. Under **Build and deployment**, choose **Deploy from a branch → main → /(root)** and save. The site should use your repository's root `index.html`. GitHub Pages deployment can take some time after a push.
 
-**GitHub Pages does not provide game multiplayer.** To enable Firebase rooms, separately configure `firebase-config.js`, Realtime Database, Authentication, and database rules as described in `README.md`. The Firebase configuration must be saved to the repository and pushed like other files.
+**GitHub Pages does not provide game multiplayer.** R02.1 uses its dedicated Render WebSocket server for online rooms. The Firebase files are retained for future features but are not required for live matches.
 
 ## Why GitHub Desktop originally showed zero files
 
@@ -31,3 +31,7 @@ Your screenshot showed the extracted R01 contents in `Downloads\SoulSeekers_Seek
 ## R02 GAME SERVER
 
 GitHub Pages hosts static files only. After GitHub Desktop pushes R02, you must also deploy the server via Render > New > Web Service, linked to the SAME GitHub repository. Build: `npm install --omit=dev`; Start: `npm start`. Render gives you `https://YOUR-SERVER.onrender.com`. You may play directly at that Render URL, or paste it into the GitHub Pages site’s GAME SERVER URL field. See `R02_SERVER_SETUP.md`.
+
+
+## Updating from R02 to R02.1
+Use the **R02.1** ZIP and its `SYNC_TO_GITHUB.bat`. If you already have a Render Web Service linked to the repository, you do **not** need to create another Render service or change Firebase. The Render server redeploys from GitHub if Auto-Deploy is on; otherwise manually deploy the latest commit. Create a new room after deployment, because a restart clears active rooms.

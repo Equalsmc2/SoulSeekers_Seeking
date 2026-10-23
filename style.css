@@ -13,3 +13,10 @@
 .server-address-row label{font-family:Consolas,monospace;letter-spacing:.15em;font-size:11px;color:#9accc8;min-width:130px}
 .server-address-row input{flex:1;min-width:240px;padding:12px 13px;background:#0a1921;border:1px solid #51767d;border-radius:4px;color:#e4f6f1;font-size:13px}
 @media(max-width:720px){.server-address-row{align-items:stretch;flex-direction:column}.server-address-row input{min-width:0;width:100%}}
+
+/* R02.1 live performance monitor, readable on two-window tests. */
+.perf-stats{position:absolute;left:16px;top:130px;z-index:5;pointer-events:none;
+  padding:5px 9px;border:1px solid #376c69;background:#071318d9;
+  color:#9de9d8;font:10px/1.4 Consolas,monospace;letter-spacing:.02em;max-width:calc(100% - 32px);}
+.perf-stats.warning{color:#ffc08c;border-color:#c38954}
+@media(max-width:690px){.perf-stats{left:8px;top:88px;font-size:9px}}

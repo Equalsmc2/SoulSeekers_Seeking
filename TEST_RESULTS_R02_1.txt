@@ -1,0 +1,16 @@
+SOULSEEKERS: SEEKING R02.1 — AUTOMATED TEST SUMMARY
+
+7 local test suites passed using Node.js 22.16:
+  1. Gameplay engine
+  2. Movement prediction and lean state snapshot
+  3. DOM/rendering test with mocked canvas
+  4. Dedicated server room/permissions/reconnect
+  5. New smooth interpolation and Party interest filtering test
+  6. Simulated WebSocket host/join protocol
+  7. Client offline boot/startup
+
+Additional benchmark with 96 enemies:
+  Full DM state 10,472 bytes; nearby Party state ~2,321 bytes
+  (about 78% reduction for that specific synthetic scene).
+
+Not verified: live Render server deployment, seven internet-connected players, real Zen-browser FPS, cross-region pings. Browser e2e could not run due runtime network restrictions. These results are local automated checks only.
