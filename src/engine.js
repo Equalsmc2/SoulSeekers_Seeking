@@ -1,4 +1,4 @@
-import { WORLD, MATCH_SECONDS, HEROES, ITEMS, BUILDINGS, SHOPS, CHEST_SPOTS, clamp, dist, makeId } from './data.js?v=R021';
+import { WORLD, MATCH_SECONDS, HEROES, ITEMS, BUILDINGS, SHOPS, CHEST_SPOTS, laneY, lanePoint, nearestLane, jungleY, CONNECTORS, clamp, dist, makeId } from './data.js?v=R03';
 const INV_W=8, INV_H=5;
 const shortest=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 
@@ -35,11 +35,11 @@ export function createGame() {
     players:[],enemies:[],forts:[],bullets:[],chests:CHEST_SPOTS.map((v,i)=>({...v,id:`chest_${i}`,opened:false})),
     effects:[],log:['The crossing begins. Advance toward the DM Tower.'],lastActions:{},stats:{kills:0,forts:0}};
   for(let i=0;i<6;i++){
-    const lane=i%3, px=WORLD.partyX+(Math.floor(i/3)*28),py=WORLD.lanes[lane]+(i>=3?48:-48);
+    const lane=i%3, px=WORLD.partyX+(Math.floor(i/3)*28),py=laneY(px,lane)+(i>=3?42:-42);
     g.players.push({id:`hero_${i}`,slot:i,hero:i,x:px,y:py,spawnX:px,spawnY:py,lane,r:19,hp:160,maxHp:160,level:1,xp:0,gold:80,kills:0,deaths:0,inventory:[],spells:['q'],atkCd:0,abilityCd:0,echoCd:0,dashCd:0,respawn:0,dir:0});
   }
   for(let lane=0;lane<3;lane++)for(let tier=0;tier<2;tier++){
-    const x=tier===0?2750:4740,y=WORLD.lanes[lane], id=`fort_${lane}_${tier}`,bid=`boss_${lane}_${tier}`;
+    const x=tier===0?2750:4740,y=laneY(x,lane), id=`fort_${lane}_${tier}`,bid=`boss_${lane}_${tier}`;
     g.forts.push({id,lane,tier,x,y,hp:1600,maxHp:1600,broken:false,bossId:bid,shotCd:1.2});
     g.enemies.push({id:bid,kind:'boss',lane,x:x-80,y:y+60,r:31,hp:1600,maxHp:1600,damage:16,speed:88,range:135,atkCd:.5,homeX:x-80,homeY:y+60,possessed:false});
   }
@@ -57,6 +57,31 @@ function moveUnit(e, dx, dy,dt, spd){
   e.y=clamp(e.y+dy*spd*dt,e.r+12,WORLD.height-e.r-12);
   if(BUILDINGS.some(b=>collideCircleRect(e.x,e.y,e.r,b)))e.y=oldY;
 }
+/** Route DM marching orders along mapped lanes and cross-town shortcuts.
+ * Computed only when a new order is issued, never in the render or network loop.
+ * Waypoints remain server-local; snapshots don't transmit path arrays. */
+export function planMarch(from,to){
+  const start=nearestLane(from.x,from.y),dest=nearestLane(to.x,to.y),points=[];
+  const push=(x,y)=>{const previous=points.at(-1);if(!previous||Math.hypot(previous.x-x,previous.y-y)>8)points.push({x,y});};
+  const along=(x1,x2,l)=>{
+    const diff=x2-x1,steps=Math.ceil(Math.abs(diff)/105);
+    for(let i=0;i<=steps;i++){const x=x1+diff*(i/Math.max(1,steps));push(x,laneY(x,l));}
+  };
+  if(start===dest)along(from.x,to.x,start);
+  else{
+    const junction=CONNECTORS.reduce((best,x)=>Math.abs(x-from.x)+Math.abs(x-to.x)<Math.abs(best-from.x)+Math.abs(best-to.x)?x:best,CONNECTORS[0]);
+    along(from.x,junction,start);
+    const shift=dest>start?1:-1;
+    for(let i=start;i!==dest;i+=shift){
+      push(junction,jungleY(junction,Math.min(i,i+shift)));
+      push(junction,laneY(junction,i+shift));
+    }
+    along(junction,to.x,dest);
+  }
+  push(to.x,to.y);
+  return points;
+}
+export function giveMarchOrder(e,x,y){e.orderX=x;e.orderY=y;e.nav=planMarch(e,{x,y});}
 function nearest(from, objects, radius=Infinity, filter=()=>true){let best=null,d=radius;for(const o of objects){if(!filter(o))continue;const s=dist(from,o);if(s<d){d=s;best=o;}}return best;}
 function effect(g,x,y,type='hit'){g.effects.push({id:makeId('fx'),x,y,type,ttl:.38});}
 function spawnBullet(g, shooter, tx,ty, team, damage, color,range=560){
@@ -145,13 +170,13 @@ export function playerAction(g,slot,action){
 export function spawnEnemy(g,lane=1,kind='grunt',x=6120,yOverride=null){
   const specs={grunt:{hp:80,damage:8,speed:105,range:100,r:15},brute:{hp:195,damage:19,speed:72,range:95,r:22},sniper:{hp:75,damage:14,speed:75,range:290,r:14}};
   if(!specs[kind]||lane<0||lane>2)return false;
-  const s=specs[kind],y=yOverride===null?WORLD.lanes[lane]+(Math.random()-.5)*145:yOverride;
+  const s=specs[kind],y=yOverride===null?laneY(x,lane)+(Math.random()-.5)*90:yOverride;
   g.enemies.push({id:makeId(kind),kind,lane,x,y,r:s.r,hp:s.hp,maxHp:s.hp,damage:s.damage,speed:s.speed,range:s.range,atkCd:Math.random()*.5,homeX:x,homeY:y,possessed:false});return true;
 }
 export function dmSpawn(g,lane,kind,x=6120,y=null){
   if(g.status!=='running')return false;
   const price={grunt:12,brute:30,sniper:24}[kind];if(!price||g.threat<price)return false;
-  const yy=y===null?WORLD.lanes[lane]:y;
+  const yy=y===null?laneY(x,lane):y;
   if(x<650||x>WORLD.width-40||yy<40||yy>WORLD.height-40)return false;
   if(BUILDINGS.some(b=>collideCircleRect(x,yy,30,b)))return false;
   g.threat-=price;return spawnEnemy(g,lane,kind,x,yy);
@@ -177,7 +202,7 @@ function aiPlayer(g,p,dt){
   if(p.hp<=0)return;
   const target=nearest(p,g.enemies,310,e=>e.hp>0) || nearest(p,g.forts,500,f=>!f.broken);
   const xGoal=target?.x??(g.stats.forts>=4?WORLD.dmX:Math.min(WORLD.dmX-130,p.x+240));
-  const yGoal=target?.y??WORLD.lanes[p.lane];
+  const yGoal=target?.y??laneY(xGoal,p.lane);
   const vx=xGoal-p.x,vy=yGoal-p.y,d=Math.hypot(vx,vy)||1;
   if(d>175)moveUnit(p,vx/d,vy/d,dt,speed(p)*.73);
   if(target && d<490){const pre=g.bullets.length;shootParty(g,p,target.x,target.y);for(let i=pre;i<g.bullets.length;i++)g.bullets[i].slot=p.slot;}
@@ -195,14 +220,19 @@ function updateEnemies(g,dt,dmInput){
     }
     const target=nearest(e,g.players,e.kind==='boss'?440:420,p=>p.hp>0);
     if(target){const d=dist(e,target);if(d>e.range*.8){moveUnit(e,(target.x-e.x)/d,(target.y-e.y)/d,dt,e.speed);}if(d<e.range+35)fireEnemy(g,e,target.x,target.y);}
-    else if(e.kind!=='boss'&&Number.isFinite(e.orderX)&&Number.isFinite(e.orderY)){
+    else if(e.kind!=='boss' && e.nav?.length){
+      const node=e.nav[0],d=dist(e,node);
+      if(d>24)moveUnit(e,(node.x-e.x)/d,(node.y-e.y)/d,dt,e.speed);
+      else{e.nav.shift();if(!e.nav.length){delete e.orderX;delete e.orderY;delete e.nav;}}
+    }else if(e.kind!=='boss'&&Number.isFinite(e.orderX)&&Number.isFinite(e.orderY)){
       const d=dist(e,{x:e.orderX,y:e.orderY});
       if(d>30)moveUnit(e,(e.orderX-e.x)/d,(e.orderY-e.y)/d,dt,e.speed);
       else {delete e.orderX;delete e.orderY;}
     }else if(e.kind==='boss'){
       const d=Math.hypot(e.homeX-e.x,e.homeY-e.y);if(d>35)moveUnit(e,(e.homeX-e.x)/d,(e.homeY-e.y)/d,dt,e.speed);
     }else{
-      const dest={x:WORLD.partyX+10,y:WORLD.lanes[e.lane]},d=dist(e,dest);
+      const travelX=Math.max(WORLD.partyX+16,e.x-165);
+      const dest=lanePoint(travelX,e.lane),d=dist(e,dest);
       if(d>45)moveUnit(e,(dest.x-e.x)/d,(dest.y-e.y)/d,dt,e.speed*.67);
     }
   }

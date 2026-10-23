@@ -1,4 +1,4 @@
-import {WORLD,BUILDINGS,clamp} from './data.js?v=R021';
+import {WORLD,BUILDINGS,clamp} from './data.js?v=R03';
 
 function blocked(x,y,r){
   return BUILDINGS.some(b=>{

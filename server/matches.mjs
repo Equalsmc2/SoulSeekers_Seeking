@@ -1,9 +1,9 @@
-/** SOULSEEKERS / SEEKING R02 — match simulation is owned by this process.
+/** SOULSEEKERS / SEEKING R03 — match simulation is owned by this process.
  * Transport independent: callers supply WebSocket-compatible clients.
  * Does not trust clients with game state, slot ownership, currency or DM powers.
  */
 import {randomBytes} from 'node:crypto';
-import {createGame,tick,dmSpawn} from '../src/engine.js';
+import {createGame,tick,dmSpawn,giveMarchOrder} from '../src/engine.js';
 import {WORLD,clamp} from '../src/data.js';
 import {networkSnapshot} from '../src/sync.js';
 
@@ -104,7 +104,7 @@ export function createMatchService({now=()=>Date.now(),logger=console,autoTimers
       else send(ws,{type:'event',message:'Could not deploy: blocked, invalid or insufficient threat.'});
     }else if(msg.type==='dmOrder'){
       const x=finite(msg.x,0,0,WORLD.width),y=finite(msg.y,0,0,WORLD.height);
-      for(const e of room.game.enemies)if(e.kind!=='boss'){e.orderX=x;e.orderY=y;}
+      for(const e of room.game.enemies)if(e.kind!=='boss'){giveMarchOrder(e,x,y);}
       send(ws,{type:'event',message:'Army move order received.'});
     }
   }
@@ -123,7 +123,7 @@ export function createMatchService({now=()=>Date.now(),logger=console,autoTimers
     clients.add(ws);ws.on('message',raw=>accept(ws,raw));
     ws.on('close',()=>{detach(ws);clients.delete(ws);});
     ws.on('error',()=>{ /* close handler performs cleanup */ });
-    send(ws,{type:'hello',version:'R02.2'});
+    send(ws,{type:'hello',version:'R03'});
   }
   function step(delta=1/30){
     const dt=clamp(delta,0,0.08);

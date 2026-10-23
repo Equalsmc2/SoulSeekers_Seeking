@@ -9,6 +9,7 @@ let raf=null,drawCalls=0,backgroundDraws=0;
 const ctx=()=>new Proxy({
  setTransform(){},
  drawImage(){drawCalls++},
+ createRadialGradient(){return {addColorStop(){}}},
 }, {get(target,key){
  if(key in target)return target[key];
  if(['fillStyle','strokeStyle','lineWidth','globalAlpha','font','textAlign','textBaseline'].includes(key))return '';

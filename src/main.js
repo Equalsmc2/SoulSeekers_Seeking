@@ -1,8 +1,8 @@
 // R02: dedicated Node/WebSocket server owns online gameplay. Offline training is standalone.
-import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,clamp,dist} from './data.js?v=R022';
-import {createGame,tick,dmSpawn,teamHasShop,towerExposed} from './engine.js?v=R022';
-import {newPrediction,predictStep,reconcileWithLatency,tweenPosition,receiveEntityMotion,createPlaybackClock} from './prediction.js?v=R022';
-import {connectMatch,normalizeEndpoint,describeSocketError} from './socket-network.js?v=R022';
+import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,CHEST_SPOTS,MAP_X,BOSTON_DISTRICTS,LANE_NAMES,CONNECTORS,laneY,jungleY,nearestLane,clamp,dist} from './data.js?v=R03';
+import {createGame,tick,dmSpawn,giveMarchOrder,teamHasShop,towerExposed} from './engine.js?v=R03';
+import {newPrediction,predictStep,reconcileWithLatency,tweenPosition,receiveEntityMotion,createPlaybackClock} from './prediction.js?v=R03';
+import {connectMatch,normalizeEndpoint,describeSocketError} from './socket-network.js?v=R03';
 function normalizeRoomCode(code){return String(code??'').trim().toUpperCase().replace(/[\s-]/g,'');}
 function describeNetworkError(error){return describeSocketError(error);}
 function getServerAddress(){return $('gameServerUrl').value.trim();}
@@ -69,7 +69,7 @@ function setupChoices(){
   $('dmUnits').querySelectorAll('button').forEach(b=>b.onclick=()=>{if(!game)return;placementType=b.dataset.unit;possessed=null;notify(`Click the battlefield to deploy a ${placementType.toUpperCase()}. ESC cancels.`);});
   $('shopItems').innerHTML=Object.entries(ITEMS).map(([id,d])=>`<button class="shop-card" data-buy="${id}"><b>${d.icon} ${d.name}</b><span>${d.price} GOLD</span></button>`).join('');
   $('shopItems').querySelectorAll('button').forEach(b=>b.onclick=()=>queueAction({type:'buy',item:b.dataset.buy}));
-  document.querySelectorAll('.lane').forEach(b=>b.onclick=()=>{lane=Number(b.dataset.lane);if(isDM()&&!possessed)camera.y=WORLD.lanes[lane];document.querySelectorAll('.lane').forEach(el=>el.classList.toggle('active',el===b));});
+  document.querySelectorAll('.lane').forEach(b=>b.onclick=()=>{lane=Number(b.dataset.lane);if(isDM()&&!possessed)camera.y=laneY(camera.x,lane);document.querySelectorAll('.lane').forEach(el=>el.classList.toggle('active',el===b));});
   $('toggleInventory').onclick=()=>{inventoryVisible=!inventoryVisible;$('inventoryWrap').classList.toggle('hidden',!inventoryVisible);};
   $('useItemButton').onclick=()=>{if(selectedItem)queueAction({type:'item',id:selectedItem});};
   $('soloParty').onclick=()=>startLocal('party');$('soloDM').onclick=()=>startLocal('dm');
@@ -100,7 +100,7 @@ function setupChoices(){
         onState:acceptNetworkState,onRoster:slots=>{netSlots=slots;},
         onEvent:notify,onConnection:status=>{$('connection').textContent=status;}});
       if(!game)throw new Error('Game server did not provide a match state.');
-      mode='onlineParty';camera.x=WORLD.partyX+250;camera.y=WORLD.lanes[selectedHero%3];startSimulation();
+      mode='onlineParty';camera.x=WORLD.partyX+250;camera.y=laneY(camera.x,selectedHero%3);startSimulation();
       $('connection').textContent='GAME SERVER CONNECTED';$('roomLabel').textContent=`ROOM ${net.code}`;
       leaveMenu();notify('Connected to DM host. Advance with your party!');
     }catch(e){menuMessage(describeNetworkError(e),true);console.error('Join failed:',e);}
@@ -273,43 +273,141 @@ function refreshInventory(p){
   $('itemInfo').textContent=d?`${d.name} (${d.w}×${d.h}): ${d.desc}`:'Select an item for details.';
   $('useItemButton').disabled=!d||!['bandage','battery'].includes(it.type);
 }
-function drawWorld(){ctx.fillStyle='#1c3137';ctx.fillRect(0,0,WORLD.width,WORLD.height);
-  ctx.save();ctx.strokeStyle='#345158';ctx.lineWidth=1;ctx.globalAlpha=.35;
-  for(let x=0;x<WORLD.width;x+=90){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD.height);ctx.stroke();}
-  for(let y=0;y<WORLD.height;y+=90){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD.width,y);ctx.stroke();}ctx.restore();
-  // Two dangerous jungle corridors through the city.
-  for(const [j,y] of [650,1320].entries()){
-    ctx.fillStyle='#20463b';ctx.fillRect(0,y-140,WORLD.width,280);
-    ctx.fillStyle='#2a5848';for(let x=90;x<WORLD.width;x+=118){const jitter=((x*3+j*53)%62)-31;ctx.beginPath();ctx.arc(x,y+jitter+(Math.sin(x*.012)*56),23,0,Math.PI*2);ctx.fill();}
+function traceRoute(fn,from=0,to=WORLD.width,step=28){
+  ctx.beginPath();ctx.moveTo(from,fn(from));for(let x=from+step;x<to;x+=step)ctx.lineTo(x,fn(x));ctx.lineTo(to,fn(to));
+}
+function routeStroke(fn,from,to,wide,color,dash=null){
+  ctx.save();ctx.strokeStyle=color;ctx.lineWidth=wide;ctx.lineJoin='round';ctx.lineCap='round';
+  if(dash)ctx.setLineDash(dash);traceRoute(fn,from,to);ctx.stroke();ctx.restore();
+}
+function labelAt(x,y,a,b,color='#c3d8d3'){
+  ctx.textAlign='center';ctx.fillStyle=color;ctx.font='bold 22px Consolas, monospace';ctx.fillText(a,x,y);
+  if(b){ctx.fillStyle='#859da0';ctx.font='14px Consolas, monospace';ctx.fillText(b,x,y+24);}ctx.textAlign='left';
+}
+function drawWorld(){
+  // Canvas is rendered once into the world cache. Streets, obstacles and travel
+  // paths share the exact same exported geometry used by the server.
+  ctx.fillStyle='#17262d';ctx.fillRect(0,0,WORLD.width,WORLD.height);
+  ctx.fillStyle='#23343a';for(let x=0;x<WORLD.width;x+=220){for(let y=0;y<WORLD.height;y+=220){
+    if(((x/220+y/220)%3)===0)ctx.fillRect(x+8,y+10,194,186);
+  }}
+  // Urban block paving and restrained utility markings.
+  ctx.save();ctx.globalAlpha=.2;ctx.strokeStyle='#5b7171';ctx.lineWidth=2;
+  for(let x=0;x<WORLD.width;x+=160){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD.height);ctx.stroke();}
+  for(let y=0;y<WORLD.height;y+=130){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD.width,y);ctx.stroke();}ctx.restore();
+
+  // Charles River, a piece of the Boston waterfront, and the disconnected
+  // industrial harbor along the eastern edge; roads cross on actual bridges.
+  ctx.fillStyle='#173b50';ctx.beginPath();ctx.moveTo(715,0);ctx.lineTo(815,0);ctx.lineTo(874,540);
+  ctx.lineTo(835,1120);ctx.lineTo(887,2000);ctx.lineTo(706,2000);ctx.lineTo(730,1120);ctx.lineTo(705,600);ctx.closePath();ctx.fill();
+  ctx.save();ctx.strokeStyle='#3a7585';ctx.lineWidth=5;ctx.setLineDash([42,54]);ctx.beginPath();ctx.moveTo(760,0);ctx.lineTo(790,650);ctx.lineTo(785,1390);ctx.lineTo(800,2000);ctx.stroke();ctx.restore();
+  // Seaport docks and warehouse apron, beyond the second jungle.
+  ctx.fillStyle='#203d46';for(let k=0;k<5;k++)ctx.fillRect(4930+k*180,45,112,64);
+  ctx.fillStyle='#44636e';for(let k=0;k<5;k++)ctx.fillRect(4930+k*180,80,112,8);
+
+  // Greenways and park trails are playable jungle paths between the lanes.
+  for(let j=0;j<2;j++){
+    const fy=x=>jungleY(x,j);
+    routeStroke(fy,800,6130,207,'#183b32');
+    routeStroke(fy,800,6130,158,'#275343');
+    routeStroke(fy,800,6130,74,'#33464a');
+    routeStroke(fy,800,6130,3,'#98b49b',[16,22]);
+    // Park pockets and tree canopy (none is a blocking collision object).
+    for(let x=990;x<5920;x+=148){
+      const y=fy(x),side=((Math.floor(x/148)+j)%2===0)?1:-1;
+      const offset=side*(74+(Math.floor(x/23)%31));
+      ctx.fillStyle='#1a3b31';ctx.beginPath();ctx.arc(x,y+offset,22,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=(x%3===0)?'#35624b':'#315647';ctx.beginPath();ctx.arc(x-4,y+offset-3,14,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#608365';ctx.fillRect(x-3,y+offset-4,4,6);
+    }
   }
-  // Charles River inspired crossing; road bridges traverse it.
-  ctx.fillStyle='#214858';ctx.fillRect(300,0,105,WORLD.height);ctx.fillStyle='#3c7280';
-  for(let y=35;y<WORLD.height;y+=75){ctx.fillRect(309,y,13,40);ctx.fillRect(385,y+18,7,28);}
-  for(const [i,y] of WORLD.lanes.entries()){
-    ctx.fillStyle='#39454a';ctx.fillRect(0,y-111,WORLD.width,222);
-    ctx.fillStyle='#647479';ctx.fillRect(0,y-111,WORLD.width,6);ctx.fillRect(0,y+105,WORLD.width,6);
-    ctx.strokeStyle='#88908b';ctx.lineWidth=3;ctx.setLineDash([28,22]);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD.width,y);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle='#9baeb7';ctx.font='700 24px Segoe UI';ctx.fillText(['BEACON HILL // NORTH','DOWNTOWN CROSSING // CENTER','SOUTH END // SOUTH'][i],520,y-145);
-    for(let x=520;x<WORLD.width;x+=340){ctx.fillStyle='#6e8c8d';ctx.fillRect(x,y-108,3,26);ctx.fillRect(x,y+82,3,26);}
+
+  // Cross-town shortcuts connect the lanes through the two jungles, giving
+  // players real rotation choices instead of three isolated corridors.
+  for(const [i,x] of CONNECTORS.entries()){
+    const top=laneY(x,0),bottom=laneY(x,2),a=Math.min(top,bottom),b=Math.max(top,bottom);
+    ctx.fillStyle='#616c6d';ctx.fillRect(x-59,a,118,b-a);
+    ctx.fillStyle='#303b42';ctx.fillRect(x-51,a,102,b-a);
+    ctx.save();ctx.strokeStyle='#859191';ctx.lineWidth=2;ctx.setLineDash([16,23]);ctx.beginPath();ctx.moveTo(x,a+20);ctx.lineTo(x,b-20);ctx.stroke();ctx.restore();
+    // Service alley crossings have pedestrian bars near the park edges.
+    for(const ly of [laneY(x,0),laneY(x,1),laneY(x,2)]){
+      ctx.fillStyle='#b5b5a0';for(let c=-3;c<=3;c++)ctx.fillRect(x+c*15-5,ly-57,8,15);
+    }
+    if(i%2===0)labelAt(x,a-110,'↕','CROSS-TOWN','#8bb5aa');
   }
-  // Buildings are drawn from exact collision rectangles.
+
+  // Continuous three-lane road network. The lanes originate at the same central
+  // spawn, split to Beacon Hill / Common / South End and converge at the DM Tower.
+  for(let lane=0;lane<3;lane++){
+    const route=x=>laneY(x,lane);
+    routeStroke(route,0,WORLD.width,202,'#58636a');
+    routeStroke(route,0,WORLD.width,185,'#748183');
+    routeStroke(route,0,WORLD.width,169,'#293942');
+    routeStroke(route,0,WORLD.width,3,'#a9afa4',[34,25]);
+    // Side lane markers follow the bends rather than cutting through blocks.
+    routeStroke(x=>route(x)-72,0,WORLD.width,2,'#abb5ac',[45,26]);
+    routeStroke(x=>route(x)+72,0,WORLD.width,2,'#abb5ac',[45,26]);
+  }
+  // Physical-looking bridge crossbeams on the Charles River; only decoration.
+  for(const x of [745,815]){ctx.save();ctx.globalAlpha=.45;ctx.fillStyle='#b5afb0';for(let lane=0;lane<3;lane++){
+    const y=laneY(x,lane);ctx.fillRect(x,y-85,5,170);
+  }ctx.restore();}
+  // Streetlamp rows draw after roads; readable urban silhouette, no collisions.
+  for(let x=1060;x<6310;x+=405)for(let l=0;l<3;l++){
+    const y=laneY(x,l);
+    for(const side of [-1,1]){
+      ctx.fillStyle='#6b7f83';ctx.fillRect(x-3,y+side*101-4,6,7);
+      ctx.fillStyle='#cfbd86';ctx.beginPath();ctx.arc(x,y+side*101,4,0,Math.PI*2);ctx.fill();
+    }
+  }
+  // Buildings are based on exact server collision rectangles (not arbitrary art).
   for(const [i,b] of BUILDINGS.entries()){
-    ctx.fillStyle='#0d1b22';ctx.fillRect(b.x+8,b.y+10,b.w,b.h);
-    ctx.fillStyle=['#647276','#616468','#576e71'][i%3];ctx.fillRect(b.x,b.y,b.w,b.h);
-    ctx.strokeStyle='#9aa5a5';ctx.lineWidth=3;ctx.strokeRect(b.x+3,b.y+3,b.w-6,b.h-6);
-    ctx.fillStyle='#36484d';ctx.fillRect(b.x+16,b.y+17,b.w-32,b.h-34);
-    ctx.fillStyle='#889b9d';for(let w=0;w<3;w++)ctx.fillRect(b.x+23+w*34,b.y+26,19,18);
+    const kind=b.kind??(i%6);
+    ctx.fillStyle='#08131a';ctx.fillRect(b.x+12,b.y+13,b.w,b.h);
+    ctx.fillStyle=['#745351','#685759','#566970','#6e615b','#536267','#6e584d'][kind];ctx.fillRect(b.x,b.y,b.w,b.h);
+    ctx.strokeStyle=['#b37c6a','#9d8380','#819b9c','#ac8876','#8296a0','#9b7d69'][kind];ctx.lineWidth=4;ctx.strokeRect(b.x+3,b.y+3,b.w-6,b.h-6);
+    ctx.fillStyle='#26383e';ctx.fillRect(b.x+13,b.y+12,b.w-26,b.h-24);
+    if(kind%2===0){ctx.fillStyle='#496069';ctx.fillRect(b.x+23,b.y+23,b.w-46,b.h-46);
+      ctx.strokeStyle='#7e9997';ctx.lineWidth=2;ctx.strokeRect(b.x+25,b.y+25,b.w-50,b.h-50);
+    }else{
+      ctx.fillStyle='#a08f7c';for(let j=0;j<3;j++)ctx.fillRect(b.x+19+j*(b.w-43)/3,b.y+18,15,16);
+      ctx.fillStyle='#9ba3a2';ctx.fillRect(b.x+b.w-34,b.y+b.h-35,19,17);
+    }
+    // A short stoop anchors the top-down geometry; no wall-spanning furniture.
+    if(kind===0||kind===5){ctx.fillStyle='#877e75';ctx.fillRect(b.x+b.w/2-14,b.y+b.h-1,28,9);}
+  }
+  // City plazas, shop markers and distinctive Boston transit stop T logos.
+  for(const [x,y] of [[1440,1000],[4050,1000]]){
+    ctx.fillStyle='#121e25';ctx.beginPath();ctx.arc(x,y-128,27,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff5e6';ctx.beginPath();ctx.arc(x,y-128,20,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#c7474c';ctx.font='bold 29px Arial';ctx.textAlign='center';ctx.fillText('T',x,y-118);ctx.textAlign='left';
+  }
+  // Atmospheric SoulSeekers signal anomalies never block players or enemy AI.
+  for(const [x,y] of [[3550,1000],[5170,710],[2600,1330]]){
+    ctx.save();ctx.strokeStyle='#775e97';ctx.globalAlpha=.42;ctx.lineWidth=3;
+    for(let r=24;r<=78;r+=25){ctx.beginPath();ctx.arc(x,y,r,-.35,1.8*Math.PI);ctx.stroke();}ctx.restore();
   }
   for(const shop of SHOPS){
-    ctx.fillStyle='#13281c';ctx.beginPath();ctx.arc(shop.x,shop.y,88,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='#91dfad';ctx.lineWidth=3;ctx.stroke();
-    ctx.fillStyle='#bcead1';ctx.fillRect(shop.x-27,shop.y-22,54,44);ctx.fillStyle='#153d34';ctx.fillRect(shop.x-20,shop.y-14,40,28);
-    ctx.fillStyle='#dffbe5';ctx.font='bold 19px Segoe UI';ctx.textAlign='center';ctx.fillText('$',shop.x,shop.y+7);
-    ctx.font='700 13px Consolas';ctx.fillText(shop.name,shop.x,shop.y-103);ctx.textAlign='left';
+    ctx.fillStyle='#10271f';ctx.beginPath();ctx.arc(shop.x,shop.y,81,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#85d4ac';ctx.lineWidth=4;ctx.stroke();
+    ctx.fillStyle='#c4efda';ctx.fillRect(shop.x-26,shop.y-22,52,44);
+    ctx.fillStyle='#214638';ctx.fillRect(shop.x-19,shop.y-14,38,28);
+    ctx.textAlign='center';ctx.fillStyle='#ecffe9';ctx.font='bold 21px Segoe UI';ctx.fillText('$',shop.x,shop.y+7);
+    ctx.font='bold 16px Consolas';ctx.fillText(shop.name,shop.x,shop.y-103);ctx.textAlign='left';
   }
-  ctx.fillStyle='#82dbc6';ctx.beginPath();ctx.arc(WORLD.partyX,1000,90,0,Math.PI*2);ctx.fillStyle='#244846';ctx.fill();ctx.strokeStyle='#75dec7';ctx.lineWidth=6;ctx.stroke();
-  ctx.fillStyle='#e2f9f3';ctx.font='bold 18px Segoe UI';ctx.textAlign='center';ctx.fillText('PARTY SPAWN',WORLD.partyX,1005);ctx.textAlign='left';
-  ctx.fillStyle='#6c2939';ctx.fillRect(WORLD.dmX-190,0,480,WORLD.height);ctx.fillStyle='#e0b1b7';ctx.font='bold 19px Segoe UI';ctx.fillText('DUNGEON MASTER TERRITORY',WORLD.dmX-165,110);
+  for(const info of BOSTON_DISTRICTS){
+    labelAt(info.x,info.y,info.name,info.sub,'#bbcac4');
+  }
+  // Central Party arrival and red-tinted final approach / DM tower. The aura
+  // overlays streets translucently so it doesn't disguise the road geometry.
+  const px=WORLD.partyX,py=1000;
+  ctx.fillStyle='#1e4d4a';ctx.beginPath();ctx.arc(px,py,95,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#83ead8';ctx.lineWidth=6;ctx.stroke();labelAt(px,py+5,'PARTY','SPAWN','#effff4');
+  const glow=ctx.createRadialGradient(WORLD.dmX,1000,40,WORLD.dmX,1000,370);
+  glow.addColorStop(0,'#9a2a4866');glow.addColorStop(1,'#9a2a4800');
+  ctx.fillStyle=glow;ctx.fillRect(WORLD.dmX-380,620,760,760);
+  ctx.fillStyle='#f0b6be';ctx.font='bold 19px Consolas';ctx.textAlign='center';
+  ctx.fillText('DM TERRITORY / NO SIGNAL',WORLD.dmX,690);ctx.textAlign='left';
 }
 function hpBar(x,y,w,fraction,c='#e17f83'){ctx.fillStyle='#08151bbd';ctx.fillRect(x-w/2,y,w,6);ctx.fillStyle=c;ctx.fillRect(x-w/2,y,w*clamp(fraction,0,1),6);}
 function shapeCircle(x,y,r,fill,stroke='#0d171b',line=3){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=stroke;ctx.lineWidth=line;ctx.stroke();}
@@ -359,8 +457,20 @@ function drawFX(fx){ctx.save();const v=1-fx.ttl/.38;ctx.globalAlpha=Math.max(0,1
 function drawMinimap(){if(!game)return;const w=210,h=125,x=width-w-18,y=height-h-18;
   ctx.save();ctx.fillStyle='#101a21e8';ctx.fillRect(x-5,y-5,w+10,h+10);ctx.strokeStyle='#88a3a0';ctx.lineWidth=1;ctx.strokeRect(x-5,y-5,w+10,h+10);
   ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();ctx.fillStyle='#2d4147';ctx.fillRect(x,y,w,h);
-  for(const ly of WORLD.lanes){ctx.strokeStyle='#879597';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x,y+ly/WORLD.height*h);ctx.lineTo(x+w,y+ly/WORLD.height*h);ctx.stroke();}
-  ctx.fillStyle='#3b6d56';ctx.fillRect(x,y+560/WORLD.height*h,w,240/WORLD.height*h);ctx.fillRect(x,y+1210/WORLD.height*h,w,240/WORLD.height*h);
+  // Minimap traces the same curved three-lane topology as the world.
+  ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
+  for(let j=0;j<2;j++){
+    ctx.strokeStyle='#42664e';ctx.lineWidth=4;ctx.beginPath();
+    for(let wx=0;wx<=WORLD.width;wx+=60){const py=y+jungleY(wx,j)/WORLD.height*h,px=x+wx/WORLD.width*w;
+      if(wx===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();
+  }
+  for(const cx of CONNECTORS){ctx.strokeStyle='#687b7c';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+cx/WORLD.width*w,y+laneY(cx,0)/WORLD.height*h);ctx.lineTo(x+cx/WORLD.width*w,y+laneY(cx,2)/WORLD.height*h);ctx.stroke();}
+  for(let lane=0;lane<3;lane++){
+    ctx.strokeStyle='#a0b4b2';ctx.lineWidth=3.2;ctx.beginPath();
+    for(let wx=0;wx<=WORLD.width;wx+=50){const py=y+laneY(wx,lane)/WORLD.height*h,px=x+wx/WORLD.width*w;
+      if(wx===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();
+  }
+  ctx.restore();
   for(const f of game.forts||[]){ctx.fillStyle=f.broken?'#586869':'#f3a2a9';ctx.fillRect(x+f.x/WORLD.width*w-3,y+f.y/WORLD.height*h-3,6,6);}
   for(const p of game.players||[]){if(p.hp<=0)continue;ctx.fillStyle=HEROES[p.hero]?.color||'#6bd';ctx.beginPath();ctx.arc(x+p.x/WORLD.width*w,y+p.y/WORLD.height*h,2.8,0,Math.PI*2);ctx.fill();}
   ctx.fillStyle='#f77a8a';ctx.beginPath();ctx.arc(x+WORLD.dmX/WORLD.width*w,y+h/2,6,0,Math.PI*2);ctx.fill();
@@ -454,7 +564,7 @@ function events(){window.addEventListener('resize',resize);window.addEventListen
  });window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{keys.clear();chosenMouse.down=false;});
   canvas.addEventListener('mousemove',mouseWorld);
   canvas.addEventListener('mousedown',e=>{if(mode==='menu'||!game)return;mouseWorld(e);if(e.button!==0)return;
-    if(isDM()&&placementType){const inferredLane=WORLD.lanes.reduce((best,ly,j)=>Math.abs(ly-chosenMouse.worldY)<Math.abs(WORLD.lanes[best]-chosenMouse.worldY)?j:best,0);
+    if(isDM()&&placementType){const inferredLane=nearestLane(chosenMouse.worldX,chosenMouse.worldY);
       if(mode==='onlineDM'){net?.spawn(placementType,inferredLane,chosenMouse.worldX,chosenMouse.worldY);placementType=null;}
       else if(dmSpawn(game,inferredLane,placementType,chosenMouse.worldX,chosenMouse.worldY)){notify(`${placementType.toUpperCase()} deployed.`);placementType=null;}else notify('Invalid position or insufficient threat.');return;}
     if(isDM()&&!possessed){const target=(game.enemies||[]).filter(v=>v.hp>0).find(e=>dist(e,{x:chosenMouse.worldX,y:chosenMouse.worldY})<e.r+14);
@@ -465,7 +575,7 @@ function events(){window.addEventListener('resize',resize);window.addEventListen
   canvas.addEventListener('mouseleave',()=>chosenMouse.down=false);
   canvas.addEventListener('contextmenu',e=>{e.preventDefault();if(!isDM()||!game)return;
     mouseWorld(e);if(mode==='onlineDM')net?.order(chosenMouse.worldX,chosenMouse.worldY);
-    else for(const enemy of game.enemies){if(enemy.kind==='boss'||enemy.id===possessed)continue;enemy.orderX=chosenMouse.worldX;enemy.orderY=chosenMouse.worldY;}
+    else for(const enemy of game.enemies){if(enemy.kind==='boss'||enemy.id===possessed)continue;giveMarchOrder(enemy,chosenMouse.worldX,chosenMouse.worldY);}
     notify('March order issued to the field army.');
   });
   canvas.addEventListener('wheel',e=>{e.preventDefault();camera.zoom=clamp(camera.zoom*(e.deltaY>0?.9:1.1),.52,1.52);},{passive:false});

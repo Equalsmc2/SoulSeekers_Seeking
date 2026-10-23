@@ -1,3 +1,17 @@
+# SoulSeekers: Seeking — R03 Boston: The Blackout
+
+## R03 (October 23, 2026)
+
+- Rebuild the city streets into a three-lane central-spawn → spread → reconverge map, including northern/central/southern routes and 2 jungle shortcuts.
+- Implement 6 cross-town links, collision-matched deterministic buildings and Boston-inspired rooftops/parks/river crossings/transit landmarks.
+- Move all 6 forts and bosses, 2 shops and 10 chests to accessible gameplay locations along the curved roads.
+- Align incoming enemy waves, AI pathing, DM spawns, fort fighting and minimap geometry with the new map.
+- Make DM army march orders use waypoints and cross-town connectors instead of running through blocks.
+- Add map travel, loot access and AI navigation regression tests and a browser map render smoke test.
+- Preserve all R02.2 network stability work and the existing GitHub/Render deployment flow.
+
+## Earlier history
+
 # SoulSeekers: Seeking — R02.2 Network Stability
 
 ## R02.2 (October 23, 2026)

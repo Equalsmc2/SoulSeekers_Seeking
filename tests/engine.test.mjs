@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createGame,tick,spawnEnemy,dmSpawn,addItem,moveInventory,fitsInventory,purchase,playerAction,towerExposed} from '../src/engine.js';
-import {HEROES,WORLD,ITEMS,SHOPS} from '../src/data.js';
+import {HEROES,WORLD,ITEMS,SHOPS,BUILDINGS,laneY} from '../src/data.js';
 const check=(name,fn)=>{fn();console.log('✓',name);};
 check('Battlefield has 6 heroes, 6 forts and 6 bosses',()=>{
  const g=createGame();assert.equal(g.players.length,6);assert.equal(g.forts.length,6);
@@ -35,8 +35,8 @@ check('Chests open once, award gold and XP',()=>{
 });
 check('DM summons cost threat and must avoid western spawn and buildings',()=>{
  const g=createGame();assert.equal(dmSpawn(g,0,'grunt',200,350),false);
- assert.equal(dmSpawn(g,0,'brute',750,350),true);assert.equal(Math.floor(g.threat),12);
- assert.equal(dmSpawn(g,0,'brute',800,350),false);
+ assert.equal(dmSpawn(g,0,'brute',1500,laneY(1500,0)),true);assert.equal(Math.floor(g.threat),12);
+ const wall=BUILDINGS[0];assert.equal(dmSpawn(g,0,'grunt',wall.x+wall.w/2,wall.y+wall.h/2),false);
 });
 check('Match advances, bullets and waves work, and timer gives DM victory',()=>{
  const g=createGame();const t=g.time;tick(g,.05);assert.ok(g.time<t);

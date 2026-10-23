@@ -1,9 +1,9 @@
 {
   "name": "soulseekers-seeking",
-  "version": "2.2.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
-  "description": "SoulSeekers: Seeking R02 dedicated WebSocket simulation server",
+  "description": "SoulSeekers: Seeking R03 branching Boston map with dedicated WebSocket server",
   "scripts": {
     "start": "node server/index.mjs",
     "test": "node --test tests/*.test.mjs"
