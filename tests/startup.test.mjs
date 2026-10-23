@@ -9,8 +9,8 @@ const root=join(dirname(fileURLToPath(import.meta.url)),'..');
 const tmp=mkdtempSync(join(tmpdir(),'seeking-startup-'));
 function copy(rel){const out=join(tmp,rel);mkdirSync(dirname(out),{recursive:true});copyFileSync(join(root,rel),out);}
 try {
-  for (const f of ['src/main.js','src/data.js','src/engine.js','src/sync.js','src/prediction.js','firebase-config.js'])copy(f);
-  // Without network.js on disk, an accidental static import would fail startup.
+  for (const f of ['src/main.js','src/data.js','src/engine.js','src/sync.js','src/prediction.js','src/socket-network.js'])copy(f);
+  // The new small socket networking module is offline-safe; no external SDK required.
   const elements=new Map();
   function el(){
     const names=new Set();
@@ -22,6 +22,8 @@ try {
     };
   }
   globalThis.document={getElementById(id){if(!elements.has(id))elements.set(id,el());return elements.get(id)},createElement(){return el()},querySelectorAll(){return[]},activeElement:null};
+  globalThis.location={hostname:'localhost',protocol:'http:',host:'localhost:8787',search:''};
+  globalThis.localStorage={getItem(){return null},setItem(){}};
   globalThis.window={addEventListener(){},devicePixelRatio:1};
   globalThis.requestAnimationFrame=()=>1;
   const moduleUrl=pathToFileURL(join(tmp,'src/main.js')).href;
@@ -34,7 +36,7 @@ try {
   document.getElementById('soloParty').onclick();
   assert.equal(document.getElementById('roleBadge').textContent,'PARTY OPERATIVE');
   await new Promise(resolve=>setTimeout(resolve,40));
-  assert.equal(document.getElementById('firebaseStatus').textContent,'CONFIGURED / READY TO CONNECT');
+  assert.equal(document.getElementById('firebaseStatus').textContent,'SERVER ADDRESS SET');
   console.log('✓ All six character choices appear; offline Party and DM start even without network.js');
-  console.log('✓ Bundled Firebase config is independently recognized without starting the network');
+  console.log('✓ Local game server URL is detected without connecting to it');
 } finally {rmSync(tmp,{recursive:true,force:true});}

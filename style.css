@@ -7,3 +7,9 @@
 #copyRoomCode{font:700 12px Consolas,monospace;letter-spacing:.4px;border-color:#5fa69d;color:#c4fff3;white-space:nowrap}
 #copyRoomCode:hover{background:#1e4d49}
 @media(max-width:690px){.mast #copyRoomCode{font-size:10px;padding:7px 5px}.mast #menuButton{font-size:10px;padding:7px 5px}.sync-alert{top:60px}}
+
+/* R02 server configuration: a normal UI field, not a code edit. */
+.server-address-row{margin-top:12px;margin-bottom:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.server-address-row label{font-family:Consolas,monospace;letter-spacing:.15em;font-size:11px;color:#9accc8;min-width:130px}
+.server-address-row input{flex:1;min-width:240px;padding:12px 13px;background:#0a1921;border:1px solid #51767d;border-radius:4px;color:#e4f6f1;font-size:13px}
+@media(max-width:720px){.server-address-row{align-items:stretch;flex-direction:column}.server-address-row input{min-width:0;width:100%}}

@@ -25,12 +25,14 @@ function el(tag='div'){
  return obj;
 }
 try{
- for(const f of ['src/main.js','src/data.js','src/engine.js','src/sync.js','src/prediction.js','firebase-config.js']){
+ for(const f of ['src/main.js','src/data.js','src/engine.js','src/sync.js','src/prediction.js','src/socket-network.js']){
   const dest=join(tmp,f);mkdirSync(dirname(dest),{recursive:true});copyFileSync(join(root,f),dest);
  }
  const elements=new Map();
  const originalSetTimeout=globalThis.setTimeout;
  globalThis.document={hidden:false,activeElement:null,getElementById(id){if(!elements.has(id))elements.set(id,el());return elements.get(id)},querySelectorAll(){return[]},createElement(t){return el(t)}};
+ globalThis.location={hostname:'localhost',protocol:'http:',host:'localhost:8787',search:''};
+ globalThis.localStorage={getItem(){return null},setItem(){}};
  globalThis.window={devicePixelRatio:1,addEventListener(){},setInterval(){return 1}};
  globalThis.requestAnimationFrame=fn=>(raf=fn,1);
  await import(pathToFileURL(join(tmp,'src/main.js')).href);

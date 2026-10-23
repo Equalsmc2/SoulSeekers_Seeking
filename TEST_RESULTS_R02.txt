@@ -1,0 +1,20 @@
+SoulSeekers: Seeking R02 — verification record
+
+PASS: 6 Node test files (engine, prediction, rendering smoke, startup,
+      dedicated-server mock transport, simulated WebSocket client/server).
+
+PASS: node --check of server/index.mjs, server/matches.mjs, src/main.js,
+      src/socket-network.js
+
+PASS: 300 server game simulation ticks (~10 seconds) in a local stress
+      sample with 105 ordinary enemies + 6 bosses. Performance estimates
+      are CPU-only and do not imply real-world frame rates or latency.
+
+NOT TESTED HERE: actual install of the npm ws dependency (sandbox cannot
+      reach npm registry), real WebSocket/TLS connection, Render deployment,
+      or live seven-person cross-device match. Browser navigation smoke
+      test was blocked by sandbox networking restrictions; Node DOM/mock
+      render tests passed.
+
+Note: R02 Firebase login/data persistence is not implemented. Existing
+      Firebase config remains in repository for future persistent accounts.

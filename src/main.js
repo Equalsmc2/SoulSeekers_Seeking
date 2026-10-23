@@ -1,48 +1,39 @@
-// Offline gameplay must NOT depend on Firebase modules loading successfully.
-// Versioned imports also avoid mixing fresh GitHub Pages JS with stale cached modules.
-import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,clamp,dist} from './data.js?v=R017';
-import {createGame,tick,dmSpawn,serialize,teamHasShop,towerExposed} from './engine.js?v=R017';
-import {networkSnapshot} from './sync.js?v=R017';
-import {newPrediction,predictStep,reconcilePrediction,tweenPosition,receiveEntityMotion} from './prediction.js?v=R017';
-let networkApi=null;
-let networkLoading=null;
+// R02: dedicated Node/WebSocket server owns online gameplay. Offline training is standalone.
+import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,clamp,dist} from './data.js?v=R020';
+import {createGame,tick,dmSpawn,teamHasShop,towerExposed} from './engine.js?v=R020';
+import {newPrediction,predictStep,reconcilePrediction,tweenPosition,receiveEntityMotion} from './prediction.js?v=R020';
+import {connectMatch,normalizeEndpoint,describeSocketError} from './socket-network.js?v=R020';
 function normalizeRoomCode(code){return String(code??'').trim().toUpperCase().replace(/[\s-]/g,'');}
-function describeNetworkError(error){return networkApi?.describeNetworkError?.(error) || String(error?.message || 'Network connection failed. Try again.');}
-async function getNetwork(){
-  if(!networkLoading){
-    networkLoading=import('./network.js?v=R017').then(module=>{
-      networkApi=module;
-      if(!module.hasFirebase)throw new Error('Firebase configuration is missing from firebase-config.js.');
-      return module;
-    }).catch(error=>{networkLoading=null;throw error;});
-  }
-  return networkLoading;
+function describeNetworkError(error){return describeSocketError(error);}
+function getServerAddress(){return $('gameServerUrl').value.trim();}
+function readyServerInput(){
+  const normalized=normalizeEndpoint(getServerAddress());
+  try{localStorage.setItem('seekingServerUrl',normalized);}catch{}return normalized;
 }
-async function checkFirebaseConfig(){
-  try{
-    const {firebaseConfig}=await import('../firebase-config.js?v=R017');
-    const ready=Boolean(firebaseConfig?.apiKey && firebaseConfig?.projectId && firebaseConfig?.databaseURL);
-    $('firebaseStatus').textContent=ready?'CONFIGURED / READY TO CONNECT':'FIREBASE CONFIG MISSING';
-    if(!ready)menuMessage('Offline training is ready. Online play requires Firebase configuration.',true);
-  }catch(error){
-    $('firebaseStatus').textContent='CONFIG ERROR / OFFLINE OK';
-    console.error('Firebase configuration file could not be loaded:',error);
-    menuMessage('Offline training is ready. Firebase config failed to load: '+error.message,true);
-  }
+function checkServerConfig(){
+  const params=new URLSearchParams(location.search);
+  const inUrl=params.get('server');
+  let stored=null;try{stored=localStorage.getItem('seekingServerUrl');}catch{}
+  const local=['localhost','127.0.0.1'].includes(location.hostname);
+  const guess=local ? 'ws://localhost:8787/ws' : (location.hostname.endsWith('.onrender.com')?'wss://'+location.host+'/ws':'');
+  const initial=inUrl||stored||guess;
+  $('gameServerUrl').value=initial;
+  const room=params.get('room');if(room)$('roomCodeInput').value=normalizeRoomCode(room);
+  $('firebaseStatus').textContent=initial?'SERVER ADDRESS SET':'SERVER ADDRESS REQUIRED';
+  if(!initial)menuMessage('Offline training works now. For online games, paste your Render server URL, then Host or Join.');
 }
-
 const $=id=>document.getElementById(id);
 const canvas=$('gameCanvas');let ctx=canvas.getContext('2d');const screenCtx=ctx;
 let worldCache=null;
 let game=null,mode='menu',net=null,activeSlot=0,selectedHero=0,lane=1,possessed=null,placementType=null;
 let netInputs={},netSlots={},selectedItem=null,inventoryVisible=true,renderedWinner=null;
-let actionSeq=0,pendingAction=null,lastTime=performance.now(),lastPublish=0,lastInputSend=0,lastUI=0;
+let actionSeq=0,pendingAction=null,lastTime=performance.now(),lastInputSend=0,lastUI=0;
 let toastTimeout=null,chosenMouse={x:0,y:0,down:false,worldX:0,worldY:0},keys=new Set();
 const camera={x:WORLD.partyX+280,y:1000,zoom:.95},remotePositions=new Map();
 let predictedPlayer=null,renderClock=performance.now();
 let width=1000,height=700,frameId=null,simTimer=null,lastSimTime=performance.now();
-let receivedStateAt=0,lastInputFingerprint='',inventoryFingerprint='',lastRenderTime=performance.now();
-const INPUT_RATE=55, INPUT_HEARTBEAT=240, PUBLISH_RATE=160;
+let receivedStateAt=0,lastInputFingerprint='',lastDMFingerprint='',lastDMSend=0,inventoryFingerprint='',lastRenderTime=performance.now();
+const INPUT_RATE=40, INPUT_HEARTBEAT=180;
 function notify(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>$('toast').classList.remove('visible'),2400);}
 function menuMessage(text,isError=false){
   $('menuMessage').textContent=text;
@@ -57,7 +48,7 @@ function liveNetworkError(error){
 }
 function setRoomCode(code){
   $('copyRoomCode').textContent=`ROOM ${code} · COPY`;
-  $('copyRoomCode').classList.remove('hidden');
+  $('copyRoomCode').classList.remove('hidden');$('copyInvite').classList.remove('hidden');
 }
 
 function setupChoices(){
@@ -69,6 +60,8 @@ function setupChoices(){
   $('roomCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('joinOnline').click();});
   $('playerName').addEventListener('keydown',e=>{if(e.key==='Enter')$('joinOnline').click();});
   $('copyRoomCode').onclick=async()=>{if(!net?.code)return;try{await navigator.clipboard.writeText(net.code);notify(`Copied room ${net.code}`);}catch{window.prompt('Copy the room code:',net.code);}};
+  $('copyInvite').onclick=async()=>{if(!net?.code)return;const invite=new URL(location.href);invite.searchParams.set('server',net.endpoint);invite.searchParams.set('room',net.code);try{await navigator.clipboard.writeText(invite.toString());notify('Invite link copied!');}catch{window.prompt('Copy this invite link:',invite.toString());}};
+  $('gameServerUrl').addEventListener('change',()=>{$('firebaseStatus').textContent=$('gameServerUrl').value.trim()?'SERVER ADDRESS SET':'SERVER ADDRESS REQUIRED';});
   $('dmUnits').innerHTML=[['grunt','GRUNT',12],['brute','BRUTE',30],['sniper','SNIPER',24]].map(([id,n,c])=>`<button class="dm-unit" data-unit="${id}"><span>${n}</span><b>${c} THREAT +</b></button>`).join('');
   $('dmUnits').querySelectorAll('button').forEach(b=>b.onclick=()=>{if(!game)return;placementType=b.dataset.unit;possessed=null;notify(`Click the battlefield to deploy a ${placementType.toUpperCase()}. ESC cancels.`);});
   $('shopItems').innerHTML=Object.entries(ITEMS).map(([id,d])=>`<button class="shop-card" data-buy="${id}"><b>${d.icon} ${d.name}</b><span>${d.price} GOLD</span></button>`).join('');
@@ -81,13 +74,12 @@ function setupChoices(){
   $('hostOnline').onclick=async()=>{
     $('hostOnline').disabled=true;
     try{
-      menuMessage('Loading online connection...');
-      const {hostRoom}=await getNetwork();
-      menuMessage('Signing in and creating a Firebase room...');
-      const g=createGame();
-      net=await hostRoom(serialize(g),slots=>{netSlots=slots;},inputs=>{netInputs=inputs;},liveNetworkError);
-      mode='onlineDM';game=g;camera.x=5790;camera.y=1000;startSimulation();
-      $('connection').textContent='FIREBASE CONNECTED';$('roomLabel').textContent=`ROOM ${net.code} · SHARE THIS CODE`;
+      menuMessage('Connecting to the dedicated game server...');
+      net=await connectMatch({endpoint:readyServerInput(),role:'dm',
+        onState:acceptNetworkState,onRoster:slots=>{netSlots=slots;},
+        onEvent:notify,onConnection:status=>{$('connection').textContent=status;}});
+      mode='onlineDM';camera.x=5790;camera.y=1000;startSimulation();
+      $('connection').textContent='GAME SERVER CONNECTED';$('roomLabel').textContent=`ROOM ${net.code} · SHARE THIS CODE`;
       setRoomCode(net.code);
       leaveMenu();notify(`Room ${net.code} created. Copy and share it with your Party.`);
     }catch(e){menuMessage(describeNetworkError(e),true);console.error('Host failed:',e);}
@@ -97,17 +89,15 @@ function setupChoices(){
     const code=normalizeRoomCode($('roomCodeInput').value);
     $('joinOnline').disabled=true;
     try{
-      menuMessage('Loading online connection...');
-      const {joinRoom}=await getNetwork();
-      menuMessage('Signing in to Firebase...');
-      let latestState=null;
+      menuMessage('Connecting to the dedicated game server...');
       activeSlot=selectedHero;predictedPlayer=null;remotePositions.clear();
-      net=await joinRoom(code,selectedHero,$('playerName').value||HEROES[selectedHero].name,
-        next=>{latestState=next;acceptNetworkState(next);},slots=>{netSlots=slots;},
-        step=>menuMessage(step),liveNetworkError);
-      if(!latestState)throw new Error('Firebase did not provide a game state.');
-      activeSlot=selectedHero;mode='onlineParty';camera.x=WORLD.partyX+250;camera.y=WORLD.lanes[selectedHero%3];startSimulation();
-      $('connection').textContent='FIREBASE CONNECTED';$('roomLabel').textContent=`ROOM ${net.code}`;
+      net=await connectMatch({endpoint:readyServerInput(),role:'party',code,slot:selectedHero,
+        name:$('playerName').value||HEROES[selectedHero].name,
+        onState:acceptNetworkState,onRoster:slots=>{netSlots=slots;},
+        onEvent:notify,onConnection:status=>{$('connection').textContent=status;}});
+      if(!game)throw new Error('Game server did not provide a match state.');
+      mode='onlineParty';camera.x=WORLD.partyX+250;camera.y=WORLD.lanes[selectedHero%3];startSimulation();
+      $('connection').textContent='GAME SERVER CONNECTED';$('roomLabel').textContent=`ROOM ${net.code}`;
       leaveMenu();notify('Connected to DM host. Advance with your party!');
     }catch(e){menuMessage(describeNetworkError(e),true);console.error('Join failed:',e);}
     finally{$('joinOnline').disabled=false;}
@@ -129,7 +119,7 @@ function acceptNetworkState(state){
   }
 }
 function isDM(){return mode==='dm'||mode==='onlineDM';}
-function isHost(){return mode==='party'||mode==='dm'||mode==='onlineDM';}
+function isHost(){return mode==='party'||mode==='dm';}
 function startLocal(role){mode=role;game=createGame();activeSlot=0;predictedPlayer=null;remotePositions.clear();
   if(role==='party' && selectedHero!==0){game.players[0].hero=selectedHero;game.players[selectedHero].hero=0;}
   camera.x=role==='dm'?5790:WORLD.partyX+250;camera.y=role==='dm'?1000:game.players[0].y;
@@ -157,8 +147,8 @@ function updateCamera(dt){if(!game)return;let tx=camera.x,ty=camera.y;
   if(!isDM()||possessed){const f=Math.min(1,dt*7);camera.x+=(tx-camera.x)*f;camera.y+=(ty-camera.y)*f;}
   camera.x=clamp(camera.x,0,WORLD.width);camera.y=clamp(camera.y,0,WORLD.height);
 }
-// Simulation runs separately from requestAnimationFrame. Background tabs stop
-// rendering but can keep ticking; catch-up covers typical browser timer clamps.
+// Offline training runs its own local timer; multiplayer simulation is server-owned.
+// The browser's interval only samples inputs and updates UI.
 function startSimulation(){
   lastSimTime=performance.now();
   if(simTimer===null && typeof window.setInterval==='function'){
@@ -178,15 +168,11 @@ function simulationPulse(){
     const step=simTime/count;
     const inputs={};
     if(mode==='party')inputs[0]=currentInput();
-    if(mode==='onlineDM'){
-      for(const [slot,s] of Object.entries(netSlots)){
-        const i=Number(slot);
-        if(Number.isInteger(i)&&i>=0&&i<6 && s?.uid && netInputs[s.uid])inputs[i]=netInputs[s.uid];
-      }
-    }
     for(let i=0;i<count;i++)tick(game,step,inputs,isDM()?dmInput():null);
-    if(mode==='onlineDM'&&now-lastPublish>=PUBLISH_RATE){
-      lastPublish=now;net.publish(networkSnapshot(game));
+  }else if(mode==='onlineDM'&&net){
+    const input=dmInput(),fingerprint=JSON.stringify(input);
+    if(now-lastDMSend>=INPUT_RATE && (fingerprint!==lastDMFingerprint || now-lastDMSend>=INPUT_HEARTBEAT)){
+      net.sendDMInput(input);lastDMSend=now;lastDMFingerprint=fingerprint;
     }
   }else if(mode==='onlineParty'&&net){
     const input=currentInput();
@@ -194,10 +180,10 @@ function simulationPulse(){
     if(player&&predictedPlayer)predictStep(predictedPlayer,player,input,Math.min(elapsed,.08));
     const fingerprint=JSON.stringify(input);
     if(now-lastInputSend>=INPUT_RATE && (fingerprint!==lastInputFingerprint || now-lastInputSend>=INPUT_HEARTBEAT)){
-      lastInputSend=now;lastInputFingerprint=fingerprint;net.send(input);
+      lastInputSend=now;lastInputFingerprint=fingerprint;net.sendInput(input);
     }
   }
-  // Hidden DM tabs still update their simulation, without spending CPU drawing.
+  // A backgrounded DM tab cannot slow the authoritative server simulation.
   if(!document.hidden && now-lastUI>=170){lastUI=now;refreshUI();}
   if(game.status==='finished'&&renderedWinner!==game.winner){
     renderedWinner=game.winner;
@@ -214,7 +200,7 @@ function refreshUI(){if(!game)return;
   const alive=(game.forts||[]).filter(f=>!f.broken).length;
   $('threat').textContent=Math.floor(game.threat||0);$('armySize').textContent=game.enemies?.length||0;$('fortCount').textContent=alive;
   $('possession').textContent=possessed?`POSSESSED: ${possessed.toUpperCase()}`:'NO UNIT POSSESSED';
-  for(const b of $('dmUnits').querySelectorAll('button')){const cost={grunt:12,brute:30,sniper:24}[b.dataset.unit];b.disabled=!isHost()||!isDM()||game.threat<cost;}
+  for(const b of $('dmUnits').querySelectorAll('button')){const cost={grunt:12,brute:30,sniper:24}[b.dataset.unit];b.disabled=!isDM()||game.threat<cost;}
   const p=game.players?.[activeSlot];
   if(p){const h=HEROES[p.hero]||HEROES[0];$('heroName').textContent=h.name.toUpperCase();$('heroTitle').textContent=h.title;
     $('hpText').textContent=`${Math.ceil(p.hp)}/${p.maxHp}`;$('hpBar').style.width=`${100*p.hp/p.maxHp}%`;
@@ -227,14 +213,14 @@ function refreshUI(){if(!game)return;
   $('log').innerHTML=(game.log||[]).slice(0,6).map(msg=>`<div>${escapeHTML(msg)}</div>`).join('');
   if(mode==='onlineParty'){
     const age=performance.now()-receivedStateAt;
-    if(age>1800){$('connection').textContent='SYNC DELAYED / HOST TAB?';}
-    else {$('connection').textContent=`FIREBASE / ${Math.round(age)}ms SNAPSHOT AGE`;}
+    if(age>1600){$('connection').textContent='SERVER UPDATES DELAYED / RECONNECTING';}
+    else {$('connection').textContent=`SERVER / ${Math.round(age)}ms SNAPSHOT AGE · ${net?.latency||0}ms RTT`;}
   }
   if(mode==='onlineDM'&&net){
-    const stats=net.getSyncStats?.();
-    $('connection').textContent=stats?.queued?'FIREBASE / UPLOAD QUEUED':'FIREBASE / HOST ACTIVE';
+    const age=performance.now()-receivedStateAt;
+    $('connection').textContent=age>1600?'SERVER UPDATES DELAYED / RECONNECTING':`SERVER / DM ACTIVE · ${net.latency||0}ms RTT`;
   }
-  const present=Object.entries(netSlots).length;
+  const present=Array.isArray(netSlots)?netSlots.filter(s=>s.connected).length:0;
   $('onlineRoster').textContent=mode==='onlineDM'?`ROOM ${net?.code||''} / ${present} OF 6 PLAYERS JOINED`:mode==='onlineParty'?`ROOM ${net?.code||''} / ${present} PLAYERS`:'LOCAL TRAINING / AI TEAMMATES';
 }
 function escapeHTML(s){return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');}
@@ -317,7 +303,7 @@ function drawTower(){const x=WORLD.dmX,y=1000,open=towerExposed(game);ctx.save()
   hpBar(0,-95,156,(game.towerHp??4200)/(game.towerMaxHp??4200),open?'#f69aaa':'#6c8d9e');ctx.restore();
 }
 function entityPosition(entity){
-  if(mode!=='onlineParty')return entity;
+  if(mode!=='onlineParty'&&mode!=='onlineDM')return entity;
   if(entity.slot===activeSlot&&predictedPlayer)return predictedPlayer;
   return tweenPosition(remotePositions.get(entity.id),renderClock)||entity;
 }
@@ -417,15 +403,17 @@ function events(){window.addEventListener('resize',resize);window.addEventListen
   canvas.addEventListener('mousemove',mouseWorld);
   canvas.addEventListener('mousedown',e=>{if(mode==='menu'||!game)return;mouseWorld(e);if(e.button!==0)return;
     if(isDM()&&placementType){const inferredLane=WORLD.lanes.reduce((best,ly,j)=>Math.abs(ly-chosenMouse.worldY)<Math.abs(WORLD.lanes[best]-chosenMouse.worldY)?j:best,0);
-      if(dmSpawn(game,inferredLane,placementType,chosenMouse.worldX,chosenMouse.worldY)){notify(`${placementType.toUpperCase()} deployed.`);placementType=null;}else notify('Invalid position or insufficient threat.');return;}
+      if(mode==='onlineDM'){net?.spawn(placementType,inferredLane,chosenMouse.worldX,chosenMouse.worldY);placementType=null;}
+      else if(dmSpawn(game,inferredLane,placementType,chosenMouse.worldX,chosenMouse.worldY)){notify(`${placementType.toUpperCase()} deployed.`);placementType=null;}else notify('Invalid position or insufficient threat.');return;}
     if(isDM()&&!possessed){const target=(game.enemies||[]).filter(v=>v.hp>0).find(e=>dist(e,{x:chosenMouse.worldX,y:chosenMouse.worldY})<e.r+14);
       if(target){possessed=target.id;notify(`Possessed ${target.kind.toUpperCase()}. ESC to release.`);return;}}
     chosenMouse.down=true;
   });
   window.addEventListener('mouseup',()=>chosenMouse.down=false);
   canvas.addEventListener('mouseleave',()=>chosenMouse.down=false);
-  canvas.addEventListener('contextmenu',e=>{e.preventDefault();if(!isDM()||!game||!isHost())return;
-    mouseWorld(e);for(const enemy of game.enemies){if(enemy.kind==='boss'||enemy.id===possessed)continue;enemy.orderX=chosenMouse.worldX;enemy.orderY=chosenMouse.worldY;}
+  canvas.addEventListener('contextmenu',e=>{e.preventDefault();if(!isDM()||!game)return;
+    mouseWorld(e);if(mode==='onlineDM')net?.order(chosenMouse.worldX,chosenMouse.worldY);
+    else for(const enemy of game.enemies){if(enemy.kind==='boss'||enemy.id===possessed)continue;enemy.orderX=chosenMouse.worldX;enemy.orderY=chosenMouse.worldY;}
     notify('March order issued to the field army.');
   });
   canvas.addEventListener('wheel',e=>{e.preventDefault();camera.zoom=clamp(camera.zoom*(e.deltaY>0?.9:1.1),.52,1.52);},{passive:false});
@@ -439,8 +427,8 @@ try{
   setupChoices();events();resize();
   window.__SEEKING_BOOTSTRAPPED__=true;
   requestAnimationFrame(frame);
-  // Deliberately not awaited: offline training remains playable without Firebase.
-  checkFirebaseConfig();
+  // Offline training remains playable even if no game server is configured.
+  checkServerConfig();
 }catch(error){
   console.error('SoulSeekers startup error:',error);
   $('firebaseStatus').textContent='STARTUP FAILED';

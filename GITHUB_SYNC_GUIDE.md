@@ -26,3 +26,8 @@ On GitHub, open repository **Settings → Pages**. Under **Build and deployment*
 ## Why GitHub Desktop originally showed zero files
 
 Your screenshot showed the extracted R01 contents in `Downloads\SoulSeekers_Seeking_R01`, while GitHub Desktop was watching the **different folder that holds your repository**. The copy step fixes that; the commit and push actually publish your work to GitHub.
+
+
+## R02 GAME SERVER
+
+GitHub Pages hosts static files only. After GitHub Desktop pushes R02, you must also deploy the server via Render > New > Web Service, linked to the SAME GitHub repository. Build: `npm install --omit=dev`; Start: `npm start`. Render gives you `https://YOUR-SERVER.onrender.com`. You may play directly at that Render URL, or paste it into the GitHub Pages site’s GAME SERVER URL field. See `R02_SERVER_SETUP.md`.

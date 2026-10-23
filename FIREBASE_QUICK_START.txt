@@ -1,31 +1,16 @@
-SOULSEEKERS: SEEKING R01.3 — FIREBASE READY
+R02 MULTIPLAYER MIGRATION
 
-Your Firebase Web App configuration is already written into firebase-config.js.
-No code editing is needed.
+No Firebase setup changes are needed.
 
-IN FIREBASE CONSOLE (only if not already completed):
-1. Authentication -> Sign-in method -> Enable Anonymous.
-2. Realtime Database -> Rules -> Paste contents of database.rules.json -> Publish.
-3. Do NOT paste database.rules.json into Cloud Firestore rules.
+Firebase Realtime Database is no longer used for shooter position updates or host/client room state.
+R02 uses a separate Node/WebSocket dedicated server on Render (or your own machine) and keeps the Firebase configuration file untouched for later accounts features.
 
-PUBLISH:
-1. Extract this entire ZIP to a folder (do not run inside the ZIP).
-2. Double-click SYNC_TO_GITHUB.bat.
-3. It should remember your GitHub Desktop repo folder.
-4. Choose 1 (GitHub Desktop) after copying.
-5. In GitHub Desktop: Commit to main -> Push origin.
-6. Visit your GitHub Pages game after it deploys. Host as DM on one tab, Join as Party in another browser (or another device), using the same 6-character room code.
+READ: R02_SERVER_SETUP.md
 
-IMPORTANT:
-- Do not use 'Use npm' setup from Firebase: this site loads Firebase directly from browser module imports.
-- Existing gameplay and map are unchanged in this configuration-only patch.
-- Internet access is required for Firebase multiplayer; offline training still works without Firebase.
-- The Firebase project must remain accessible and within its service limits.
+1. Push R02 to GitHub using SYNC_TO_GITHUB.bat.
+2. On Render create a new Web Service from your GitHub repo.
+3. Build: npm install --omit=dev | Start: npm start
+4. Open the Render service URL in your browser.
+5. Host a DM room and Copy Invite Link for players.
 
-R01.4 JOIN INSTRUCTIONS
-------------------------
-1. Ensure Anonymous Auth is enabled and `database.rules.json` is published in Realtime Database Rules.
-2. DM hosts; use the new ROOM ... COPY button to copy the generated 6-character code.
-3. Party chooses an unoccupied character, pastes the code and their name, then presses JOIN AS PARTY.
-4. If it fails, the join menu gives the exact cause. Screenshot the red message.
-5. Test on 2 independent browsers, and hard-refresh after GitHub Pages deploys.
+No need to delete your Firebase project or relax database rules.
