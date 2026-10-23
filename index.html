@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0b1016"><title>SOULSEEKERS / SEEKING</title>
-<link rel="stylesheet" href="./style.css?v=R021"></head>
+<link rel="stylesheet" href="./style.css?v=R022"></head>
 <body>
 <div id="app">
 <header class="mast">
-  <div class="brand"><div class="sigil">Ø</div><div><div class="eyebrow">A SOULSEEKERS EXPERIENCE <span class="test-tag">PROTOTYPE R02.1 · SMOOTH MOVEMENT</span></div><h1>SEEKING<span class="dot">.</span></h1></div></div>
+  <div class="brand"><div class="sigil">Ø</div><div><div class="eyebrow">A SOULSEEKERS EXPERIENCE <span class="test-tag">PROTOTYPE R02.2 · NETWORK STABILITY</span></div><h1>SEEKING<span class="dot">.</span></h1></div></div>
   <div class="topmeta"><span class="pulse"></span><span id="connection">OFFLINE TRAINING</span><span class="separator">/</span><span id="roomLabel">BOSTON // BLACKOUT</span></div>
   <button class="outline tiny hidden" id="copyRoomCode" title="Click to copy the 6-character room code">COPY ROOM CODE</button><button class="outline tiny hidden" id="copyInvite" title="Copy an invite link with game server and room code">COPY INVITE LINK</button><button class="outline tiny" id="menuButton">MAIN MENU</button>
 </header>
@@ -16,7 +16,7 @@
     <div class="hud hud-left"><div class="mini-label">OPERATION CLOCK</div><strong id="clock">20:00</strong><div class="tiny-text" id="victoryRule">Destroy 4 forts to expose the Tower</div></div>
     <div class="hud hud-right"><div class="mini-label">TOWER INTEGRITY</div><strong id="towerHp">SHIELDED</strong><div class="bar"><div id="towerBar"></div></div></div>
     <div class="crosshair" id="crosshair">✛</div>
-    <div class="perf-stats" id="perfStats" title="Live diagnostic: FPS is browser rendering, NET/s is snapshot delivery, RTT is network round-trip, JITTER is update irregularity">PERFORMANCE MONITOR LOADING</div>
+    <div class="perf-stats" id="perfStats" title="Live diagnostic: FPS is browser rendering, NET/s is snapshot delivery, RTT is network round-trip, NET JITTER is update irregularity; P95 is frame time for 95% of frames">PERFORMANCE MONITOR LOADING</div>
     <div id="toast" class="toast"></div><div id="syncAlert" class="sync-alert hidden" role="alert"></div>
     <div id="endOverlay" class="end-overlay hidden"><span class="eyebrow">OPERATION COMPLETE</span><div id="endTitle" class="end-title"></div><button class="primary" id="endRestart">BACK TO MENU</button></div>
   </main>
@@ -73,4 +73,4 @@ window.__SEEKING_BOOTSTRAPPED__=false;
   },2400);
 })();
 </script>
-<script type="module" src="./src/main.js?v=R021"></script></body></html>
+<script type="module" src="./src/main.js?v=R022"></script></body></html>

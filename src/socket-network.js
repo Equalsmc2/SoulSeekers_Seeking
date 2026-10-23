@@ -67,7 +67,7 @@ export function connectMatch({endpoint,role,code='',slot=0,name='Seeker',onState
         roomCode=msg.code;authToken=msg.token;selectedSlot=msg.slot??selectedSlot;
         if(role==='party')try{sessionStorage.setItem(`seeking-seat-${roomCode}-${selectedSlot}`,authToken);}catch{}
         retries=0;lastSnapshotSeq=Number(msg.seq??-1);lastSnapshotAt=performance.now();snapshotIntervals=[];
-        onState(msg.state);onRoster(msg.slots||[]);
+        onState(msg.state,msg.serverTimeMs);onRoster(msg.slots||[]);
         onConnection('CONNECTED / DEDICATED SERVER');
         if(!resolved){resolved=true;resolveFirst(connection);}
       }else if(msg.type==='snapshot'){
@@ -75,7 +75,7 @@ export function connectMatch({endpoint,role,code='',slot=0,name='Seeker',onState
         if(typeof msg.seq==='number')lastSnapshotSeq=msg.seq;
         const recv=performance.now(),interval=recv-lastSnapshotAt;
         if(lastSnapshotAt && interval>5 && interval<2000){snapshotIntervals.push(interval);if(snapshotIntervals.length>30)snapshotIntervals.shift();}
-        lastSnapshotAt=recv;onState(msg.state);
+        lastSnapshotAt=recv;onState(msg.state,msg.serverTimeMs);
       }
       else if(msg.type==='roster'){onRoster(msg.slots||[]);}
       else if(msg.type==='event'){onEvent(msg.message);}

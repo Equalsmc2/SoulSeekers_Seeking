@@ -38,11 +38,54 @@ export function reconcilePrediction(pos,server,isMoving){
   return pos;
 }
 
-/** Buffered remote positions. Rendering 110ms behind the newest sample absorbs
- * uneven packet arrivals, while extrapolation is capped to 55ms after the last
- * sample. No unlimited runaway when the network pauses. */
+/**
+ * A server-clocked presentation timeline. Do not use packet arrival time as
+ * motion time: packets frequently arrive in bursts even when the simulation
+ * steps at a steady 30 Hz. The playhead advances monotonically, stays behind
+ * the latest server frame, and catches up gently instead of jumping ahead.
+ */
+export function createPlaybackClock({baseDelay=115,minDelay=100,maxDelay=205}={}) {
+  let playhead=null,latest=null,lastArrival=null,lastServer=null;
+  let networkJitter=0,delay=baseDelay,stalls=0;
+  return {
+    get time(){return playhead;},
+    get delay(){return delay;},
+    get jitter(){return networkJitter;},
+    get stalls(){return stalls;},
+    reset(){playhead=latest=lastArrival=lastServer=null;networkJitter=0;delay=baseDelay;stalls=0;},
+    receive(serverMs,arrivalMs){
+      if(!Number.isFinite(serverMs)||!Number.isFinite(arrivalMs))return;
+      if(lastServer!==null && serverMs<=lastServer)return; // duplicate / stale sample
+      if(lastServer!==null){
+        const observed=(arrivalMs-lastArrival)-(serverMs-lastServer);
+        // Packet burstiness, not normal 50 ms snapshot spacing, is jitter.
+        networkJitter=.88*networkJitter+.12*Math.min(180,Math.abs(observed));
+        const targetDelay=clamp(baseDelay+networkJitter*2.2,minDelay,maxDelay);
+        delay+=clamp(targetDelay-delay,-2.5,2.5);
+      }
+      lastArrival=arrivalMs;lastServer=serverMs;latest=serverMs;
+      if(playhead===null)playhead=serverMs-delay;
+    },
+    advance(deltaMs){
+      if(playhead===null)return null;
+      const dt=clamp(deltaMs,0,55);
+      const target=latest-delay;
+      // Keep the presentation clock stable across packets, with a small rate
+      // adjustment to restore buffer occupancy after jitter or a skipped update.
+      const gap=target-playhead;
+      const rate=clamp(1+gap/380,.87,1.15);
+      const ceiling=latest+35;
+      if(playhead+dt*rate>ceiling && playhead<ceiling)stalls++;
+      playhead=Math.min(ceiling,playhead+dt*rate);
+      return playhead;
+    },
+  };
+}
+
+/** Interpolate on timestamped server-simulation positions. Legacy callers
+ * can still supply arrival timestamps and the 110 ms default delay. */
 export function tweenPosition(entry,time,delay=110){
-  if(!entry?.samples?.length)return null;
+  if(!entry?.samples?.length||!Number.isFinite(time))return null;
   const samples=entry.samples,target=time-delay;
   if(samples.length===1 || target<=samples[0].t)return {x:samples[0].x,y:samples[0].y};
   for(let i=1;i<samples.length;i++){
@@ -53,26 +96,54 @@ export function tweenPosition(entry,time,delay=110){
     }
   }
   const b=samples.at(-1),a=samples.at(-2);
-  const ahead=target-b.t>55?0:clamp(target-b.t,0,55);
-  if(!a || Math.hypot(b.x-a.x,b.y-a.y)>180)return {x:b.x,y:b.y};
+  const ahead=clamp(target-b.t,0,42);
+  // Don't extrapolate through respawns, teleports or packet-starved intervals.
+  if(!a || Math.hypot(b.x-a.x,b.y-a.y)>180 || target-b.t>85)return {x:b.x,y:b.y};
   const dt=Math.max(25,b.t-a.t);
-  // Cap velocity to prevent pathological extrapolation on bursty connections.
-  return {x:b.x+clamp((b.x-a.x)/dt,-.9,.9)*ahead,
-          y:b.y+clamp((b.y-a.y)/dt,-.9,.9)*ahead};
+  return {x:b.x+clamp((b.x-a.x)/dt,-1,1)*ahead,
+          y:b.y+clamp((b.y-a.y)/dt,-1,1)*ahead};
 }
 export function receiveEntityMotion(entries,entities,time){
+  if(!Number.isFinite(time))return;
   const present=new Set();
   for(const entity of entities){
-    if(!entity?.id)continue;
+    if(!entity?.id || !Number.isFinite(entity.x) || !Number.isFinite(entity.y))continue;
     present.add(entity.id);
     const old=entries.get(entity.id);
     const previous=old?.samples?.at(-1);
-    const jumped=previous&&Math.hypot(entity.x-previous.x,entity.y-previous.y)>380;
+    // Reset when respawning, teleporting or reentering interest range after a pause.
+    const jumped=previous&&(Math.hypot(entity.x-previous.x,entity.y-previous.y)>380 || time-previous.t>500);
     const samples=(!old||jumped)?[]:old.samples;
-    // Fresh samples are bounded so a long-running match cannot leak memory.
+    if(previous && !jumped && time<=previous.t)continue;
     samples.push({t:time,x:entity.x,y:entity.y});
-    while(samples.length>6 || (samples.length>2&&time-samples[0].t>700))samples.shift();
+    while(samples.length>10 || (samples.length>2&&time-samples[0].t>800))samples.shift();
     entries.set(entity.id,{samples,lastReceived:time});
   }
-  for(const id of entries.keys())if(!present.has(id))entries.delete(id);
+  // An entity outside the Party's interest area should not cause unnecessary
+  // sample loss if it briefly crosses a boundary. Expire it after a grace period.
+  for(const [id,entry] of entries)if(!present.has(id)&&time-entry.lastReceived>360)entries.delete(id);
+}
+
+/** Compare a delayed server position with predicted-present movement without
+ * dragging the local avatar backwards by the normal one-way network delay.
+ * Hard corrections remain reserved for respawns and large divergences. */
+export function reconcileWithLatency(pos,server,input,oneWaySeconds=0){
+  if(!pos)return newPrediction(server);
+  if(server.hp<=0||server.respawn>0){pos.x=server.x;pos.y=server.y;return pos;}
+  const step=clamp(oneWaySeconds,0,.18);
+  const base={x:server.x,y:server.y,dashCd:pos.dashCd};
+  if(step>0){
+    const count=Math.max(1,Math.ceil(step/.04));
+    for(let i=0;i<count;i++)predictStep(base,server,{...input,dash:false},step/count);
+  }
+  const dx=base.x-pos.x,dy=base.y-pos.y,d=Math.hypot(dx,dy);
+  if(d>390){pos.x=base.x;pos.y=base.y;return pos;}
+  const moving=!!(input.mx||input.my);
+  const deadZone=moving?22:3;
+  if(d>deadZone){
+    const factor=moving?(d<75?.08:.18):(d<75?.28:.36);
+    const applied=(d-deadZone)*factor/d;
+    pos.x+=dx*applied;pos.y+=dy*applied;
+  }
+  return pos;
 }

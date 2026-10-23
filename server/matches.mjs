@@ -34,10 +34,10 @@ const ready=ws=>ws?.readyState===1;
 function send(ws,msg){if(!ready(ws))return false;try{ws.send(JSON.stringify(msg));return true;}catch{return false;}}
 export function createMatchService({now=()=>Date.now(),logger=console,autoTimers=true}={}){
   const rooms=new Map(),clients=new Set();
-  let tickTimer=null,sendTimer=null,cleanupTimer=null,lastTick=now();
+  let tickTimer=null,sendTimer=null,cleanupTimer=null,lastTick=now(),tickAccumulator=0;
   const members=room=>room.party.map((p,slot)=>p?({slot,name:p.name,connected:ready(p.ws)}):null).filter(Boolean);
   function welcome(ws,room,role,slot,secret){
-    send(ws,{type:'welcome',code:room.code,role,slot,token:secret,state:networkSnapshot(room.game),slots:members(room),tickRate:30,snapshotRate:20,seq:room.snapshotSeq||0});
+    send(ws,{type:'welcome',code:room.code,role,slot,token:secret,state:networkSnapshot(room.game),slots:members(room),tickRate:30,snapshotRate:20,seq:room.snapshotSeq||0,serverTimeMs:Math.round(room.ticks*1000/30)});
     notifyRoster(room);
   }
   function notifyRoster(room){const packet={type:'roster',slots:members(room),dmConnected:ready(room.dm.ws)};
@@ -123,7 +123,7 @@ export function createMatchService({now=()=>Date.now(),logger=console,autoTimers
     clients.add(ws);ws.on('message',raw=>accept(ws,raw));
     ws.on('close',()=>{detach(ws);clients.delete(ws);});
     ws.on('error',()=>{ /* close handler performs cleanup */ });
-    send(ws,{type:'hello',version:'R02.1'});
+    send(ws,{type:'hello',version:'R02.2'});
   }
   function step(delta=1/30){
     const dt=clamp(delta,0,0.08);
@@ -140,8 +140,8 @@ export function createMatchService({now=()=>Date.now(),logger=console,autoTimers
       const full=networkSnapshot(room.game),seq=++room.snapshotSeq;
       // The DM needs the complete battlefield. Each Party player only needs
       // nearby projectiles/enemies/effects; retain every player and fort globally.
-      const encode=(state)=>JSON.stringify({type:'snapshot',seq,state});
-      const dmPacket=encode(full);
+      const timestamp=Math.round(room.ticks*1000/30);
+      const dmPacket=JSON.stringify({type:'snapshot',seq,serverTimeMs:timestamp,state:full});
       if(ready(room.dm.ws)&&(room.dm.ws.bufferedAmount||0)<128000){
         try{room.dm.ws.send(dmPacket);}catch{}
       }
@@ -152,7 +152,7 @@ export function createMatchService({now=()=>Date.now(),logger=console,autoTimers
         const near=o=>Math.abs(o.x-hero.x)<1800&&Math.abs(o.y-hero.y)<1300;
         const state={...full,enemyCount:full.enemies.length,
           enemies:full.enemies.filter(near),bullets:full.bullets.filter(near),effects:full.effects.filter(near)};
-        try{ws.send(encode(state));}catch{}
+        try{ws.send(JSON.stringify({type:'snapshot',seq,serverTimeMs:timestamp,state}));}catch{}
       }
     }
   }
@@ -163,15 +163,26 @@ export function createMatchService({now=()=>Date.now(),logger=console,autoTimers
     r.party.forEach((p,i)=>{if(p&&!ready(p.ws)&&now()-p.lastSeen>DROP_SESSION_MS)r.party[i]=null;});
     if(!active&&now()-r.lastMemberAt>IDLE_ROOM_MS)rooms.delete(id);
   }}
-  function start(){if(tickTimer)return;lastTick=now();
-    tickTimer=setInterval(()=>{const current=now(),delta=Math.min(.12,Math.max(0,(current-lastTick)/1000));lastTick=current;
-      // Fixed 30Hz, bounded catch-up after load/sleep; never spiral out of control.
-      const n=Math.max(1,Math.min(3,Math.ceil(delta/(1/30))));for(let i=0;i<n;i++)step(Math.min(1/30,delta/n));
+  // Fixed timestep accumulator: don't double-step on a 34 ms timer callback,
+  // and don't simulate imaginary extra time on early timer callbacks.
+  function advanceTimer(deltaMs){
+    tickAccumulator+=clamp(deltaMs,0,125)/1000;
+    let steps=0;
+    const fixed=1/30;
+    while(tickAccumulator+1e-9>=fixed && steps<4){step(fixed);tickAccumulator-=fixed;steps++;}
+    // If the host was CPU-starved, discard an excessive backlog rather than
+    // forcing an expensive spiral that delays broadcasts and worsens latency.
+    if(steps===4 && tickAccumulator>fixed*2)tickAccumulator=fixed*2;
+    return steps;
+  }
+  function start(){if(tickTimer)return;lastTick=now();tickAccumulator=0;
+    tickTimer=setInterval(()=>{const current=now(),delta=Math.max(0,current-lastTick);lastTick=current;
+      advanceTimer(delta);
     },1000/30);
     sendTimer=setInterval(broadcast,1000/20);
     cleanupTimer=setInterval(cleanup,5000);
   }
   function stop(){for(const t of [tickTimer,sendTimer,cleanupTimer])if(t)clearInterval(t);tickTimer=sendTimer=cleanupTimer=null;}
   if(autoTimers)start();
-  return {attach,accept,rooms,step,broadcast,cleanup,start,stop,clients};
+  return {attach,accept,rooms,step,advanceTimer,broadcast,cleanup,start,stop,clients};
 }

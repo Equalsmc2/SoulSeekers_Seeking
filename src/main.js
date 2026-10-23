@@ -1,8 +1,8 @@
 // R02: dedicated Node/WebSocket server owns online gameplay. Offline training is standalone.
-import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,clamp,dist} from './data.js?v=R021';
-import {createGame,tick,dmSpawn,teamHasShop,towerExposed} from './engine.js?v=R021';
-import {newPrediction,predictStep,reconcilePrediction,tweenPosition,receiveEntityMotion} from './prediction.js?v=R021';
-import {connectMatch,normalizeEndpoint,describeSocketError} from './socket-network.js?v=R021';
+import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,clamp,dist} from './data.js?v=R022';
+import {createGame,tick,dmSpawn,teamHasShop,towerExposed} from './engine.js?v=R022';
+import {newPrediction,predictStep,reconcileWithLatency,tweenPosition,receiveEntityMotion,createPlaybackClock} from './prediction.js?v=R022';
+import {connectMatch,normalizeEndpoint,describeSocketError} from './socket-network.js?v=R022';
 function normalizeRoomCode(code){return String(code??'').trim().toUpperCase().replace(/[\s-]/g,'');}
 function describeNetworkError(error){return describeSocketError(error);}
 function getServerAddress(){return $('gameServerUrl').value.trim();}
@@ -31,6 +31,8 @@ let actionSeq=0,pendingAction=null,lastTime=performance.now(),lastInputSend=0,la
 let toastTimeout=null,chosenMouse={x:0,y:0,down:false,worldX:0,worldY:0},keys=new Set();
 const camera={x:WORLD.partyX+280,y:1000,zoom:.95},remotePositions=new Map();
 let predictedPlayer=null,renderClock=performance.now();
+const motionClock=createPlaybackClock();
+const frameSamples=[];
 let frameCount=0,frameWindowStarted=performance.now(),displayFps=0,qualityScale=1,slowFrames=0,fastFrames=0;
 let width=1000,height=700,frameId=null,simTimer=null,lastSimTime=performance.now();
 let receivedStateAt=0,lastInputFingerprint='',lastDMFingerprint='',lastDMSend=0,inventoryFingerprint='',lastRenderTime=performance.now();
@@ -76,6 +78,7 @@ function setupChoices(){
     $('hostOnline').disabled=true;
     try{
       menuMessage('Connecting to the dedicated game server...');
+      motionClock.reset();remotePositions.clear();
       net=await connectMatch({endpoint:readyServerInput(),role:'dm',
         onState:acceptNetworkState,onRoster:slots=>{netSlots=slots;},
         onEvent:notify,onConnection:status=>{$('connection').textContent=status;}});
@@ -91,7 +94,7 @@ function setupChoices(){
     $('joinOnline').disabled=true;
     try{
       menuMessage('Connecting to the dedicated game server...');
-      activeSlot=selectedHero;predictedPlayer=null;remotePositions.clear();
+      activeSlot=selectedHero;predictedPlayer=null;remotePositions.clear();motionClock.reset();
       net=await connectMatch({endpoint:readyServerInput(),role:'party',code,slot:selectedHero,
         name:$('playerName').value||HEROES[selectedHero].name,
         onState:acceptNetworkState,onRoster:slots=>{netSlots=slots;},
@@ -108,15 +111,24 @@ function leaveMenu(){ $('menuLayer').classList.add('hidden');$('roleBadge').text
   $('dmPanel').classList.toggle('hidden',!isDM());$('playerPanel').classList.toggle('hidden',isDM());
   $('controls').innerHTML=isDM()?'WASD POSSESSED ENEMY <b>·</b> CLICK ENEMY TO POSSESS <b>·</b> MOUSE FIRE <b>·</b> RIGHT CLICK TO COMMAND <b>·</b> ARROWS PAN <b>·</b> ESC RELEASE':'WASD MOVE <b>·</b> MOUSE FIRE <b>·</b> Q SPELL <b>·</b> E ECHO <b>·</b> SPACE DASH <b>·</b> F CHEST <b>·</b> B SHOP <b>·</b> I INVENTORY';
 }
-function acceptNetworkState(state){
-  const time=performance.now();
-  receivedStateAt=time;
+function acceptNetworkState(state,serverTimeMs){
+  const arrived=performance.now();
+  receivedStateAt=arrived;
   game=state;
-  receiveEntityMotion(remotePositions,[...(state.players||[]),...(state.enemies||[]),...(state.bullets||[])],time);
-  const server=state.players?.[activeSlot];
-  if(server){
-    const control=currentInput();
-    predictedPlayer=reconcilePrediction(predictedPlayer,server,!!(control.mx||control.my));
+  // Positions are indexed by server simulation time, NOT packet-arrival time.
+  // The latter varies when Render/Zen delivers bursts of WebSocket traffic.
+  const stamp=Number.isFinite(serverTimeMs)?serverTimeMs:Number(state.elapsed||0)*1000;
+  motionClock.receive(stamp,arrived);
+  receiveEntityMotion(remotePositions,[...(state.players||[]),...(state.enemies||[]),...(state.bullets||[])],stamp);
+  if(mode==='onlineParty'){
+    const server=state.players?.[activeSlot];
+    if(server){
+      const control=currentInput();
+      // Approximate the transit time since the authoritative sample. The
+      // expected in-flight movement is not an error to correct backwards.
+      const oneWay=clamp((net?.latency||100)/2000+.025,.025,.17);
+      predictedPlayer=reconcileWithLatency(predictedPlayer,server,control,oneWay);
+    }
   }
 }
 function isDM(){return mode==='dm'||mode==='onlineDM';}
@@ -152,7 +164,7 @@ function updateCamera(dt){if(!game)return;let tx=camera.x,ty=camera.y;
 // The browser's interval only samples inputs and updates UI.
 function startSimulation(){
   lastSimTime=performance.now();
-  frameWindowStarted=lastSimTime;frameCount=0;displayFps=0;
+  frameWindowStarted=lastSimTime;frameCount=0;displayFps=0;frameSamples.length=0;
   if(simTimer===null && typeof window.setInterval==='function'){
     simTimer=window.setInterval(simulationPulse,33);
   }
@@ -225,11 +237,15 @@ function refreshUI(){if(!game)return;
   const perf=$('perfStats');
   if(perf){
     const fps=displayFps||'–',rtt=net?.latency||0,rate=net?.snapshotRate||0,jitter=net?.jitter||0;
+    const sorted=frameSamples.length>20?[...frameSamples].sort((a,b)=>a-b):[];
+    const p95=sorted.length?Math.round(sorted[Math.floor((sorted.length-1)*.95)]):0;
+    const hitches=frameSamples.filter(ms=>ms>34).length;
     const flags=[];
+    if(p95>26)flags.push('FRAME HITCHES');
     if(displayFps>0&&displayFps<42)flags.push('LOW FPS');
     if(rate>0&&rate<12)flags.push('SLOW SERVER UPDATES');
     if(jitter>30)flags.push('UNEVEN NETWORK');
-    perf.textContent=`${fps} FPS · ${isHost()?'OFFLINE':rate+' NET/s · '+rtt+'ms RTT · '+jitter+'ms JITTER'}${flags.length?' · '+flags.join(' / '):''}`;
+    perf.textContent=`${fps} FPS · P95 ${p95||'–'}ms · ${hitches} HITCHES · ${isHost()?'OFFLINE':rate+' NET/s · '+rtt+'ms RTT · '+jitter+'ms NET JITTER'}${flags.length?' · '+flags.join(' / '):''}`;
     perf.classList.toggle('warning',flags.length>0);
   }
   $('onlineRoster').textContent=mode==='onlineDM' ?`ROOM ${net?.code||''} / ${present} OF 6 PLAYERS JOINED`:mode==='onlineParty'?`ROOM ${net?.code||''} / ${present} PLAYERS`:'LOCAL TRAINING / AI TEAMMATES';
@@ -316,7 +332,7 @@ function drawTower(){const x=WORLD.dmX,y=1000,open=towerExposed(game);ctx.save()
 function entityPosition(entity){
   if(mode!=='onlineParty'&&mode!=='onlineDM')return entity;
   if(entity.slot===activeSlot&&predictedPlayer)return predictedPlayer;
-  return tweenPosition(remotePositions.get(entity.id),renderClock)||entity;
+  return tweenPosition(remotePositions.get(entity.id),motionClock.time??renderClock,0)||entity;
 }
 function drawCharacter(p){if(p.hp<=0)return;const h=HEROES[p.hero]||HEROES[0],v=entityPosition(p);
   ctx.fillStyle='#070c10aa';ctx.beginPath();ctx.ellipse(v.x+6,v.y+11,p.r+5,p.r*.55,0,0,Math.PI*2);ctx.fill();
@@ -399,6 +415,11 @@ function frame(now){
   renderClock=now;
   const rawDelta=Math.max(0,(now-lastRenderTime)/1000);
   const dt=Math.min(.05,rawDelta);
+  if(!document.hidden&&mode!=='menu'&&rawDelta>0&&rawDelta<.5){
+    frameSamples.push(rawDelta*1000);
+    if(frameSamples.length>180)frameSamples.shift();
+  }
+  if(mode==='onlineParty'||mode==='onlineDM')motionClock.advance(dt*1000);
   // Animate local movement at display refresh rate, not at 30Hz setInterval.
   // This is visual-only; server still simulates actual movement and collision.
   if(mode==='onlineParty'&&game?.players?.[activeSlot]&&predictedPlayer)
@@ -417,7 +438,7 @@ function frame(now){
       if(slowFrames>=3&&qualityScale>0.7){qualityScale=.7;slowFrames=0;resize();notify('Low FPS: reduced canvas resolution to keep movement smooth.');}
       else if(fastFrames>=12&&qualityScale<1){qualityScale=1;fastFrames=0;resize();}
     }
-  }else{frameCount=0;frameWindowStarted=now;}
+  }else{frameCount=0;frameWindowStarted=now;if(document.hidden)frameSamples.length=0;}
   frameId=requestAnimationFrame(frame);
 }
 function events(){window.addEventListener('resize',resize);window.addEventListener('keydown',e=>{

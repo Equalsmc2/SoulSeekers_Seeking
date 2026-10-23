@@ -1,3 +1,18 @@
+# SoulSeekers: Seeking — R02.2 Network Stability
+
+## R02.2 (October 23, 2026)
+
+- Use server simulation time in snapshots for remote heroes, enemies, possessed NPCs and bullets. Fix interpolation speeding up or slowing down with WebSocket packet arrival jitter.
+- Introduce bounded, adaptive visual playback clock (slight remote display delay, monotonic timeline, controlled catch-up).
+- Account for ordinary one-way network delay in client prediction reconciliation to reduce local rubber-banding.
+- Replace server timer's occasional accidental double-step with a bounded fixed-timestep accumulator.
+- Add P95 frame time and per-window hitch count beside existing FPS, NET/s, RTT and NET JITTER metrics.
+- Preserve 30Hz authoritative simulation, 20Hz snapshots, Party interest filtering, all game content and the GitHub sync BAT.
+- Add deterministic tests for packet burst timing, monotonic interpolation, one-way lag compensation and stable server ticks.
+- **8 local test suites pass.** A real Zen + Render run is still required to confirm perceived smoothness.
+
+## Prior release
+
 # SoulSeekers: Seeking — R02.1 / Smooth Multiplayer
 
 ## Changes since R02

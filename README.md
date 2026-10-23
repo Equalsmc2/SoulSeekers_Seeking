@@ -1,23 +1,24 @@
-# SoulSeekers: Seeking — R02.1 / Smooth Multiplayer
+# SoulSeekers: Seeking — R02.2 / Network Stability
 
-**R02.1 is a complete source-code update to the SoulSeekers: Seeking browser prototype.** It replaces Firebase Realtime Database combat snapshots and the DM browser-hosted game loop with a Node.js/WebSocket simulation server. Offline practice is preserved. The game is still a prototype, not a finished competitive MOBA or a proven low-latency production deployment.
+**R02.2 is a complete source-code update to the SoulSeekers: Seeking browser prototype.** It replaces Firebase Realtime Database combat snapshots and the DM browser-hosted game loop with a Node.js/WebSocket simulation server. Offline practice is preserved. The game is still a prototype, not a finished competitive MOBA or a proven low-latency production deployment.
 
-## R02.1 smoothing update
+## R02.2 targeted stutter and desync polish
 
-- Predicts your own character on **every animation frame** (rather than a 30Hz browser timer). The server remains authoritative for damage, movement and purchases.
-- Buffers and interpolates other players, bosses, possessed units, and bullets; caps extrapolation if updates stop.
-- Raises snapshot send rate from 12Hz to **20Hz**, but sends Party clients only nearby enemies, projectiles and effects. The DM still receives the full world.
-- Includes a **live performance overlay** showing FPS, network snapshot rate, ping/RTT and network update jitter. A sustained low FPS automatically lowers internal canvas resolution to reduce drawing load.
-- Fixes snapshot sequence handling before the first Party member joins and reduces unnecessary small-packet compression work.
-- R02.1 is a continuation of the existing R02 server. If Render is already deployed and linked to your GitHub repository, **just push this ZIP with `SYNC_TO_GITHUB.bat` and let Render redeploy**; you do not need a second Render service or Firebase project.
+- **Server-timestamped snapshots:** actors and projectiles interpolate on the 30 Hz simulation timeline, rather than relying on irregular browser packet arrival times.
+- **Adaptive presentation buffer:** keeps remote actors moving through modest network jitter, gently correcting playback rate without rewinding the display clock. Buffering adds a small amount of visual delay to *remote* entities; the local player still has immediate visual prediction.
+- **Less local rubber-banding:** the client's position reconciliation estimates the normal one-way network travel before deciding something needs correcting. Large authoritative corrections, deaths and respawns still win over client prediction.
+- **Fixed timestep scheduler:** replaces the old ceil-based tick catch-up that could unintentionally double-step after a slightly late timer callback; limits expensive catch-up bursts if Render stalls.
+- **Stronger diagnostics:** FPS, P95 frame time (95th percentile over the recent frame window), hitch count, network snapshots/second, ping RTT and update jitter. Sustained low frame rates still trigger resolution scaling.
+- The server remains at **30 simulation ticks/s** and sends at most **20 snapshots/s**; the DM is not the simulation host. R02.2 preserves R02.1's interest filtering, map, inventory, roles and Firebase configuration.
+- Existing Render web service + GitHub Pages configuration can be **updated in place** by running the included `SYNC_TO_GITHUB.bat` and pushing to GitHub. **Do not make a new Firebase project, repository or Render service.**
 
-Read `R02_1_PERFORMANCE_TEST.md` for the diagnostic procedure. **Local unit and simulated-socket tests passed; actual live Render/Zen performance still needs your test.**
+Read `R02_2_NETWORK_ACCEPTANCE.md` for the two-window testing procedure. **Eight local suites pass, including packet-jitter and tick-drift regression tests. Real multiplayer on your Render deployment still needs testing.**
 
 ## Play it
 
 ### Easiest online route — Render (browser only after deployment)
 
-1. Extract R02.1, run `SYNC_TO_GITHUB.bat` and push using GitHub Desktop as usual.
+1. Extract R02.2, run `SYNC_TO_GITHUB.bat` and push using GitHub Desktop as usual.
 2. Follow [`R02_SERVER_SETUP.md`](R02_SERVER_SETUP.md) to connect the same GitHub repo to a **Render Web Service**. Build command `npm install --omit=dev`; start command `npm start`.
 3. Render gives you a URL like `https://soulseekers-seeking-server.onrender.com`. **Open this URL directly to play**: the Node server also serves the browser game. It automatically knows its own WebSocket address.
 4. DM clicks **HOST AS DM** and **COPY INVITE LINK**; Party players open the link, select a unique character, enter a name and click **JOIN AS PARTY**. The room code is generated, not a password.

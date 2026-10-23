@@ -1,0 +1,12 @@
+SOULSEEKERS: SEEKING R02.2 — LOCAL CHECKS (2026-10-23)
+
+PASS — engine.test.mjs (gameplay, inventory, boss/fort/tower, timer)
+PASS — prediction.test.mjs (visual-only movement and compact snapshots)
+PASS — render.test.mjs (mocked browser canvas / cached map)
+PASS — server.test.mjs (room joins, permissions, reconnect, DM control)
+PASS — smoothing.test.mjs (R02.1 bounded remote interpolation/interest filtering)
+PASS — socket-client.test.mjs (simulated browser-to-server WebSocket protocol)
+PASS — startup.test.mjs (offline modes and configurable server address)
+PASS — clock-stability.test.mjs (R02.2 network jitter, latency compensation, fixed timestep)
+
+Limitations: Node-based tests use simulated WebSocket connections. Public Render deployment, real Zen frame pacing, and seven-player internet latency were not measured in this environment. Do not claim zero lag.

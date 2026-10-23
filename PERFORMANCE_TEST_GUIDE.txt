@@ -1,16 +1,12 @@
-SOULSEEKERS: SEEKING R02.1 — SMOOTHNESS TEST
+SOULSEEKERS: SEEKING R02.2 — NETWORK STABILITY CHECK
 
-1. Extract the ZIP and run SYNC_TO_GITHUB.bat.
-2. Commit + Push origin in GitHub Desktop. Let your EXISTING Render web service redeploy and show Live. Do not create a new Render service.
-3. Open two VISIBLE Zen windows side by side (DM in one, Party in the other). Hard-refresh both (Ctrl+Shift+R) so you see PROTOTYPE R02.1.
-4. Host a NEW room on the DM, join with the Party. Move continuously for 20-30 seconds, shoot, have the DM spawn several enemies, and possess an enemy.
-5. Watch the new performance readout:
-   FPS: graphical frames per second (goal: around your monitor refresh rate, often 60).
-   NET/s: snapshots per second arriving from the game server (target about 20 while active).
-   RTT: network ping round-trip, lower is better.
-   JITTER: variation in snapshot arrival spacing, lower is better.
-6. If FPS is low in BOTH online and offline practice, the issue is rendering/device/browser rather than just the server. Try a separate browser window without screen recording and close demanding background apps.
-7. If FPS is high but NET/s falls far below 20 or JITTER frequently spikes, suspect server or network stalls. Check Render service logs/CPU and your internet connection.
-8. If both FPS and NET/s are healthy but characters still rubber-band, record a short sample with the performance readout visible and report which role (DM/player) it affects.
+1. Extract this ZIP; run SYNC_TO_GITHUB.bat, choose GitHub Desktop, commit and Push origin.
+2. Wait for your EXISTING Render Web Service to show Live. If auto-deploy is off, deploy latest commit manually. Restarted servers lose old rooms.
+3. Hard-refresh both Zen windows (Ctrl+Shift+R). Confirm "PROTOTYPE R02.2" appears. Create a NEW DM room and join it with the Party window.
+4. Keep the DM and Party in separate VISIBLE windows side by side.
+5. Move straight for 20 seconds, turn sharply, fire several shots, and then have the DM possess and move a unit.
+6. Watch the diagnostics: FPS (goal: near monitor refresh rate); P95 frame time (for 60Hz, preferably 20 ms or less); HITCHES (>34ms frame in last ~180 frames); NET/s (about 20); RTT (lower is better); NET JITTER (lower is better).
+7. If FPS is good but P95 or HITCHES are high, rendering/Windows/recording may be pausing frames. If FPS/P95 are good but NET/s is low or jitter high, inspect the Render service and your connection.
+8. Compare offline Party training against online Party mode. If the hitch only happens online, record the diagnostics and indicate whether bullets/enemies or the local player are stuttering.
 
-No settings change is necessary in Firebase. R02.1 is tested locally with simulated sockets, not a proof of public multi-user performance.
+R02.2 keeps the server at 30 simulation Hz and broadcasts at 20 Hz. No Firebase settings need changing. Local automated tests passed; live Render performance is not guaranteed.
