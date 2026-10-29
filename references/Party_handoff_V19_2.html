@@ -1,0 +1,1245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SoulSeekers — Weapon + Dodge Lab V19.1 / Deadweight Bullet Phase</title>
+<style>
+:root{color-scheme:dark;--bg:#0d1015;--panel:#12171eea;--line:#3a3b37;--gold:#d9b45f;--muted:#b0ada5;--ivory:#f4efe1}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ivory);font:13px system-ui,Segoe UI,sans-serif;overflow:hidden;user-select:none}canvas{display:block;width:100vw;height:100vh;cursor:crosshair}
+#top{position:fixed;z-index:3;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:start;gap:12px;pointer-events:none}
+.panel{background:var(--panel);border:1px solid #7d69472b;box-shadow:0 9px 28px #0008;backdrop-filter:blur(12px);border-radius:8px;pointer-events:auto}
+.brand{padding:12px 14px;min-width:320px;max-width:min(590px,73vw)}.eyebrow{font-size:10px;letter-spacing:2px;color:var(--gold);font-weight:800}.title{font-size:21px;font-weight:900;letter-spacing:-.5px;line-height:1.1;margin:4px 0 2px}.sub{font-size:11px;color:var(--muted);line-height:1.4}.chars{display:flex;flex-wrap:wrap;gap:4px;margin-top:11px}.cbtn,.select,.slot{border:1px solid #575247;background:#1e252c;color:#cfc8bb;cursor:pointer;font:inherit;border-radius:5px}.cbtn{padding:6px 8px;font-size:11px;font-weight:650;white-space:nowrap}.cbtn.on{border-color:var(--gold);background:#3a321e;color:#fff4d7}.cbtn:hover,.select:hover,.slot:hover{border-color:#bd9f59}
+#status{width:265px;padding:12px 13px;flex-shrink:0}.statusrow{display:flex;justify-content:space-between;font-size:11px;margin-top:6px;gap:10px}.metric{font-weight:850;color:var(--ivory)}.bar{height:6px;background:#3b3430;border-radius:10px;overflow:hidden;margin-top:6px}.fill{height:100%;background:#d1ab56;width:100%;transition:width .09s linear}.bar.red .fill{background:#de727c}.bar.blue .fill{background:#77b3ce}
+#bottom{position:fixed;z-index:3;bottom:12px;left:50%;transform:translateX(-50%);width:min(900px,calc(100vw - 24px));pointer-events:none}.dodgePanel{padding:10px 13px;display:flex;gap:12px;align-items:center;justify-content:space-between;pointer-events:auto}.dodges{display:flex;gap:6px;flex:1}.select{flex:1;padding:8px 10px;text-align:left;min-width:0}.select strong{font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.select small{display:block;color:#aaa;letter-spacing:.3px;font-size:10px;margin-top:2px}.select.active{border-color:var(--gold);background:linear-gradient(100deg,#3a3224,#27282a);color:#f7e1ab}.desc{font-size:11px;color:var(--muted);min-width:160px;max-width:215px;line-height:1.3}.spellPanel{margin-top:6px;padding:7px;display:flex;gap:5px;justify-content:center;pointer-events:auto}.slot{width:9.3%;height:45px;max-width:82px;display:flex;flex-direction:column;justify-content:center;align-items:center;font-size:10px;gap:1px}.slot b{color:var(--gold);font-size:11px}.slot.on{border-color:var(--gold);color:#fff4d7;background:#3a3224}
+#hint{position:fixed;top:157px;left:13px;background:#14191edb;border:1px solid #3e4142;color:#c3c7c7;padding:9px 12px;line-height:1.65;border-radius:6px;font-size:11px;pointer-events:none;z-index:2}kbd{font:700 11px system-ui;color:#f2da9b;background:#3a3730;padding:2px 4px;border-radius:3px}
+#toast{position:fixed;top:45%;left:50%;transform:translate(-50%,-50%);background:#141a20ed;border:1px solid #c4a563;border-radius:6px;padding:12px 20px;color:#ffefbb;opacity:0;transition:opacity .18s;pointer-events:none;z-index:5;font-weight:700}
+@media(max-width:940px){#top{top:6px;left:6px;right:6px}.brand{min-width:0;padding:9px;max-width:70vw}.title{font-size:16px}.cbtn{font-size:10px;padding:5px}.chars{margin-top:7px}#status{width:180px;padding:8px}#hint{display:none}.desc{display:none}.dodgePanel{padding:7px}.select{padding:6px}.spellPanel{padding:5px}.slot{height:38px}}
+@media(max-width:580px){#status{display:none}.brand{max-width:100%;width:100%}.title{font-size:15px}#top{right:6px}.spellPanel{gap:2px}.slot{font-size:9px}.select strong{font-size:10px}}
+
+/* Compact weapon picker and live ammo/readiness display */
+#weaponPanel{display:flex;gap:6px;align-items:stretch;padding:8px 10px;margin-top:6px;pointer-events:auto}
+.weaponChoice{background:#222a2f;border:1px solid #696153;color:#eee4ce;border-radius:5px;cursor:pointer;flex:1;text-align:left;padding:8px 10px;min-width:0}
+.weaponChoice.active{border-color:#e7c675;background:#3a3424;color:#fff1be}
+.weaponChoice strong{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.weaponChoice small{display:block;color:#c7b89d;font-size:10px;line-height:1.5}
+#weaponStatus{flex:0 0 170px;border-left:1px solid #4b4943;padding:5px 8px;color:#ded4bd;font-size:11px;line-height:1.4}
+#weaponStatus strong{color:#ffe3a2;display:block;font-size:14px;white-space:nowrap}
+#weaponDesc{font-size:10px;color:#c7b89d;margin-top:3px}
+#reticle{pointer-events:none;position:fixed;z-index:1;width:24px;height:24px;transform:translate(-50%,-50%);display:none;border:1px solid #e9ce8477;border-radius:50%}
+#reticle::after{content:'';position:absolute;left:10px;top:10px;width:2px;height:2px;border-radius:50%;background:#fff4c7}
+#weaponGuide{position:fixed;top:205px;right:13px;max-width:265px;padding:9px 11px;background:#14191ed9;border-left:2px solid #d9b45f;color:#ded2b9;font-size:11px;line-height:1.5;pointer-events:none;z-index:2}#weaponHelp{position:fixed;top:162px;left:13px;background:#14191ee6;border:1px solid #675947;color:#e1d8c5;padding:9px 12px;line-height:1.75;border-radius:6px;font-size:11px;pointer-events:none;z-index:2;max-width:360px}
+#hint{display:none}
+#helpToggle{position:fixed;z-index:4;bottom:12px;right:12px;background:#252b2eee;color:#e5cea0;border:1px solid #ad915e60;border-radius:5px;padding:5px 10px;font:700 11px system-ui;cursor:pointer;opacity:.8}
+#helpToggle:hover{opacity:1}
+body.help-hidden #weaponHelp,body.help-hidden #weaponGuide{display:none}
+@media(max-width:940px){#weaponHelp,#weaponGuide{display:none}#weaponStatus{flex-basis:110px}.weaponChoice{padding:6px}.weaponChoice strong{font-size:10px}}
+@media(max-width:600px){#weaponPanel{padding:5px;gap:3px}#weaponStatus{flex-basis:92px;font-size:9px}.weaponChoice small{font-size:9px}}
+
+/* Level 3 resource bar; visible only during resting. */
+#spells .slot{height:54px;line-height:1.15;overflow:hidden;text-overflow:ellipsis}#spells .slot span:not(.spellLv){font-size:10px;max-width:100%;display:block}#spells .slot .spellLv{display:block;white-space:nowrap;margin-top:2px}
+#magicResources{margin-top:6px;padding:7px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:33px;pointer-events:auto;font-size:11px}
+#magicResources .resources{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.magicPip{border-radius:3px;width:14px;height:14px;border:1px solid #927e4c;background:#dfba6d;display:inline-block}
+.magicPip.bonus{background:#88b8ca;border-color:#bce9f3}.magicPip.empty{background:#2d3035;border-color:#5b5b55}
+#magicResources button{border:1px solid #8b7757;background:#262b2d;border-radius:4px;padding:4px 6px;color:#e7d6a8;cursor:pointer;font-size:10px}
+#magicResources button:disabled{opacity:.35;cursor:default}
+#magicResources .resourceLbl{font-size:10px;color:#c9c2ae;white-space:nowrap;margin-right:4px}
+#restMeter{position:fixed;z-index:9;top:40%;left:50%;transform:translate(-50%,-50%);width:min(390px,90vw);background:#161b20f2;border:1px solid #d9b45f;padding:20px 22px;border-radius:10px;box-shadow:0 20px 60px #0009;text-align:center;pointer-events:none;display:none}
+#restMeter.active{display:block}#restLabel{font-size:18px;font-weight:900;color:#f6dda3;letter-spacing:1px}
+.restTrack{height:16px;background:#333840;border-radius:8px;position:relative;overflow:hidden;margin:16px 0 10px;border:1px solid #605947}
+#restFill{height:100%;background:linear-gradient(90deg,#c29c52,#f8d98d);width:0%}
+.shortMark{position:absolute;left:37%;top:0;bottom:0;border-left:2px dashed white}
+#restHint{font-size:11px;color:#cbc5b7}body.resting canvas{cursor:wait}
+.slot .spellLv{font-size:9px;color:#aab5c0}.slot.unavailable{opacity:.3}.slot.noammo{border-color:#85565b}
+@media(max-width:940px){#magicResources{flex-wrap:wrap;font-size:10px;gap:4px}.slot{height:49px;font-size:9px}}
+</style></head>
+<body>
+<canvas id="game"></canvas>
+<div id="top"><section class="panel brand"><div class="eyebrow">SOULSEEKERS / WEAPON & MAGIC LAB / V19.2</div><div class="title" id="personTitle">ASYA <span style="color:var(--gold)">/</span> SORCERER</div><div class="sub" id="personSub">Visible blade = damage · directional mouse-aim blocking.</div><div class="chars" id="chars"></div></section><section class="panel" id="status"><div class="eyebrow">TEST RANGE / BOSTON</div><div class="statusrow"><span>HEALTH</span><span class="metric" id="healthText">100 / 100</span></div><div class="bar red"><div class="fill" id="hpFill"></div></div><div class="statusrow"><span>TRAVEL SPEED</span><span class="metric" id="speedText">0u/s</span></div><div class="statusrow"><span>DODGE COOLDOWN</span><span class="metric" id="cooldownText">READY</span></div><div class="bar"><div class="fill" id="cdFill"></div></div><div class="statusrow"><span>CAST READY</span><span class="metric" id="spellText">READY</span></div><div class="bar blue"><div class="fill" id="spellFill"></div></div><div class="statusrow"><span>HOSTILE DUMMIES</span><span class="metric" id="turretText">3</span></div></section></div>
+<div id="hint"><kbd>WASD</kbd> move · <kbd>Mouse</kbd> aim · <kbd>LMB</kbd> shoot<br><kbd>Space</kbd> dodge · <kbd>Z / X</kbd> select dodge A / B<br><kbd>F1–F6</kbd> character · <kbd>1–0</kbd> equip spell<br><kbd>RMB</kbd> cast equipped Level 3 spell · <kbd>R</kbd> reset test<br>Hold / double-tap Space where required · Mouse selects Knight landing.<br>Tactical movement: accelerate, brake and pivot; <kbd>SHIFT</kbd> precision walk.<br>Both loadouts share cooldown.<br>Asya: soft air drag; hover glides, but naturally settles. Opposite input brakes faster.<br>Rewind Echo: HOLD Space to retrace the last second; release early.<br>Shutter Reflex: arm to dodge an incoming shot. CD is shared across builds.<br>Castling: 8 + RMB creates a Decoy spell; then X + Space to swap.</div>
+<div id="bottom"><div class="panel" id="weaponPanel"><button class="weaponChoice active" id="weaponA"><strong>A · Weapon</strong><small></small></button><button class="weaponChoice" id="weaponB"><strong>B · Weapon</strong><small></small></button><div id="weaponStatus">WEAPON<strong>READY</strong><div id="weaponDesc"></div></div></div><div class="panel dodgePanel"><div class="dodges"><button class="select active" id="dodgeA"><strong> Z · Dodge A </strong><small> </small></button><button class="select" id="dodgeB"><strong> X · Dodge B </strong><small> </small></button></div><div class="desc" id="dodgeDesc">Space to activate selected dodge.</div></div><div class="panel spellPanel" id="spells"></div><div class="panel" id="magicResources"></div></div><div id="restMeter" aria-live="polite"><div id="restLabel">REST</div><div class="restTrack"><div id="restFill"></div><div class="shortMark"></div></div><div id="restHint">Hold Ctrl · release for a Short Rest, or continue to Long Rest</div></div>
+<button id="helpToggle" type="button" title="Toggle help (H)">H · HELP</button><div id="weaponHelp"><span style="color:#e9c67a;font-weight:800;letter-spacing:1px">WEAPON & MAGIC LAB / V19.2 · CASTING RULES</span><br><kbd>F1–F6</kbd> character · <kbd>Q</kbd> switch weapon A/B<br><kbd>LMB</kbd> attack / charge scoped camera / time potion<br><kbd>R</kbd> reload early · knife SNEAK · extinguisher pressure burst · crowbar C4<br><kbd>SHIFT</kbd> look ahead / charged focus camera · block toward mouse<br><kbd>R</kbd> with a FULL crossbow: switch augment · <kbd>E</kbd> reserved<br><kbd>Z / X</kbd> dodge choice · <kbd>SPACE</kbd> dodge<br><kbd>1–0</kbd> spell select · <kbd>RMB</kbd> spell cast<br><kbd>H</kbd> hide help · <kbd>ALT</kbd> show spell ranges<br><kbd>CTRL</kbd> hold: short rest → long rest · release to complete<br>Spells cast at MAX RANGE if aimed too far; line-of-sight spells require a clear path.<br>Attacking and spellcasting cannot overlap.<br><kbd>M</kbd> simulate enemy melee hit (test)<br><kbd>BACKSPACE</kbd> reset test arena</div><div id="reticle"></div><div id="weaponGuide" aria-live="polite"></div><div id="toast"></div>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d');let W=0,H=0,DPR=1;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=window.innerWidth;H=window.innerHeight;canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0)}addEventListener('resize',resize);resize();
+const colors=['#b391e4','#78d6e5','#9da9ad','#e09a75','#e9c875','#77c7a2'];
+const defs=[
+ {name:'ASYA',role:'Sorcerer / Close-Range Specialist',speed:216,accel:1050,friction:3.1,fireMult:.80, dodge:[['SIGNAL LOSS','Hold Space: steer a remote ghost, release to reappear.'],['REWIND ECHO','Hold Space to travel backward along your last 1 second of movement. Release to stop; a decoy echo absorbs one projectile.']]},
+ {name:'ALEXANDRA',role:'Rogue / Arcane Chess',speed:238,accel:18,friction:16,fireMult:1,dodge:[['KNIGHT\'S MOVE','Aim at one of eight visible L-shaped landing squares; Space to blink.'],['CASTLING','Swap with the nearest spell, enemy, or ally within 300u. Normal bullets are never valid targets.']]},
+ {name:'VETERAN',role:'Warlock / Undead Vet',speed:181,accel:10,friction:9,fireMult:.65,dodge:[['FOXHOLE DIVE','Short dive toward cover. Hitting a wall resets cooldown, but landing recovery still applies.'],['DEADWEIGHT','Dive into a crawl. Enemy bullets pass through during the dive and crawl, but melee hits still connect. Tap Space to stand early.']]},
+ {name:'DEBTOR',role:'Warlock / Cult Tank',speed:164,accel:5,friction:6,fireMult:.55,dodge:[['FORECLOSURE','Stronger committed charge, limited 30° steering and a longer coast.'],['COUNTERWEIGHT','Brace and absorb a hostile shot, then recoil from the impact.']]},
+ {name:'JEANETTE',role:'Cleric / Wedding Photographer',speed:242,accel:17,friction:14,fireMult:.9,dodge:[['DOUBLE EXPOSURE','Two rapid physical jukes. Second Space redirects. Zero end-lag.'],['SHUTTER REFLEX','Space arms a defensive window. Incoming fire triggers a physical sidestep and marks the shooter for a stronger follow-up shot.']]},
+ {name:'CHEMIST',role:'Artificer / Long-Range Support',speed:204,accel:8,friction:6,fireMult:.75,dodge:[['REACTION THRUST','First rocket burst; press Space to fire a directional second stage or reverse-brake.'],['CATALYST SKIM','Faster, longer drift; WASD bends the slide and walls preserve speed.']]}
+];
+
+// A playable Level 3 sample spellbook, inspired by the 2024 D&D class tables.
+// Spell effects are *adaptations* for the SoulSeekers action lab, not a rules engine.
+const mk=(name,level,range,fx,desc)=>({name,level,range,fx,desc});
+const classBooks=[
+ {cls:'SORCERER · ABERRANT MIND',max:{1:4,2:2},sp:3,slots:[
+  mk('Mind Sliver',0,440,'sliver','Psionic dart'),mk('Fire Bolt',0,640,'bolt','Arcane fire'),mk('Shocking Grasp',0,120,'shock','Touch lightning'),mk('Mage Hand',0,420,'hand','Spectral decoy'),
+  mk('Dissonant Whispers',1,490,'whispers','Psychic distress'),mk('Shield',1,0,'ward','Short defensive ward'),mk('Magic Missile',1,620,'missile','Reliable arcane force'),mk('Thunderwave',1,0,'thunder','Point-blank blast'),
+  mk('Misty Step',2,280,'misty','Short targeted blink'),mk('Hold Person',2,470,'hold','Halt one enemy')]},
+ {cls:'ROGUE · ARCANE TRICKSTER',max:{1:2,2:0},sp:0,slots:[
+  mk('Mage Hand',0,420,'hand','Make a decoy'),mk('Mind Sliver',0,440,'sliver','Psychic dart'),mk('Minor Illusion',0,420,'illusion','Distracting apparition'),
+  mk('Disguise Self',1,0,'disguise','Temporarily go unnoticed'),mk('Silent Image',1,410,'illusion','Create visual decoy'),mk('Sleep',1,390,'sleep','Slows the nearest target')]},
+ {cls:'WARLOCK · UNDEAD',max:{1:0,2:2},pact:true,sp:0,slots:[
+  mk('Eldritch Blast',0,720,'bolt','Focused eldritch beam'),mk('Chill Touch',0,500,'chill','Necrotic slowing dart'),
+  mk('Hex',1,470,'hex','Curse an enemy'),mk('Armor of Agathys',1,0,'ward','Cold protective shell'),mk('Misty Step',2,280,'misty','Reposition instantly'),mk('Hold Person',2,470,'hold','Restrain target')]},
+ {cls:'WARLOCK · CULT DEBTOR',max:{1:0,2:2},pact:true,sp:0,slots:[
+  mk('Eldritch Blast',0,720,'bolt','Eldritch ray'),mk('Toll the Dead',0,450,'toll','Necrotic curse'),
+  mk('Hex',1,470,'hex','Weakening curse'),mk('Armor of Agathys',1,0,'ward','Pact barrier'),mk('Shatter',2,530,'shatter','Concussive ring'),mk('Darkness',2,400,'darkness','Area of obscuring shadow')]},
+ {cls:'CLERIC',max:{1:4,2:2},sp:0,slots:[
+  mk('Sacred Flame',0,540,'flame','Radiant strike'),mk('Guidance',0,0,'guidance','Brief support buff'),mk('Thaumaturgy',0,380,'hand','Distract a target'),
+  mk('Cure Wounds',1,0,'heal','Restore health'),mk('Guiding Bolt',1,640,'bolt','Radiant projectile'),mk('Bless',1,0,'bless','Inspiring support'),mk('Shield of Faith',1,0,'ward','Protective ward'),
+  mk('Spiritual Weapon',2,520,'spiritual','Summon a striking spirit'),mk('Aid',2,0,'aid','Heal yourself and an ally')]},
+ {cls:'ARTIFICER · CHEMIST',max:{1:3,2:0},sp:0,slots:[
+  mk('Fire Bolt',0,640,'bolt','Fire dart'),mk('Mending',0,0,'mending','Fix cover / heal slightly'),
+  mk('Cure Wounds',1,0,'heal','Restore health'),mk('Faerie Fire',1,490,'faerie','Mark enemies'),mk('Grease',1,470,'grease','Slippery control zone'),mk('Catapult',1,650,'catapult','Launch a heavy projectile')]}
+];
+let book=[],spellResources=null,restClock=0,restOn=false,spellEmpower=false;
+const SHORT_REST_TIME=1.6,LONG_REST_TIME=4.3;
+function initSpellResources(){const cfg=classBooks[ci];book=cfg.slots;spell=0;spellResources={max:{...cfg.max},slots:{...cfg.max},points:cfg.sp||0,empowered:false};spellEmpower=false;refreshSpellUI();}
+function spellAvailable(s){return s.level===0 || (classBooks[ci].pact?spellResources.slots[2]>0:((spellResources.slots[s.level]||0)>0));}
+function resourcePips(total,used){return Array.from({length:Math.max(total,used)},(_,i)=>'<span class="magicPip '+(i>=used?'empty':(i>=total?'bonus':''))+'"></span>').join('');}
+function refreshSpellUI(){
+ const bar=$('spells');if(!bar)return;bar.innerHTML='';
+ for(let i=0;i<10;i++){
+  const m=book[i],b=document.createElement('button');b.type='button';b.className='slot'+(!m?' unavailable':'')+(m&&!spellAvailable(m)?' noammo':'')+(spell===i?' on':'');
+  const n=document.createElement('b');n.textContent=i===9?'0':i+1;b.appendChild(n);
+  if(m){const label=document.createElement('span');label.textContent=m.name;b.appendChild(label);const l=document.createElement('span');l.className='spellLv';l.textContent=(m.level?'LV'+m.level:'CANTRIP')+' · '+(m.range?m.range+'u':'SELF');b.appendChild(l);b.title=m.desc+' · '+(m.level?'Level '+m.level:'Cantrip')+' · '+(m.range?m.range+'u':'Self');b.onclick=()=>{spell=i;refreshSpellUI()};}
+  else{b.textContent=(i===9?'0':i+1)+' · —';b.disabled=true;}bar.appendChild(b);
+ }
+ updateResourceUI();
+}
+function updateResourceUI(){const r=$('magicResources');if(!r||!spellResources)return;
+ let str='<span class="resourceLbl">LV 3 · '+classBooks[ci].cls+'</span><div class="resources">';
+ for(const l of [1,2]){const n=spellResources.max[l]||0;if(n)str+='<span class="resourceLbl">'+(classBooks[ci].pact?'PACT LV2':'LV'+l)+'</span>'+resourcePips(n,spellResources.slots[l]);}
+ if(ci===0)str+='<span class="resourceLbl">SP</span>'+resourcePips(3,spellResources.points);
+ str+='</div>';
+ if(ci===0)str+='<div class="resources"><button id="empowerBtn" '+(spellResources.points<1?'disabled':'')+'>EMPOWER '+(spellResources.empowered?'✓':'· 1 SP')+'</button><button id="createOneBtn" '+(spellResources.points<2?'disabled':'')+'>+LV1 · 2 SP</button><button id="createTwoBtn" '+(spellResources.points<3?'disabled':'')+'>+LV2 · 3 SP</button><button id="convertBtn" '+(spellResources.slots[1]<1?'disabled':'')+'>LV1 → 1 SP</button></div>';
+ r.innerHTML=str;
+ if(ci===0){$('empowerBtn').onclick=()=>{if(spellResources.points<1)return;spellResources.empowered=!spellResources.empowered;updateResourceUI()};
+ $('createOneBtn').onclick=()=>createSlot(1);$('createTwoBtn').onclick=()=>createSlot(2);$('convertBtn').onclick=()=>{if(spellResources.slots[1]===0||spellResources.points>=3)return;spellResources.slots[1]--;spellResources.points=Math.min(3,spellResources.points+1);updateResourceUI();refreshSpellUI()};}
+}
+function createSlot(l){const cost=l===1?2:3;if(ci!==0||spellResources.points<cost)return;spellResources.points-=cost;spellResources.slots[l]++;showToast('SORCERY POINTS → LEVEL '+l+' SLOT');refreshSpellUI();}
+function startRest(){if(restOn||!player||player.mode||player.rec>0)return;restOn=true;restClock=0;cancelWeaponHold();document.body.classList.add('resting');$('restMeter').classList.add('active');}
+function finishRest(){if(!restOn)return;restOn=false;document.body.classList.remove('resting');$('restMeter').classList.remove('active');
+ if(restClock>=LONG_REST_TIME){
+  spellResources.slots={...spellResources.max};spellResources.points=classBooks[ci].sp||0;spellResources.empowered=false;player.hp=100;showToast('LONG REST · ALL SPELL SLOTS & RESOURCES RESTORED');
+ } else if(restClock>=SHORT_REST_TIME){
+  if(classBooks[ci].pact)spellResources.slots[2]=spellResources.max[2];
+  else if(spellResources.max[1]>0&&spellResources.slots[1]<spellResources.max[1])spellResources.slots[1]++; // SoulSeekers arcade house rule.
+  player.hp=Math.min(100,player.hp+22);showToast('SHORT REST · '+(classBooks[ci].pact?'PACT SLOTS':'ONE LV1 SLOT')+' + 22 HP');
+ }else showToast('REST INTERRUPTED · HOLD LONGER');
+ restClock=0;refreshSpellUI();
+}
+function tickRest(dt){if(!restOn)return;restClock=Math.min(LONG_REST_TIME,restClock+dt);
+ const p=Math.min(1,restClock/LONG_REST_TIME);$('restFill').style.width=Math.round(p*100)+'%';
+ $('restLabel').textContent=restClock>=LONG_REST_TIME?'LONG REST READY':restClock>=SHORT_REST_TIME?'SHORT REST READY · HOLD FOR LONG REST':'RESTING · '+Math.ceil((SHORT_REST_TIME-restClock)*10)/10+'s TO SHORT REST';
+ $('restHint').textContent=restClock>=LONG_REST_TIME?'Release CTRL to finish Long Rest':restClock>=SHORT_REST_TIME?'Release CTRL for Short Rest · keep holding for Long Rest':'Hold CTRL without releasing to charge';
+ player.vx=0;player.vy=0;
+}
+const spells=new Proxy([],{get(_t,k){if(k==='length')return book.length;if(k===Symbol.iterator)return function*(){for(const s of book)yield s.name};if(typeof k==='string'&&/^\d+$/.test(k))return book[Number(k)]?.name;return undefined}});
+const spellRanges=new Proxy([],{get(_t,k){if(k==='length')return book.length;if(typeof k==='string'&&/^\d+$/.test(k))return book[Number(k)]?.range||0;return undefined}});
+const spellEffectRadii=new Proxy([],{get(_t,k){if(typeof k==='string'&&/^\d+$/.test(k))return book[Number(k)]?.level?90:20;return undefined}});
+const spellRangeText=i=>book[i]?.range?book[i].range+'u':'SELF';
+const world={w:1650,h:1120};const rectangles=[{x:322,y:275,w:220,h:175},{x:1100,y:270,w:240,h:175},{x:318,y:700,w:235,h:145},{x:1105,y:690,w:245,h:155},{x:700,y:125,w:180,h:125},{x:720,y:885,w:180,h:120},{x:50,y:450,w:160,h:180},{x:1440,y:450,w:160,h:170}];
+const crates=[{x:600,y:410,w:58,h:58},{x:980,y:640,w:60,h:60},{x:607,y:735,w:55,h:55},{x:982,y:340,w:65,h:65},{x:850,y:430,w:48,h:48}];
+let towers=[],shots=[],effects=[],trail=[],mines=[],particles=[],player,ci=0,slot=0,spell=0,simT=0,messages=[],cam={x:0,y:0},fps=60;
+let allies=[];
+// The two alternative builds share their cooldown. Numbers are deliberately conservative
+// for a tactical shooter and can be tuned after this prototype is play-tested.
+// Per-character ordinary locomotion only. Acceleration, reversing and braking use
+// world-units/second^2; the fixed 60 Hz step makes them frame-rate independent.
+// Asya retains aerial drift, with moderate air drag and controlled counter-thrust.
+// Unlike the grounded characters, she eases down rather than abruptly stopping.
+const groundMotion=[
+ {launch:1050,reverse:1460,turn:900,brake:680,pace:.52,style:'STABLE HOVER / SOFT DRAG'},
+ {launch:2090,reverse:2300,turn:1920,brake:2840,pace:.48,style:'QUICK / CONTROLLED FOOTWORK'},
+ {launch:710,reverse:680,turn:610,brake:1030,pace:.50,style:'BRACED FOOTWORK'},
+ {launch:470,reverse:415,turn:365,brake:620,pace:.50,style:'HEAVY FOOTWORK'},
+ {launch:1410,reverse:1530,turn:1370,brake:1950,pace:.52,style:'LIGHT FOOTWORK'},
+ {launch:830,reverse:680,turn:690,brake:920,pace:.53,style:'SLIDING FOOTWORK'}
+];
+// Ordinary grounded locomotion is a genuine velocity model: starting takes time,
+// turning at speed has a cost, release decelerates, and opposite input countersteers.
+function applyGroundMovement(p,character,input,dt,maximum,precision){
+ const config=groundMotion[character],speed=vlen(p.vx,p.vy);
+ if(!input.x&&!input.y){
+  const remaining=Math.max(0,speed-config.brake*dt);
+  if(speed>.0001){const factor=remaining/speed;p.vx*=factor;p.vy*=factor}
+  else {p.vx=0;p.vy=0}
+  return;
+ }
+ const goal=maximum*(precision?config.pace:1);
+ const tx=input.x*goal,ty=input.y*goal;
+ const dx=tx-p.vx,dy=ty-p.vy,delta=vlen(dx,dy);
+ if(delta<.0001)return;
+ const dot=speed>.001?(p.vx*input.x+p.vy*input.y)/speed:1;
+ let force=dot<-.25?config.reverse:dot<.72?config.turn:config.launch;
+ // Shift allows careful final placement and faster stops, not free acceleration.
+ if(speed>goal+.5&&dot>.72)force=config.brake;
+ if(precision&&speed>goal)force=Math.max(force,config.brake);
+ const k=Math.min(1,force*dt/delta);
+ p.vx+=dx*k;p.vy+=dy*k;
+}
+
+// Hover should read as *flight*, not zero-gravity ice skating: the air gradually
+// slows Asya when she lets go, but she does not snap to a stop like a foot soldier.
+// WASD applies thruster force. Counter-thrust brakes/redirects more deliberately.
+// All constants are world units / second^2 and independent of frame rate.
+function applyHoverMovement(p,input,dt,maximum,precision,firingFactor=1){
+ const config=groundMotion[0],speed=vlen(p.vx,p.vy);
+ // Light, continuous air resistance. This is NOT instant ground friction.
+ const drag=precision?4.6:3.1;
+ const damping=Math.exp(-drag*dt);
+ p.vx*=damping; p.vy*=damping;
+ if(!input.x&&!input.y){
+  if(vlen(p.vx,p.vy)<1.2){p.vx=0;p.vy=0}
+  return;
+ }
+ const dot=speed>0.001?(p.vx*input.x+p.vy*input.y)/speed:1;
+ const thrust=dot<-.25?config.reverse:dot<.72?config.turn:config.launch;
+ const power=thrust*(precision?.56:1)*firingFactor;
+ p.vx+=input.x*power*dt;p.vy+=input.y*power*dt;
+ // A hovering character still has a sustainable speed ceiling, even with thrust.
+ const cap=maximum*(precision?config.pace:1);
+ const now=vlen(p.vx,p.vy);
+ if(now>cap){
+  // Holding Shift at full flight speed should NOT instantly snap Asya down
+  // to the precision cap; air thrusters bleed off speed over several frames.
+  const prior=vlen(p.vx-input.x*power*dt,p.vy-input.y*power*dt);
+  if(prior<=cap+1){p.vx*=cap/now;p.vy*=cap/now}
+  else{const next=Math.max(cap,now-(precision?680:440)*dt);p.vx*=next/now;p.vy*=next/now}
+ }
+}
+
+const dodgeBalance=[
+ {cd:4.4,range:'~245u',risk:'EXPOSED ANCHOR',label:'Signal Loss'},
+ {cd:4.9,range:'1s HISTORY',risk:'RETURN PATH',label:'Rewind Echo'},
+ {cd:3.9,range:'161u',risk:'VISIBLE LANDING',label:"Knight's Move"},
+ {cd:5.3,range:'300u',risk:'TARGET REQUIRED',label:'Castling'},
+ {cd:3.8,range:'~165u',risk:'LANDING RECOVERY',label:'Foxhole Dive'},
+ {cd:4.2,range:'DIVE + CRAWL',risk:'BULLET-PHASE / MELEE VULNERABLE',label:'Deadweight'},
+ {cd:5.1,range:'~450u CHARGE',risk:'WALL STAGGER',label:'Foreclosure'},
+ {cd:4.3,range:'160u RECOIL',risk:'NEEDS CONTACT',label:'Counterweight'},
+ {cd:2.4,range:'2 SHORT JUKES',risk:'BRIEF COMMIT',label:'Double Exposure'},
+ {cd:4.8,range:'SHORT EVADE',risk:'MUST ARM EARLY',label:'Shutter Reflex'},
+ {cd:3.8,range:'TWO BURNS',risk:'DIRECTION COMMIT',label:'Reaction Thrust'},
+ {cd:4.2,range:'~410u',risk:'WIDE TURNS',label:'Catalyst Skim'}
+];
+const mouse={x:W/2,y:H/2,down:false,castDown:false},keys=new Set();let toastTime=0;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),vlen=(x,y)=>Math.hypot(x,y),norm=(x,y)=>{const m=vlen(x,y)||1;return {x:x/m,y:y/m}},lerp=(a,b,t)=>a+(b-a)*t;
+function showToast(t){$('toast').textContent=t;toastTime=1.5;$('toast').style.opacity=1}
+function moveInput(){return norm0((keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0))}
+function norm0(x,y){let d=vlen(x,y);return d?{x:x/d,y:y/d}:{x:0,y:0}}
+function aim(){const q=cursorWorld();return Math.atan2(q.y-player.y,q.x-player.x)}
+function axis(){let v=moveInput();if(!v.x&&!v.y){let a=aim();return{x:Math.cos(a),y:Math.sin(a)}}return v}
+function hitRect(cx,cy,r,b){const xx=clamp(cx,b.x,b.x+b.w),yy=clamp(cy,b.y,b.y+b.h);return vlen(cx-xx,cy-yy)<r}
+function solidAt(x,y,r=16){if(x<r||x>world.w-r||y<r||y>world.h-r)return true;return rectangles.some(b=>hitRect(x,y,r,b))||crates.some(b=>hitRect(x,y,r,b))}
+// Shared targeting rules for all ranged spells. Aiming beyond spell range places
+// the endpoint exactly at its maximum distance; it never rejects just for range.
+function spellTargetPoint(s,from=player,cursor=cursorWorld()){
+ const dx=cursor.x-from.x,dy=cursor.y-from.y,dist=Math.hypot(dx,dy),range=s.range||0;
+ if(!range)return {x:from.x,y:from.y,clamped:false};
+ const travel=Math.min(dist,range),dir=dist>1e-8?{x:dx/dist,y:dy/dist}:{x:1,y:0};
+ return {x:from.x+dir.x*travel,y:from.y+dir.y*travel,clamped:dist>range+.01};
+}
+// Line segment vs expanded axis-aligned rectangle; unlike point sampling, this
+// cannot accidentally jump across a thin wall in one update.
+function segmentHitsRect(x0,y0,x1,y1,b,padding=2){
+ let enter=0,exit=1;
+ for(const [origin,diff,min,max] of [[x0,x1-x0,b.x-padding,b.x+b.w+padding],[y0,y1-y0,b.y-padding,b.y+b.h+padding]]){
+  if(Math.abs(diff)<1e-9){if(origin<min||origin>max)return false;continue;}
+  let a=(min-origin)/diff,z=(max-origin)/diff;if(a>z)[a,z]=[z,a];
+  enter=Math.max(enter,a);exit=Math.min(exit,z);if(enter>exit)return false;
+ }
+ return exit>=0&&enter<=1;
+}
+function spellSightBlocked(from,to){
+ return rectangles.some(b=>segmentHitsRect(from.x,from.y,to.x,to.y,b)) || crates.some(b=>segmentHitsRect(from.x,from.y,to.x,to.y,b));
+}
+// Only targeted, instant magic requires a clear sight line before committing a
+// spell slot. Fired spell projectiles use the existing swept wall collision.
+function spellRequiresSight(s){return s.range>0&&!['bolt','missile','catapult','flame'].includes(s.fx)}
+
+function moveCircle(ent,dx,dy,{bank=false,breakCrate=false}={}){let wall=false,edge=false,crateHit=false;let steps=Math.max(1,Math.ceil(vlen(dx,dy)/10));let sx=dx/steps,sy=dy/steps;for(let k=0;k<steps;k++){
+  for(const a of ['x','y']){let amount=a==='x'?sx:sy;if(!amount)continue;let nx=ent.x+(a==='x'?amount:0),ny=ent.y+(a==='y'?amount:0);let edgeThis=nx<ent.r||nx>world.w-ent.r||ny<ent.r||ny>world.h-ent.r;
+    let obstruction=rectangles.some(b=>hitRect(nx,ny,ent.r,b));let cr=crates.find(b=>hitRect(nx,ny,ent.r,b));
+    if(cr&&breakCrate){crates.splice(crates.indexOf(cr),1);spawnParticles(nx,ny,24,'#e1b86f');cr=null;showToast('BARRICADE BREACHED')}
+    if(edgeThis||obstruction||cr){wall=true;edge=edge||edgeThis;crateHit=crateHit||!!cr;
+      if(bank){if(a==='x'){ent.vx*=-.87;sx*=-1}else{ent.vy*=-.87;sy*=-1}spawnParticles(ent.x,ent.y,7,colors[ci])}
+      else{if(a==='x')ent.vx=0;else ent.vy=0}}
+    else ent[a]+=amount;
+  }
+ }return{wall,edge,crateHit};}
+function spawnParticles(x,y,n,color){if(particles.length>320)particles.splice(0,particles.length-240);for(let i=0;i<n;i++){let a=Math.random()*Math.PI*2,s=60+Math.random()*200;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,t:.12+Math.random()*.35,color})}}
+function addTrail(x,y,color,size=17,t=.36){if(trail.length>260)trail.splice(0,trail.length-180);trail.push({x,y,color,r:size,t,life:t})}
+function resetWorld(keepCharacter=true){mouse.castDown=false;if(restOn){restOn=false;restClock=0;document.body.classList.remove('resting');$('restMeter').classList.remove('active');}cancelWeaponHold();weaponSwapCD=0;hasteT=0;guard=100;weaponFX=[];meleeCombo=0;weaponStates=newWeaponStates();shots=[];effects=[];trail=[];mines=[];particles=[];crates.splice(0,crates.length,{x:600,y:410,w:58,h:58},{x:980,y:640,w:60,h:60},{x:607,y:735,w:55,h:55},{x:982,y:340,w:65,h:65},{x:850,y:430,w:48,h:48});towers=[{x:805,y:280,r:20,hp:100,fire:1.1},{x:440,y:590,r:20,hp:100,fire:1.6},{x:1230,y:570,r:20,hp:100,fire:2.1}];allies=[{x:965,y:558,r:17,name:'ALLY PLAYER'}];player={x:810,y:575,vx:0,vy:0,r:16,hp:100,inv:0,damageFlash:0,fireCD:0,spellCD:0,weaponLock:0,castLock:0,dodgeCD:0,dodgeTotal:.1,firePosture:0,rec:0,mode:null,modeT:0,modeDur:0,prev:[],focus:null,anchor:null,castlingT:0,foxReset:false,secondReady:false,activeSlot:slot,dir:{x:1,y:0},data:{},enchant:0,drone:null,c4:null,sneakT:0};simT=0;initSpellResources();updateUI();updateWeaponUI()}
+function chooseCharacter(i){cancelWeaponHold();ci=i;slot=0;weaponSlot=0;resetWorld();showToast(defs[ci].name+' · '+defs[ci].role)}
+function chooseDodge(i){if(player.mode||player.rec>0){showToast('FINISH YOUR CURRENT DODGE FIRST');return;}slot=i;player.activeSlot=i;updateUI();showToast('LOADOUT '+(slot?'B':'A')+' · '+defs[ci].dodge[slot][0]+' · SHARED COOLDOWN')}
+function updateUI(){let d=defs[ci];$('personTitle').innerHTML=d.name+' <span style="color:var(--gold)">/</span> '+d.role.split(' / ')[0].toUpperCase();$('personSub').textContent=d.role+' · '+groundMotion[ci].style+' · Two weapons, two dodges';document.querySelectorAll('.cbtn').forEach((el,i)=>el.classList.toggle('on',i===ci));for(let n=0;n<2;n++){let b=$(n?'dodgeB':'dodgeA');b.classList.toggle('active',slot===n);b.querySelector('strong').textContent=(n?'X · ':'Z · ')+d.dodge[n][0];b.querySelector('small').textContent=d.dodge[n][1]}{let b=dodgeBalance[ci*2+slot];$('dodgeDesc').textContent=b.cd.toFixed(1)+'s CD  ·  '+b.range+'  ·  '+b.risk;}refreshSpellUI()}
+function buildUI(){let c=$('chars');defs.forEach((d,i)=>{let b=document.createElement('button');b.className='cbtn';b.textContent=['ASYA','ALEXANDRA','VET','TANK','JEANETTE','CHEMIST'][i];b.onclick=()=>chooseCharacter(i);c.appendChild(b)});refreshSpellUI();$('dodgeA').onclick=()=>chooseDodge(0);$('dodgeB').onclick=()=>chooseDodge(1);$('weaponA').onclick=()=>selectWeapon(0);$('weaponB').onclick=()=>selectWeapon(1);updateUI()}
+function startMode(kind,duration,totalCD,dir){const tunedCD=dodgeBalance[ci*2+slot].cd;player.mode=kind;player.modeT=duration;player.modeDur=duration;player.dodgeCD=tunedCD;player.dodgeTotal=tunedCD;player.rec=0;player.dir={...dir};player.data={};player.foxReset=false;player.secondReady=false;}
+// Eight legal chess-knight destinations. The mouse chooses the closest square and the preview is identical to actual landing.
+const knightSquares=[[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]];
+function knightLanding(){let {x:mx,y:my}=cursorWorld(),score=Infinity,best=null;for(const [nx,ny] of knightSquares){let x=player.x+nx*72,y=player.y+ny*72,blocked=solidAt(x,y,player.r);let dist=vlen(mx-x,my-y)+(blocked?100000:0);if(dist<score){score=dist;best={x,y,blocked,nx,ny,corner:{x:player.x+nx*72,y:player.y}}}}return best;}
+function castleTarget(){
+ const options=[];
+ // Spell projectiles and sustained spell constructs can be swapped; regular bullets cannot.
+ for(const b of shots)if(b.castleSpell===true)options.push({type:'SPELL',ref:b,x:b.x,y:b.y});
+ for(const e of effects)if(e.t>0&&['decoy','frost','gravity'].includes(e.kind))options.push({type:'SPELL',ref:e,x:e.x,y:e.y});
+ for(const m of mines)options.push({type:'SPELL',ref:m,x:m.x,y:m.y});
+ for(const t of towers)if(t.hp>0)options.push({type:'ENEMY',ref:t,x:t.x,y:t.y});
+ for(const a of allies)options.push({type:'PLAYER',ref:a,x:a.x,y:a.y});
+ return options.filter(o=>vlen(o.x-player.x,o.y-player.y)<=300&&!solidAt(o.x,o.y,player.r))
+ .sort((a,b)=>vlen(a.x-player.x,a.y-player.y)-vlen(b.x-player.x,b.y-player.y))[0]||null;
+}
+function thrustStageTwo(){let p=player;if(p.mode!=='thrust'||p.data.phase!==0)return;let a=axis(),v=vlen(p.vx,p.vy),dot=v?((p.vx*a.x+p.vy*a.y)/v):1;const backward=dot<-.35;
+ p.data.phase=1;p.modeT=.29;p.modeDur=.29;
+ if(backward){p.vx=a.x*360;p.vy=a.y*360;showToast('REACTION THRUST · REVERSE BURN')}else{p.vx+=a.x*480;p.vy+=a.y*480;let sp=vlen(p.vx,p.vy);if(sp>660){p.vx*=660/sp;p.vy*=660/sp}showToast('REACTION THRUST · SECOND IGNITION')}
+ effects.push({x:p.x,y:p.y,r:64,t:.4,c:'#83e3ad',kind:'pulse'});spawnParticles(p.x,p.y,28,'#8fefc5');}
+function steerForeclosure(p,input,dt,rate=.82){
+ // Player retains full charge speed; steering is limited to 30 degrees TOTAL, including the coast.
+ if(!input.x&&!input.y)return;
+ const used=p.data.turnUsed||0,remaining=Math.PI/6-used;
+ if(remaining<=0)return;
+ const current=Math.atan2(p.dir.y,p.dir.x),target=Math.atan2(input.y,input.x);
+ const delta=Math.atan2(Math.sin(target-current),Math.cos(target-current));
+ const turn=Math.sign(delta)*Math.min(Math.abs(delta),rate*dt,remaining);
+ p.data.turnUsed=used+Math.abs(turn);
+ p.dir={x:Math.cos(current+turn),y:Math.sin(current+turn)};
+}
+// Rewind follows ACTUAL recorded positions, never a direct teleport.
+// History is frozen at activation so rewinding does not record itself.
+function rewindSample(history,target){
+ if(!history.length)return {x:player.x,y:player.y};
+ if(target<=history[0].t)return history[0];
+ if(target>=history[history.length-1].t)return history[history.length-1];
+ for(let i=1;i<history.length;i++)if(history[i].t>=target){
+  const a=history[i-1],b=history[i],k=clamp((target-a.t)/Math.max(.001,b.t-a.t),0,1);
+  return {x:lerp(a.x,b.x,k),y:lerp(a.y,b.y,k)};
+ }
+ return history[0];
+}
+function spawnRewindEcho(x,y){effects.push({x,y,r:33,t:1,c:'#bda4f7',kind:'rewindEcho'});}
+function absorbEchoProjectile(b){
+ if(b.team!=='enemy')return false;
+ const i=effects.findIndex(e=>e.kind==='rewindEcho'&&vlen(e.x-b.x,e.y-b.y)<=e.r+b.r);
+ if(i<0)return false;
+ const e=effects.splice(i,1)[0];
+ spawnParticles(e.x,e.y,16,'#c2a4ff');effects.push({x:e.x,y:e.y,r:56,t:.28,c:'#c2a4ff',kind:'pulse'});
+ showToast('REWIND ECHO · SHOT ABSORBED');return true;
+}
+function detectIncomingShot(p,shot,horizon=.24){
+ if(shot.team!=='enemy')return false;
+ const dx=p.x-shot.x,dy=p.y-shot.y;
+ if(dx*shot.vx+dy*shot.vy<=0)return false;
+ const x=shot.x+shot.vx*horizon,y=shot.y+shot.vy*horizon;
+ return segmentDistance(p.x,p.y,shot.x,shot.y,x,y)<p.r+shot.r+18;
+}
+function triggerShutter(p,shot){
+ if(p.mode!=='shutterArmed')return false;
+ // Move at a RIGHT ANGLE to the incoming bullet, never teleport.
+ const d=norm0(shot.vx,shot.vy),base={x:-d.y,y:d.x},wish=moveInput();
+ const choices=[base,{x:-base.x,y:-base.y}];
+ let pick=choices[0],best=-Infinity;
+ for(const dir of choices){
+  const test={x:p.x,y:p.y,r:p.r};const collision=moveCircle(test,dir.x*102,dir.y*102);
+  const travel=vlen(test.x-p.x,test.y-p.y);
+  const alignment=wish.x||wish.y?12*(wish.x*dir.x+wish.y*dir.y):0;
+  const score=travel+alignment-(collision.wall?8:0);
+  if(score>best){best=score;pick=dir;}
+ }
+ p.mode='shutterEvade';p.modeT=.20;p.modeDur=.20;p.vx=pick.x*520;p.vy=pick.y*520;p.inv=.21;
+ // Mark the actual projectile's source. No auto-aim: the next hit must be aimed.
+ const source=shot.owner&&shot.owner.hp>0?shot.owner:towers.filter(t=>t.hp>0).sort((a,b)=>vlen(a.x-shot.x,a.y-shot.y)-vlen(b.x-shot.x,b.y-shot.y))[0]||null;
+ p.focus=source?{target:source,t:3}:null;
+ effects.push({x:p.x,y:p.y,r:48,t:.2,c:'#fff3c6',kind:'shutter'});
+ spawnParticles(p.x,p.y,22,'#f7dfa0');showToast('SHUTTER REFLEX! · SHOOT THE MARKED TARGET');
+ return true;
+}
+function segmentDistance(px,py,ax,ay,bx,by){
+ const dx=bx-ax,dy=by-ay,l2=dx*dx+dy*dy;
+ const t=l2?clamp(((px-ax)*dx+(py-ay)*dy)/l2,0,1):0;
+ return vlen(px-ax-dx*t,py-ay-dy*t);
+}
+function dodgePressed(){if(restOn)return;if(player.mode==='signal'){endSignal();return}if(player.mode==='rewind'){endRewind();return}if(player.mode==='doubleWindow'){beginSecondStep();return}if(player.mode==='thrust'){thrustStageTwo();return}if(player.mode==='crawl'){finishMode(.12);return}if(player.mode||player.rec>0||player.dodgeCD>0)return;
+ const a=axis();const kind=ci*2+slot;const p=player;
+ switch(kind){
+ case 0: // signal: limited distance, exposed body, manual choice of landing
+   startMode('signal',.72,4.4,a);p.data.proj={x:p.x,y:p.y,vx:a.x*345,vy:a.y*345};p.data.origin={x:p.x,y:p.y};break;
+ case 1: // Hold to scrub BACKWARD along your actual recent path, not teleport.
+   {startMode('rewind',.76,4.9,a);p.data.history=p.prev.slice().filter(pt=>simT-pt.t<=1.05);
+    p.data.rewindStart=simT;p.data.orig={x:p.x,y:p.y};p.data.velocity={vx:p.vx,vy:p.vy};
+    spawnRewindEcho(p.x,p.y);showToast('REWIND ECHO · HOLD SPACE / RELEASE TO STOP');break;}
+ case 2: // land on the highlighted knight square, not an unpredictable facing offset
+   {const end=knightLanding();if(!end||end.blocked){showToast('KNIGHT LANDING BLOCKED');break}startMode('knight',.12,3.9,a);addTrail(p.x,p.y,colors[ci],24,.5);p.x=end.x;p.y=end.y;p.vx=0;p.vy=0;spawnParticles(p.x,p.y,17,colors[ci]);break;}
+ case 3: // swap places with nearest projectile / enemy / allied player
+   {const t=castleTarget();if(!t){showToast('CASTLING · NEED A SPELL, ENEMY OR ALLY WITHIN 300u');break}startMode('castleSwap',.17,5.3,a);let old={x:p.x,y:p.y};p.x=t.x;p.y=t.y;t.ref.x=old.x;t.ref.y=old.y;p.vx=0;p.vy=0;spawnParticles(p.x,p.y,22,colors[ci]);addTrail(old.x,old.y,colors[ci],20,.65);showToast('CASTLING · SWAPPED WITH '+t.type);break;}
+ case 4: // veteran dive toward cover
+   startMode('fox',.34,3.8,a);p.vx=a.x*690;p.vy=a.y*690;break;
+ case 5: // physical dive into low crawl, return upright by second Space or timer
+   startMode('proneDive',.2,4.2,a);p.vx=a.x*550;p.vy=a.y*550;showToast('DEADWEIGHT · BULLETS PASS THROUGH · MELEE STILL HITS');break;
+ case 6: // juggernaut accelerate and smash crates, with longer but committed momentum
+   startMode('barge',.50,5.1,a);p.vx=a.x*135;p.vy=a.y*135;break;
+ case 7: // counterweight waits for projectile, recoil
+   startMode('counter',.6,4.3,a);p.vx=0;p.vy=0;break;
+ case 8: // cleric two-stage burst with no teleport
+   startMode('doubleFirst',.12,2.4,a);p.vx=a.x*650;p.vy=a.y*650;break;
+ case 9: // Player manually ARMS a reaction. The game's threat detector chooses WHEN.
+   {startMode('shutterArmed',.62,4.8,a);p.vx*=.38;p.vy*=.38;
+    showToast('SHUTTER REFLEX · ARMED (0.7s)');break;}
+ case 10: // choose when and which direction to ignite stage two
+   startMode('thrust',.36,3.8,a);p.vx=a.x*365;p.vy=a.y*365;p.data.phase=0;showToast('REACTION THRUST · SPACE AGAIN FOR SECOND STAGE');break;
+ case 11: // skate with wall normal reflection: modest momentum buff
+   startMode('skim',.79,4.2,a);p.vx=a.x*555;p.vy=a.y*555;break;
+ }
+}
+function endRewind(){if(player.mode!=='rewind')return;
+ const v=player.data.velocity||{vx:0,vy:0};finishMode(.12);
+ // Exit from the chosen history point, retaining the prior hover momentum.
+ player.vx=v.vx;player.vy=v.vy;
+}
+function endSignal(){if(player.mode!=='signal')return;const ghost=player.data.proj;if(ghost&&!solidAt(ghost.x,ghost.y,player.r)){addTrail(player.x,player.y,colors[ci],20,.6);player.x=ghost.x;player.y=ghost.y;spawnParticles(ghost.x,ghost.y,18,colors[ci])}finishMode(.16)}
+function endCastling(){if(player.mode==='castlingAnchor'){player.mode=null;player.rec=0}}
+function beginSecondStep(){let p=player;const a=axis();p.mode='doubleSecond';p.modeT=.14;p.modeDur=.14;p.vx=a.x*670;p.vy=a.y*670;p.secondReady=false;spawnParticles(p.x,p.y,11,colors[ci])}
+function finishMode(recovery=.12,keepMomentum=false){let p=player;p.mode=null;p.modeT=0;p.rec=recovery;p.data={coastRecovery:keepMomentum};if(!keepMomentum&&ci!==5&&ci!==0){p.vx*=.28;p.vy*=.28}}
+
+// V9: weapon identities are familiar real-world objects. Effects are intentionally fictional game mechanics.
+const weaponCatalog=[
+ [
+  {name:'BombDrone_u_Pilot',type:'drone',range:495,cool:.4,mag:2,reload:3.0,desc:'Asya specialist: close-to-midrange guided bomb drone. Click once to launch, again to detonate. Auto-reloads.'},
+  {name:'Crowbar + C4',type:'crowbar',range:76,cool:.43,desc:'Heavy crowbar sweeps. SHIFT blocks toward cursor. R plants one C4 charge ahead; R again detonates after arming. Close-range specialist.'}
+ ],[
+  {name:'Kitchen Knife',type:'knife',range:58,cool:.31,desc:'Fast alternating cuts, third-hit stab. R activates SNEAK (5s): turrets lose track of you until a knife strike connects, you take damage, or you cast a spell. First stealth hit deals bonus damage. SHIFT blocks.'},
+  {name:'Scoped Revolver',type:'revolver',range:950,cool:.54,mag:6,reload:1.85,desc:'Six precision shots. Auto-reloads when empty; R reloads early.'}
+ ],[
+  {name:'Combat Shovel',type:'shovel',range:82,cool:.65,desc:'Wide weighted shovel sweep. SHIFT blocks; R digs a cover mound.'},
+  {name:'M4 Carbine',type:'carbine',range:690,cool:.125,mag:30,reload:2.2,desc:'Veteran mid-range automatic carbine. HOLD LMB for controlled fire, SHIFT looks farther ahead and tightens shot spread. R reloads early; automatic reload when empty.'}
+ ],[
+  {name:'Steel Mace',type:'mace',range:95,cool:.72,desc:'Slow, forceful mace smash. SHIFT blocks; R ground slam.'},
+  {name:'Fire Extinguisher',type:'extinguisher',range:230,cool:.13,mag:24,reload:2.7,desc:'Hold LMB for a suppressing foam cone, SHIFT guards in the direction of your mouse. R: PRESSURE BURST, a short directional blast that pushes enemies and knocks aside incoming projectiles (10 pressure, 5.5s CD).'}
+ ],[
+  {name:'M1911 Pistol',type:'pistol',range:495,cool:.27,mag:7,reload:1.4,desc:'Seven-round pistol. Auto-reloads when empty; R reloads early.'},
+  {name:'Flash Camera',type:'camera',range:760,closeRange:154,cool:1.05,mag:5,reload:2.1,desc:'Jeanette: unscoped tap = 110° close flash; SHIFT + hold LMB + release = charged narrow long-range flash. R recharges batteries.'}
+ ],[
+  {name:'Timing Potion',type:'potion',range:540,cool:.65,mag:5,reload:2.0,desc:'Long-range support: hold LMB, release on the desired color, then lob a potion out to 540u. Replenishes when empty.'},
+  {name:'Enchanted Crossbow',type:'crossbow',range:980,cool:.35,mag:1,reload:1.20,desc:'Long-range primary. R when fully loaded cycles PIERCING, SCATTER, SNARE, RICOCHET. Auto-reloads at zero. SHIFT scouts ahead.'}
+ ]];
+const potionPhases=[
+ {name:'MEND',color:'#7bdca4',kind:'heal'},
+ {name:'HASTE',color:'#f9d77c',kind:'haste'},
+ {name:'WARD',color:'#7cc9f8',kind:'ward'},
+ {name:'DECOY',color:'#d2a4fa',kind:'decoy'},
+ {name:'CORROSIVE',color:'#ef7b7b',kind:'damage'}
+];
+const enchants=[{name:'PIERCING',color:'#f4e7b9'},{name:'SCATTER',color:'#ffc78b'},{name:'SNARE',color:'#89dfe0'},{name:'RICOCHET',color:'#d7aaff'}];
+let weaponSlot=0,weaponStates=[],weaponFX=[],weaponHold=0,weaponChargeMode=false,meleeFlip=1,meleeCombo=0,weaponSwapCD=0,guard=100,hasteT=0,viewZoom=1;
+function cursorWorld(){return {x:mouse.x/viewZoom+cam.x,y:mouse.y/viewZoom+cam.y}}
+function newWeaponStates(){return weaponCatalog.map(row=>row.map(w=>({ammo:w.mag??-1,reloading:0,special:0})));}
+function weaponNow(){return weaponCatalog[ci][weaponSlot]}
+function weaponState(){return weaponStates[ci][weaponSlot]}
+function isMelee(w=weaponNow()){return ['knife','shovel','mace','crowbar'].includes(w.type)}
+function isGuardWeapon(w=weaponNow()){return isMelee(w)||w.type==='extinguisher'}
+function scoped(){return (keys.has('ShiftLeft')||keys.has('ShiftRight'))&&!player.mode&&!player.rec}
+function hasScope(w=weaponNow()){return ['revolver','pistol','crossbow','drone','camera','carbine'].includes(w.type)}
+function scopeActive(){return scoped()&&hasScope()}
+// A scope pans the WORLD view toward the crosshair rather than magnifying the hero.
+// It is deliberately viewport-aware: the world-space shot cap is the distance
+// that fits on screen at the moment of firing, not a magically larger hit range.
+function visibleRange(angle){
+ const ux=Math.cos(angle),uy=Math.sin(angle),left=cam.x+24/viewZoom,right=cam.x+W/viewZoom-24/viewZoom;
+ const top=cam.y+24/viewZoom,bottom=cam.y+H/viewZoom-24/viewZoom;
+ const px=player.x,py=player.y;
+ let tx=ux>0.001?(right-px)/ux:ux<-.001?(left-px)/ux:Infinity;
+ let ty=uy>0.001?(bottom-py)/uy:uy<-.001?(top-py)/uy:Infinity;
+ return Math.max(0,Math.min(tx,ty));
+}
+function effectiveWeaponRange(w=weaponNow(),angle=aim()){
+ if(!hasScope(w))return w.range;
+ if(w.type==='camera'&&!scopeActive())return w.closeRange;
+ const cap=scopeActive()?w.range:w.range*.58;
+ return Math.min(cap,visibleRange(angle));
+}
+// Aim direction for camera look-ahead is based on the INPUT cursor's screen offset
+// so the camera does not chase its own moving projection and oscillate.
+function scopeLookDir(){
+ const dx=mouse.x-W/2,dy=mouse.y-H/2;
+ return norm0(dx,dy);
+}
+
+function selectWeapon(i){if(player.mode||player.rec>0||weaponSwapCD>0)return;
+ if(player.sneakT>0)endSneak('WEAPON SWITCH');
+ weaponSlot=i;cancelWeaponHold();weaponSwapCD=.18;updateWeaponUI();showToast('WEAPON '+(i?'B':'A')+' · '+weaponNow().name.toUpperCase());}
+function updateWeaponUI(){const w=weaponNow(),s=weaponState();for(let i=0;i<2;i++){
+ let b=$(i?'weaponB':'weaponA'),item=weaponCatalog[ci][i];b.classList.toggle('active',weaponSlot===i);
+ b.querySelector('strong').textContent=(i?'B':'A')+' · '+item.name;
+ b.querySelector('small').textContent=item.type.toUpperCase()+' · '+(item.type==='camera'?(item.closeRange+'u / '+item.range+'u SCOPED'):item.range+'u');}
+ let title=s.reloading>0?'RELOADING '+s.reloading.toFixed(1)+'s':s.ammo<0?'READY':s.ammo+' / '+w.mag;
+ $('weaponStatus').querySelector('strong').textContent=title;
+ let sec=s.special>0?' · R CD '+s.special.toFixed(1):'';
+ if(w.type==='crowbar'&&player.c4)sec+=' · C4 '+(player.c4.armed>0?'ARMING':'READY');
+ if(w.type==='knife'&&player.sneakT>0)sec+=' · SNEAK '+player.sneakT.toFixed(1)+'s';
+ $('weaponDesc').textContent=(isGuardWeapon(w)?'SHIFT BLOCK · GUARD '+Math.round(guard):hasScope(w)?'SHIFT LOOK AHEAD · REACH '+Math.round(effectiveWeaponRange(w))+'u':w.type==='camera'?'SHIFT FOCUS FLASH · CONE '+(scoped()?'74°':'110°'):'SHIFT AIM')+ ' · R '+(w.type==='crossbow'?'FULL: NEXT AUGMENT / EMPTY: RELOAD':w.type==='crowbar'?'PLANT / DETONATE C4':w.type==='knife'?'SNEAK':w.type==='extinguisher'?'PRESSURE BURST':isMelee(w)?'SPECIAL':'RELOAD EARLY')+(w.type==='crossbow'?' · '+enchants[player.enchant||0].name:'')+sec;
+ $('weaponGuide').textContent=w.desc;
+}
+function cancelWeaponHold(){mouse.down=false;weaponHold=0;weaponChargeMode=false;}
+function stopWeaponHold(){let w=weaponNow();if(!mouse.down)return;mouse.down=false;
+ if(weaponChargeMode&&w.type==='camera')fireFocusedCamera(weaponHold);
+ if(weaponHold>.03&&w.type==='potion')throwPotion(weaponHold);
+ weaponHold=0;weaponChargeMode=false;
+}
+function beginReload(){const w=weaponNow(),s=weaponState();if(s.reloading>0||s.ammo<0||s.ammo===w.mag)return false;
+ if(w.type==='drone'&&player.drone){showToast('RECALL OR DETONATE DRONE FIRST');return false;}
+ s.reloading=w.reload;showToast('RELOADING · '+w.name.toUpperCase());return true;
+}
+// Every finite-ammo weapon automatically starts its normal reload at zero ammo.
+// The active drone is still controllable/detonatable during its auto-reload.
+function autoReloadIfEmpty(w=weaponNow(),s=weaponState()){
+ if(!(w.mag>0)||s.ammo!==0||s.reloading>0)return false;
+ s.reloading=w.reload;
+ showToast('AUTO RELOADING · '+w.name.toUpperCase());
+ return true;
+}
+function spawnWeaponShot(speed,range,damage,r=4,color='#f4dda1',extra={}){
+ let a=extra.angleOverride??aim(),d={x:Math.cos(a),y:Math.sin(a)},p=player;
+ shots.push({x:p.x+d.x*22,y:p.y+d.y*22,vx:d.x*speed,vy:d.y*speed,r,team:'player',t:Math.max(0,(Math.min(range,effectiveWeaponRange(weaponNow(),a))-22))/speed,damage,c:color,castleSpell:false,weaponShot:true,...extra});
+ spawnParticles(p.x+d.x*19,p.y+d.y*19,5,color);
+}
+// All six melee weapons use a visible held weapon and an authored attack motion.
+// Attacks hit only during the *active* swing, rather than instantly on button press.
+// Values are tuneable without changing dodge, spell or ranged weapon rules.
+const meleeProfiles={
+ knife:  {motion:'slash',duration:.245,active:[.20,.80],arc:.78,damage:17,reach:.92,thickness:14,after:0},
+ shovel: {motion:'slash',duration:.48, active:[.24,.82],arc:1.15,damage:33,reach:.91,thickness:19,after:0},
+ crowbar: {motion:'slash',duration:.37,active:[.22,.81],arc:1.05,damage:28,reach:.93,thickness:15,after:0},
+ spear:  {motion:'thrust',duration:.40,active:[.20,.75],arc:.19,damage:34,reach:1,thickness:14,after:0},
+ mace:   {motion:'smash',duration:.58, active:[.31,.83],arc:1.05,damage:39,reach:.89,thickness:23,after:0},
+ hook:   {motion:'whip',duration:.56, active:[.27,.83],arc:1.58,damage:29,reach:.98,thickness:21,after:0}
+};
+function easeOutCubic(x){return 1-Math.pow(1-clamp(x,0,1),3)}
+function smoothStep01(x){x=clamp(x,0,1);return x*x*(3-2*x)}
+function meleeAttack(){const p=player,w=weaponNow();if(mouse.castDown||p.castLock>0||p.fireCD>0||scoped())return;
+ const spec=meleeProfiles[w.type],angle=aim();if(!spec)return;
+ p.fireCD=w.cool;meleeFlip*=-1;meleeCombo++;
+ const profile={...spec};
+ if(w.type==='knife'&&meleeCombo%3===0){profile.motion='thrust';profile.duration=.255;profile.arc=.18;profile.active=[.25,.68];profile.damage=20;}
+ if(w.type==='shovel'&&meleeCombo%2===0){profile.arc=1.30;profile.duration=.51;profile.active=[.30,.78];}
+ p.weaponLock=Math.max(p.weaponLock,profile.duration);
+ weaponFX.push({kind:'melee',type:w.type,profile,combo:meleeCombo,a:angle,r:w.range,side:meleeFlip,t:profile.duration,life:profile.duration,hits:[],impactFreeze:0,c:colors[ci]});
+}
+// Blade lengths correspond to the actual drawn weapon silhouettes below.
+// No more invisible hit-radius extending well beyond the metal or chain.
+const meleeModelTips={knife:49,shovel:93,crowbar:88,spear:122,mace:78,hook:140};
+const BLOCK_HALF_ANGLE=55*Math.PI/180; // 110-degree forward block, follows cursor exactly.
+const meleeContactStarts={knife:.38,shovel:.62,crowbar:.34,spear:.64,mace:.53,hook:.32};
+function meleeAttackPose(fx,atU=null){
+ const spec=fx.profile,u=atU===null?clamp((fx.life-fx.t)/fx.life,0,1):clamp(atU,0,1);
+ if(spec.motion==='thrust'){
+  const shove=smoothStep01((u-.13)/.24)*(1-smoothStep01((u-.59)/.30));
+  const base=fx.r*spec.reach*.54,extension=shove*fx.r*spec.reach*.46;
+  return {u,a:fx.a+fx.side*.035,extension,bladeReach:base+extension,power:shove,baseReach:base};
+ }
+ const begin=spec.motion==='smash'?.29:spec.motion==='whip'?.22:.18;
+ const end=spec.motion==='smash'?.69:spec.motion==='whip'?.75:.71;
+ const strike=smoothStep01((u-begin)/(end-begin));
+ const overshoot=clamp((u-end)/Math.max(.01,1-end),0,1);
+ const a=fx.a+fx.side*((strike*2-1)*spec.arc+overshoot*spec.arc*.13);
+ const extension=spec.motion==='whip'?Math.sin(strike*Math.PI)*fx.r*.10:0;
+ return {u,a,extension,bladeReach:fx.r*spec.reach+extension,baseReach:fx.r*spec.reach,power:strike};
+}
+// World-space geometry shared between the drawn weapon and its hit tests.
+function meleeBladeSegment(fx,pose){
+ const tip=pose.bladeReach;
+ const start=fx.profile.motion==='thrust'?Math.max(12,tip-fx.r*.36):tip*meleeContactStarts[fx.type];
+ const ca=Math.cos(pose.a),sa=Math.sin(pose.a);
+ return {x1:player.x+ca*start,y1:player.y+sa*start,x2:player.x+ca*tip,y2:player.y+sa*tip};
+}
+function nearestSegmentPoint(x,y,seg){
+ const dx=seg.x2-seg.x1,dy=seg.y2-seg.y1,length2=dx*dx+dy*dy;
+ const t=length2?clamp(((x-seg.x1)*dx+(y-seg.y1)*dy)/length2,0,1):0;
+ const px=seg.x1+dx*t,py=seg.y1+dy*t;
+ return {x:px,y:py,dist:vlen(x-px,y-py)};
+}
+// Check the *whole swept blade*, including any angles crossed between ticks.
+// This prevents a fast slash from passing through a dummy between two samples.
+function updateMeleeCollision(fx,previousU){
+ const spec=fx.profile,[lo,hi]=spec.active;
+ const nowU=clamp((fx.life-fx.t)/fx.life,0,1);
+ const from=Math.max(lo,previousU??nowU),to=Math.min(hi,nowU);
+ if(from>to)return;
+ const a0=meleeAttackPose(fx,from).a,a1=meleeAttackPose(fx,to).a;
+ const n=Math.max(1,Math.ceil(Math.max(Math.abs(a1-a0)/.045,(to-from)/.023)));
+ for(const target of towers){
+  if(target.hp<=0||fx.hits.includes(target))continue;
+  let contact=null;
+  for(let k=0;k<=n;k++){
+   const u=from+(to-from)*(k/n),pose=meleeAttackPose(fx,u);
+   const nearest=nearestSegmentPoint(target.x,target.y,meleeBladeSegment(fx,pose));
+   if(nearest.dist<=target.r+spec.thickness*.5&&flashClearPath(player,target)){
+    contact={...nearest,a:pose.a};break;
+   }
+  }
+  if(!contact)continue;
+  fx.hits.push(target);
+  let damage=spec.damage;
+  if(fx.type==='knife'&&player.sneakT>0){damage+=22;endSneak('KNIFE STRIKE');}
+  target.hp=Math.max(0,target.hp-damage);
+  spawnParticles(contact.x,contact.y,fx.type==='mace'?19:12,'#ffe4ac');
+  weaponFX.push({kind:'meleeImpact',x:contact.x,y:contact.y,a:contact.a,r:fx.type==='mace'?25:16,c:'#ffedc7',life:.18,t:.18});
+  fx.impactFreeze=fx.type==='mace'?.050:.027;
+ }
+}
+// Camera flashes cannot affect an enemy through solid buildings or cover.
+function flashClearPath(p,t){
+ const steps=Math.max(2,Math.ceil(vlen(t.x-p.x,t.y-p.y)/16));
+ for(let i=1;i<steps;i++){
+  const f=i/steps;
+  if(solidAt(p.x+(t.x-p.x)*f,p.y+(t.y-p.y)*f,2))return false;
+ }
+ return true;
+}
+function attackOnce(){if(restOn)return;const p=player,w=weaponNow(),s=weaponState();if(mouse.castDown||p.castLock>0||p.fireCD>0||p.mode||p.rec>0||weaponSwapCD>0)return;
+ // An already-launched drone may still be detonated while a fresh drone loads.
+ if(w.type==='drone'&&p.drone){explodeDrone();return;}
+ if(s.reloading>0)return;
+ if(isMelee(w)){meleeAttack();return;}
+ // An attack commits the player before another spell may begin.
+ p.weaponLock=Math.max(p.weaponLock,.20);
+ if(w.type==='sonic'||w.type==='potion')return;
+ if(w.type==='camera'&&scoped())return;
+ if(w.type==='extinguisher'){
+  if(scoped())return;
+  if(s.ammo<=0){autoReloadIfEmpty(w,s);return;}
+  s.ammo--;p.fireCD=w.cool;const a=aim(),half=.39,reach=w.range;
+  for(const t of towers){if(t.hp<=0)continue;let dist=vlen(t.x-p.x,t.y-p.y),delta=Math.abs(Math.atan2(Math.sin(Math.atan2(t.y-p.y,t.x-p.x)-a),Math.cos(Math.atan2(t.y-p.y,t.x-p.x)-a)));
+   if(dist<reach+t.r&&delta<half+.06&&flashClearPath(p,t)){t.hp=Math.max(0,t.hp-4);t.fire+=.15;spawnParticles(t.x,t.y,2,'#b5e8df');}
+  }
+  weaponFX.push({kind:'foamSpray',x:p.x,y:p.y,a,r:reach,arc:half,c:'#a9ebe2',t:.18,life:.18});
+  autoReloadIfEmpty(w,s);return;
+ }
+ if(w.type==='camera'){
+  if(s.ammo<=0){autoReloadIfEmpty(w,s);return;}
+  s.ammo--;p.fireCD=w.cool;
+  if(scoped())return; // scoped camera charges until mouse release
+  const a=aim(),halfAngle=Math.PI*55/180,radius=w.closeRange;
+  let hit=0;
+  for(const t of towers){
+   if(t.hp<=0)continue;
+   const dist=vlen(t.x-p.x,t.y-p.y),ang=Math.atan2(t.y-p.y,t.x-p.x);
+   const delta=Math.abs(Math.atan2(Math.sin(ang-a),Math.cos(ang-a)));
+   if(dist<=radius+t.r&&delta<=halfAngle+Math.asin(Math.min(.98,t.r/Math.max(dist,t.r+1)))&&flashClearPath(p,t)){
+    t.hp=Math.max(0,t.hp-(dist<75?42:25));
+    t.fire=Math.max(t.fire,1.55); // flash interrupts the next shot
+    spawnParticles(t.x,t.y,18,'#fff1bd');hit++;
+   }
+  }
+  weaponFX.push({kind:'cameraFlash',x:p.x,y:p.y,a,r:radius,arc:halfAngle,life:.29,t:.29,c:'#fff2bd'});
+  spawnParticles(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,10,'#fff3dc');
+  showToast('FLASH CAMERA · '+hit+' TARGET'+(hit===1?'':'S')+' DAZZLED');
+  autoReloadIfEmpty(w,s);return;
+ }
+ if(w.type==='drone'){
+  if(s.ammo<=0){autoReloadIfEmpty(w,s);return;}
+  s.ammo--;p.drone={x:p.x,y:p.y,ox:p.x,oy:p.y,vx:0,vy:0,t:3.8,maxRange:effectiveWeaponRange(w)};p.fireCD=.25;
+  autoReloadIfEmpty(w,s);
+  showToast('DRONE ACTIVE · AIM WITH MOUSE / CLICK TO DETONATE');return;
+ }
+ if(s.ammo<=0){autoReloadIfEmpty(w,s);return;}
+ s.ammo--;p.fireCD=w.cool;
+ autoReloadIfEmpty(w,s);
+ if(w.type==='revolver')spawnWeaponShot(1650,w.range,58,4,'#ffe0a5',{projectileType:'revolver'});
+ if(w.type==='carbine'){const spread=scoped()?.012:.047;const angle=aim()+(Math.random()*2-1)*spread;spawnWeaponShot(1480,w.range,13,3,'#f4d39a',{projectileType:'carbine',angleOverride:angle});}
+ if(w.type==='pistol')spawnWeaponShot(1290,w.range,24,4,'#ffce95',{projectileType:'pistol'});
+ if(w.type==='hatchet')spawnWeaponShot(730,w.range,49,9,'#c7d1d4',{projectileType:'hatchet'});
+ if(w.type==='crossbow'){
+  const mode=p.enchant||0,en=enchants[mode];
+  if(mode===0)spawnWeaponShot(1150,w.range,52,5,en.color,{projectileType:'bolt',crossMode:'PIERCING',pierce:1,hitTargets:[]});
+  if(mode===1){for(const off of [-.145,0,.145])spawnWeaponShot(900,510,19,5,en.color,{projectileType:'bolt',crossMode:'SCATTER',angleOverride:aim()+off});}
+  if(mode===2)spawnWeaponShot(850,740,23,7,en.color,{projectileType:'bolt',crossMode:'SNARE'});
+  if(mode===3)spawnWeaponShot(930,w.range,32,6,en.color,{projectileType:'bolt',crossMode:'RICOCHET',bounces:2});
+ }
+}
+function explodeDrone(){const d=player.drone;if(!d)return;
+ damageArea(d.x,d.y,100,62);effects.push({x:d.x,y:d.y,r:100,t:.4,c:'#e4b67a',kind:'pulse'});
+ spawnParticles(d.x,d.y,30,'#f7d19a');player.drone=null;player.fireCD=.3;
+}
+function fireSonic(held){
+ const w=weaponNow(),s=weaponState();if(s.reloading||player.mode||player.rec||player.fireCD>0)return;
+ if(s.ammo<=0){autoReloadIfEmpty(w,s);return;}
+ const charge=clamp(held/.85,0,1);if(charge<.10){showToast('HOLD TO CHARGE SONIC PULSE');return;}
+ const a=aim(),r=effectiveWeaponRange(w,a),half=.16-charge*.065,damage=Math.round(18+charge*51);
+ s.ammo--;player.fireCD=w.cool;
+ let hits=0;
+ for(const t of towers){if(t.hp<=0)continue;
+  let dist=vlen(t.x-player.x,t.y-player.y),da=Math.atan2(t.y-player.y,t.x-player.x),dif=Math.abs(Math.atan2(Math.sin(da-a),Math.cos(da-a)));
+  if(dist<=r+t.r&&dif<=half+Math.asin(Math.min(.98,t.r/Math.max(dist,t.r+1)))&&flashClearPath(player,t)){
+   t.hp=Math.max(0,t.hp-damage);t.fire+=.35;spawnParticles(t.x,t.y,16,'#eabfff');hits++;
+  }
+ }
+ weaponFX.push({kind:'sonicPulse',x:player.x,y:player.y,a,r,arc:half,c:'#d3a8f9',life:.34,t:.34});
+ autoReloadIfEmpty(w,s);showToast('SONIC PULSE · '+damage+' IMPACT · '+hits+' TARGETS');
+}
+// Charged scoped flash: same hold-and-release precision mechanic as the former
+// loudspeaker, but distinctly photographic and with its own battery rules.
+function fireFocusedCamera(held){
+ const w=weaponNow(),s=weaponState();
+ if(w.type!=='camera'||s.reloading>0||player.mode||player.rec>0||player.fireCD>0)return false;
+ if(s.ammo<=0){autoReloadIfEmpty(w,s);return false;}
+ const charge=clamp(held/.85,0,1);
+ if(charge<.12){showToast('FOCUS FLASH · HOLD BRIEFLY TO CHARGE');return false;}
+ player.weaponLock=Math.max(player.weaponLock,.20);
+ const a=aim(),range=Math.min(w.range,visibleRange(a));
+ const halfAngle=.135-charge*.052,damage=Math.round(28+charge*51);
+ let hit=0;
+ for(const t of towers){
+  if(t.hp<=0)continue;
+  const dist=vlen(t.x-player.x,t.y-player.y),theta=Math.atan2(t.y-player.y,t.x-player.x);
+  const delta=Math.abs(Math.atan2(Math.sin(theta-a),Math.cos(theta-a)));
+  if(dist<=range+t.r&&delta<=halfAngle+Math.asin(Math.min(.98,t.r/Math.max(dist,t.r+1)))&&flashClearPath(player,t)){
+   t.hp=Math.max(0,t.hp-damage);t.fire=Math.max(t.fire,1.7);
+   spawnParticles(t.x,t.y,18,'#fff2b5');hit++;
+  }
+ }
+ s.ammo--;player.fireCD=w.cool;
+ weaponFX.push({kind:'cameraFlash',x:player.x,y:player.y,a,r:range,arc:halfAngle,life:.33,t:.33,c:'#ffe9a9'});
+ spawnParticles(player.x+Math.cos(a)*22,player.y+Math.sin(a)*22,10,'#fff6de');
+ autoReloadIfEmpty(w,s);showToast('FOCUSED FLASH · '+hit+' HIT · '+damage+' DAMAGE');return true;
+}
+function throwPotion(held){const w=weaponNow(),s=weaponState();if(s.reloading||player.mode||player.rec||player.fireCD>0)return;
+ if(s.ammo<=0){autoReloadIfEmpty(w,s);return;}
+ const phase=potionPhases[Math.floor(held/.48)%potionPhases.length],cursor=cursorWorld(),tx=cursor.x,ty=cursor.y;
+ if(vlen(tx-player.x,ty-player.y)>w.range){showToast('POTION OUT OF RANGE · '+w.range+'u');return;}
+ s.ammo--;player.fireCD=.65;player.weaponLock=Math.max(player.weaponLock,.20);
+ autoReloadIfEmpty(w,s);
+ weaponFX.push({kind:'bottle',x:player.x,y:player.y,tx,ty,c:phase.color,phase:phase.kind,phaseName:phase.name,t:.25,life:.25});
+ showToast('POTION THROWN · '+phase.name);
+}
+function resolvePotion(fx){
+ effects.push({x:fx.tx,y:fx.ty,r:65,t:.55,c:fx.c,kind:'pulse'});
+ spawnParticles(fx.tx,fx.ty,14,fx.c);
+ switch(fx.phase){
+  case 'heal':player.hp=Math.min(100,player.hp+34);break;
+  case 'haste':hasteT=4;break;
+  case 'ward':player.inv=Math.max(player.inv,1.5);break;
+  case 'decoy':effects.push({x:fx.tx,y:fx.ty,r:22,t:4,c:fx.c,kind:'decoy'});break;
+  case 'damage':damageArea(fx.tx,fx.ty,85,55);break;
+ }
+ showToast('POTION · '+fx.phaseName+' SPLASH');
+}
+function endSneak(reason){
+ if(player.sneakT<=0)return;
+ player.sneakT=0;weaponStates[1][0].special=Math.max(weaponStates[1][0].special,6.0);
+ spawnParticles(player.x,player.y,11,'#f0d39c');showToast('SNEAK REVEALED · '+reason);
+}
+function specialMelee(){const p=player,w=weaponNow(),s=weaponState(),angle=aim(),d={x:Math.cos(angle),y:Math.sin(angle)};
+ if(p.mode||p.rec>0||p.castLock>0||mouse.castDown)return;
+ // The R-key action is also a weapon action; don't overlap a damaging special
+ // with a newly initiated spell.
+ p.weaponLock=Math.max(p.weaponLock,.19);
+ if(w.type==='crowbar'){
+  if(p.c4){
+   if(p.c4.armed>0){showToast('C4 ARMING · '+p.c4.armed.toFixed(1)+'s');return;}
+   const bomb=p.c4;p.c4=null;s.special=6.5;
+   effects.push({x:bomb.x,y:bomb.y,r:118,t:.42,c:'#edc88a',kind:'pulse'});
+   damageArea(bomb.x,bomb.y,118,72);spawnParticles(bomb.x,bomb.y,36,'#f4d8aa');
+   showToast('C4 DETONATED · 118u BLAST');return;
+  }
+  if(s.special>0){showToast('C4 RECHARGING · '+s.special.toFixed(1)+'s');return;}
+  const x=p.x+d.x*59,y=p.y+d.y*59;
+  if(solidAt(x,y,16)){showToast('C4 · NO SPACE TO PLACE CHARGE');return;}
+  p.c4={x,y,armed:.5,life:15};
+  showToast('C4 PLANTED · R TO DETONATE');return;
+ }
+ if(s.special>0){showToast('SPECIAL ON COOLDOWN');return;}
+ if(w.type==='extinguisher'){
+  if(s.ammo<10||s.reloading>0){showToast('PRESSURE BURST NEEDS 10 PRESSURE');return;}
+  const reach=225,cone=Math.PI*53/180;let knocked=0,deflected=0;
+  for(const t of towers){if(t.hp<=0)continue;const dx=t.x-p.x,dy=t.y-p.y,dist=vlen(dx,dy),delta=Math.abs(Math.atan2(Math.sin(Math.atan2(dy,dx)-angle),Math.cos(Math.atan2(dy,dx)-angle)));
+   if(dist>reach+t.r||delta>cone||!flashClearPath(p,t))continue;
+   const displacement=90*(1-Math.min(dist/reach,1)) + 35;const temp={x:t.x,y:t.y,vx:0,vy:0,r:t.r};moveCircle(temp,d.x*displacement,d.y*displacement);t.x=temp.x;t.y=temp.y;t.hp=Math.max(0,t.hp-10);t.fire=Math.max(t.fire,1.7);knocked++;spawnParticles(t.x,t.y,12,'#bcece1');
+  }
+  for(const shot of shots){if(shot.team!=='enemy')continue;const dx=shot.x-p.x,dy=shot.y-p.y,dist=vlen(dx,dy),delta=Math.abs(Math.atan2(Math.sin(Math.atan2(dy,dx)-angle),Math.cos(Math.atan2(dy,dx)-angle)));
+    if(dist>reach||delta>cone||!flashClearPath(p,shot))continue;
+    const speed=Math.max(390,vlen(shot.vx,shot.vy));shot.vx=d.x*speed;shot.vy=d.y*speed;shot.team='player';shot.owner=null;shot.damage=9;shot.weaponShot=true;shot.c='#bdece6';deflected++;
+  }
+  s.ammo-=10;s.special=5.5;autoReloadIfEmpty(w,s);
+  weaponFX.push({kind:'pressureBurst',x:p.x,y:p.y,a:angle,r:reach,arc:cone,c:'#b6e9e2',t:.32,life:.32});
+  spawnParticles(p.x+d.x*65,p.y+d.y*65,25,'#b6eee6');showToast('PRESSURE BURST · '+knocked+' PUSHED / '+deflected+' DEFLECTED');return;
+ }
+ if(w.type==='shovel'){
+   if(crates.filter(b=>b.placed).length>=3){showToast('MAXIMUM OF THREE DEPLOYED COVERS');return;}
+   let x=p.x+d.x*65,y=p.y+d.y*65,b={x:x-27,y:y-17,w:54,h:34,placed:true};
+   if(solidAt(x,y,37)){showToast('NO ROOM TO PLACE COVER');return;}
+   crates.push(b);s.special=7;spawnParticles(x,y,18,'#c5b08a');showToast('SHOVEL · EARTHWORK COVER');return;
+ }
+ if(w.type==='knife'){
+  if(p.sneakT>0){showToast('SNEAK ALREADY ACTIVE');return;}
+  p.sneakT=5.0;spawnParticles(p.x,p.y,16,'#b5d9e4');
+  showToast('SNEAK ACTIVE · REVEALED ON HIT / DAMAGE / SPELL');return;
+ }
+ if(w.type==='spear'){
+  shots.push({x:p.x+d.x*24,y:p.y+d.y*24,vx:d.x*920,vy:d.y*920,r:7,team:'player',t:420/920,damage:64,c:'#d0ded5',weaponShot:true,projectileType:'spear'});
+  s.special=5;showToast('SPEAR THROW');return;
+ }
+ if(w.type==='mace'){
+  damageArea(p.x+d.x*52,p.y+d.y*52,105,36);effects.push({x:p.x,y:p.y,r:120,t:.5,c:'#f7b77a',kind:'pulse'});
+  s.special=5.5;showToast('MACE · GROUND SLAM');return;
+ }
+ if(w.type==='hook'){
+  let target=towers.filter(t=>t.hp>0&&vlen(t.x-p.x,t.y-p.y)<360).sort((a,b)=>vlen(a.x-p.x,a.y-p.y)-vlen(b.x-p.x,b.y-p.y))[0];
+  if(!target){showToast('HOOK · NO TARGET IN RANGE');return;}
+  let unit=norm0(p.x-target.x,p.y-target.y);const temp={x:target.x,y:target.y,r:target.r,vx:0,vy:0};
+  moveCircle(temp,unit.x*125,unit.y*125);target.x=temp.x;target.y=temp.y;
+  weaponFX.push({kind:'hookline',x:p.x,y:p.y,tx:target.x,ty:target.y,c:'#d7b876',t:.28,life:.28});
+  s.special=5.2;showToast('CHAIN & HOOK · PULL');return;
+ }
+}
+// Crossbow uses the reload key as a tactical mode selector only when fully loaded.
+// A normal shot auto-reloads at zero ammo; reloading does not silently change mode.
+// E is intentionally unbound and available for another future action.
+function pressReloadOrSpecial(){if(restOn)return;
+ const w=weaponNow(),s=weaponState();
+ if(w.type==='crossbow'){
+  if(s.reloading>0){showToast('CROSSBOW RELOADING · AUGMENT LOCKED');return;}
+  if(s.ammo===w.mag){
+   player.enchant=(player.enchant+1)%enchants.length;
+   showToast('CROSSBOW AUGMENT · '+enchants[player.enchant].name);
+   updateWeaponUI();
+   return;
+  }
+  beginReload();
+  return;
+ }
+ if(isMelee(w)||w.type==='extinguisher')specialMelee();else beginReload();
+}
+function updateWeapon(dt){
+ if(player.sneakT>0){player.sneakT=Math.max(0,player.sneakT-dt);if(player.sneakT<=0){player.sneakT=.00001;endSneak('TIMEOUT');}}
+ if(player.c4){player.c4.armed=Math.max(0,player.c4.armed-dt);player.c4.life-=dt;
+  if(player.c4.life<=0){player.c4=null;weaponStates[0][1].special=3.0;showToast('C4 EXPIRED · CHARGE LOST');}}
+ weaponSwapCD=Math.max(0,weaponSwapCD-dt);hasteT=Math.max(0,hasteT-dt);guard=Math.min(100,guard+(scoped()&&isGuardWeapon()?5:20)*dt);
+ for(const pair of weaponStates)for(const s of pair){s.special=Math.max(0,s.special-dt);if(s.reloading>0){s.reloading=Math.max(0,s.reloading-dt);if(s.reloading===0){const w=weaponCatalog[weaponStates.indexOf(pair)][pair.indexOf(s)];s.ammo=w.mag;}}}
+ for(let i=weaponFX.length-1;i>=0;i--){const fx=weaponFX[i];
+   // Impact pauses the attack POSE for a few milliseconds but never pauses physics.
+   const previousU=fx.kind==='melee'?clamp((fx.life-fx.t)/fx.life,0,1):0;
+   if(fx.kind==='melee'&&fx.impactFreeze>0){fx.impactFreeze-=dt;}else fx.t-=dt;
+   if(fx.kind==='melee')updateMeleeCollision(fx,previousU);
+   if(fx.t<=0){if(fx.kind==='bottle')resolvePotion(fx);weaponFX.splice(i,1);}
+ }
+ // Keep melee attacks responsive when the button is held, with weapon-specific tempo.
+ if(mouse.down&&isMelee()&&!scoped()&&!player.mode&&!player.rec&&player.fireCD<=0&&weaponSwapCD<=0)meleeAttack();
+ if(mouse.down&&!player.mode&&!player.rec&&weaponSwapCD<=0){let w=weaponNow();if((w.type==='sonic'||w.type==='potion'||(w.type==='camera'&&weaponChargeMode))&&weaponState().reloading<=0&&weaponState().ammo>0)weaponHold+=dt;
+  if((w.type==='extinguisher'||w.type==='carbine')&&player.fireCD<=0&&weaponState().reloading<=0)attackOnce();}
+ if(player.drone){let d=player.drone;d.t-=dt;let cursor=cursorWorld(),tx=cursor.x,ty=cursor.y,v=norm0(tx-d.x,ty-d.y),sp=scoped()?330:265;
+  d.vx=lerp(d.vx,v.x*sp,.13);d.vy=lerp(d.vy,v.y*sp,.13);
+  const temp={x:d.x,y:d.y,vx:d.vx,vy:d.vy,r:8};const collision=moveCircle(temp,d.vx*dt,d.vy*dt);
+  d.x=temp.x;d.y=temp.y;addTrail(d.x,d.y,'#dfbd73',7,.12);
+  if(d.t<=0||collision.wall||vlen(d.x-d.ox,d.y-d.oy)>d.maxRange)explodeDrone();
+ }
+}
+// Weapon silhouettes are drawn in the player's local facing direction.
+// These are intentionally simple, readable top-down shapes: a visible held weapon
+// makes the arc readable even without particles or after-image effects.
+function renderMeleeModel(type){
+ const metal='#dce3dd',edge='#fff0c6',shaft='#866a4a',dark='#4b515c';
+ ctx.lineCap='round';ctx.lineJoin='round';
+ const line=(x1,y1,x2,y2,width,color)=>{ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();};
+ const poly=(pts,color,stroke)=>{ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fillStyle=color;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1.5;ctx.stroke()}};
+ if(type==='knife'){
+  line(12,0,25,0,7,'#4d3634');line(20,-5,20,5,2,'#e8c788');
+  poly([[24,-5],[43,-4],[49,0],[43,4],[24,5]],metal,edge);line(28,-2,44,-2,1,'#ffffff');
+ } else if(type==='shovel'){
+  line(11,0,62,0,6,shaft);line(12,0,62,0,2,'#d4b88c');
+  poly([[60,-13],[81,-15],[92,-6],[93,5],[81,15],[60,12]],dark,metal);line(83,-10,89,0,2,edge);
+ } else if(type==='crowbar'){
+  line(12,0,76,0,7,'#77818a');line(16,-1,73,-1,2,'#e3e3d9');
+  ctx.strokeStyle='#b9c2c7';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(75,0);ctx.quadraticCurveTo(91,0,85,-16);ctx.stroke();
+  line(79,-13,90,-18,4,'#e7e8df');
+ } else if(type==='spear'){
+  line(12,0,96,0,5,shaft);line(16,-1,93,-1,1,edge);
+  poly([[91,-11],[122,0],[91,11],[97,0]],metal,edge);
+ } else if(type==='mace'){
+  line(12,0,52,0,7,shaft);line(42,-3,43,3,2,edge);
+  poly([[49,-13],[72,-15],[78,-8],[78,9],[72,16],[49,13]],dark,metal);
+  line(57,-12,57,13,2,edge);line(70,-12,70,13,2,'#919fac');
+ } else if(type==='hook'){
+  for(let i=0;i<9;i++){const x=16+i*11;
+   ctx.strokeStyle=i%2?edge:'#a3afb3';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(x,Math.sin(i*.66)*2,6.6,3.7,.12,0,Math.PI*2);ctx.stroke();}
+  ctx.strokeStyle=metal;ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(112,0);ctx.lineTo(129,-2);ctx.quadraticCurveTo(140,-3,137,12);ctx.quadraticCurveTo(132,21,122,12);ctx.stroke();
+ }
+}
+function drawMeleeAttack(fx){
+ const pose=meleeAttackPose(fx),u=pose.u,spec=fx.profile;
+ const visibleActive=u>=spec.active[0]&&u<=spec.active[1];
+ const isThrust=spec.motion==='thrust';
+ ctx.save();ctx.translate(player.x,player.y);
+ if(!isThrust&&visibleActive){
+  // Both directions use the SHORT arc from earlier blade angle to current.
+  // Previously the reversed swing drew the 300+ degree remainder of a circle.
+  const tailPose=meleeAttackPose(fx,Math.max(spec.active[0],u-.115));
+  for(const [width,opacity,col] of [[23,.085,'#fbe5a3'],[12,.22,'#edc989'],[4,.65,'#fff6ce']]){
+   ctx.strokeStyle=col;ctx.globalAlpha=opacity;ctx.lineWidth=width;
+   ctx.beginPath();ctx.arc(0,0,pose.bladeReach,tailPose.a,pose.a,fx.side<0);ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+ }
+ const recoil=spec.motion==='smash'?8:spec.motion==='whip'?4:2;
+ ctx.rotate(pose.a);
+ ctx.translate(pose.extension-(u<.18?Math.sin(u/.18*Math.PI)*recoil:0),0);
+ if(isThrust&&pose.power>.1){
+  ctx.globalAlpha=pose.power*.38;ctx.strokeStyle='#fff1c5';ctx.lineWidth=9;
+  ctx.beginPath();ctx.moveTo(21,0);ctx.lineTo(pose.baseReach+pose.extension,0);ctx.stroke();ctx.globalAlpha=1;
+ }
+ const scale=pose.baseReach/meleeModelTips[fx.type];
+ ctx.scale(scale,scale);
+ renderMeleeModel(fx.type);
+ ctx.restore();
+}
+function drawWeapon(){const p=player,w=weaponNow(),scope=scoped();
+ if(scope&&!isGuardWeapon(w)){let a=aim(),length=hasScope(w)?effectiveWeaponRange(w,a):w.range;ctx.globalAlpha=.6;ctx.strokeStyle=isMelee(w)?'#efc987':'#d5e6dd';ctx.lineWidth=1.4;ctx.setLineDash([7,9]);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+Math.cos(a)*length,p.y+Math.sin(a)*length);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;}
+ // Draw idle held melee weapon if no attack is in flight; other weapons keep their simple icon.
+ const attacking=weaponFX.find(f=>f.kind==='melee');
+ if(isMelee(w)&&!attacking){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(aim()+.28);ctx.scale(w.range*meleeProfiles[w.type].reach/meleeModelTips[w.type],w.range*meleeProfiles[w.type].reach/meleeModelTips[w.type]);ctx.globalAlpha=.92;renderMeleeModel(w.type);ctx.restore();}
+ if(scope&&isGuardWeapon(w)){
+  const a=aim(),half=BLOCK_HALF_ANGLE,rad=34,front=Math.cos(a),side=Math.sin(a);
+  ctx.save();ctx.fillStyle=guard>0?'rgba(217,180,95,.15)':'rgba(225,100,100,.10)';
+  ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.arc(p.x,p.y,rad,a-half,a+half);ctx.closePath();ctx.fill();
+  ctx.strokeStyle=guard>0?'#ffdc86':'#d96b65';ctx.lineWidth=5;ctx.lineCap='round';
+  ctx.beginPath();ctx.arc(p.x,p.y,rad,a-half,a+half);ctx.stroke();
+  ctx.strokeStyle='#fff1c8';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(p.x+front*23,p.y+side*23);ctx.lineTo(p.x+front*49,p.y+side*49);ctx.stroke();
+  ctx.fillStyle='#ffedb9';ctx.font='bold 10px ui-monospace,monospace';ctx.textAlign='center';
+  ctx.fillText(guard>0?'BLOCK':'GUARD BROKEN',p.x+front*62,p.y+side*62-9);
+  ctx.restore();
+ }
+ if(w.type==='camera'){
+   // A visibly recognizable handheld compact camera, with a glass lens.
+   ctx.save();ctx.translate(p.x,p.y);ctx.rotate(aim());
+   ctx.fillStyle='#353d45';ctx.strokeStyle='#ead5aa';ctx.lineWidth=2;
+   ctx.fillRect(15,-12,22,24);ctx.strokeRect(15,-12,22,24);
+   ctx.fillStyle='#222d38';ctx.beginPath();ctx.arc(27,0,8,0,Math.PI*2);ctx.fill();
+   ctx.strokeStyle=scoped()?'#fff4ce':'#98d0de';ctx.lineWidth=2;
+   ctx.beginPath();ctx.arc(27,0,6,0,Math.PI*2);ctx.stroke();
+   ctx.fillStyle='#e1c386';ctx.fillRect(17,-15,8,4);
+   ctx.restore();
+ }
+ for(const fx of weaponFX){
+  if(fx.kind==='melee'){drawMeleeAttack(fx);continue;}
+  let alpha=clamp(fx.t/fx.life,0,1);ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=fx.c;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();
+  if(fx.kind==='foamSpray'||fx.kind==='sonicPulse'||fx.kind==='pressureBurst'){
+   const grow=1-alpha,reach=fx.r*(.65+.35*grow);
+   ctx.fillStyle=fx.c;ctx.globalAlpha=alpha*(fx.kind==='sonicPulse'?.09:fx.kind==='pressureBurst'?.26:.23);
+   ctx.beginPath();ctx.moveTo(fx.x,fx.y);ctx.arc(fx.x,fx.y,reach,fx.a-fx.arc,fx.a+fx.arc);ctx.closePath();ctx.fill();
+   ctx.globalAlpha=alpha*.9;ctx.lineWidth=fx.kind==='sonicPulse'?4:fx.kind==='pressureBurst'?5:8;ctx.strokeStyle=fx.c;
+   ctx.beginPath();ctx.arc(fx.x,fx.y,reach,fx.a-fx.arc,fx.a+fx.arc);ctx.stroke();ctx.globalAlpha=1;
+  }
+  if(fx.kind==='cameraFlash'){
+    const progress=1-alpha,reach=fx.r*(.55+.45*progress);
+    ctx.fillStyle='#fff4c2';ctx.globalAlpha=alpha*.35;
+    ctx.beginPath();ctx.moveTo(fx.x,fx.y);
+    ctx.arc(fx.x,fx.y,reach,fx.a-fx.arc,fx.a+fx.arc);
+    ctx.closePath();ctx.fill();
+    ctx.globalAlpha=alpha*.85;ctx.strokeStyle='#fff9e4';ctx.lineWidth=3;
+    ctx.beginPath();ctx.arc(fx.x,fx.y,reach,fx.a-fx.arc,fx.a+fx.arc);ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  if(fx.kind==='meleeImpact'){
+    const k=1-alpha;ctx.strokeStyle='#fff0c0';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(fx.x,fx.y,3+fx.r*k,0,Math.PI*2);ctx.stroke();
+    for(let i=0;i<6;i++){let a=fx.a+i*Math.PI/3,r=fx.r*(.5+k*.6);ctx.beginPath();ctx.moveTo(fx.x+Math.cos(a)*r*.55,fx.y+Math.sin(a)*r*.55);ctx.lineTo(fx.x+Math.cos(a)*r,fx.y+Math.sin(a)*r);ctx.stroke();}
+  }
+  if(fx.kind==='stab'){let d=(1-alpha)*fx.r;ctx.moveTo(fx.x+Math.cos(fx.a)*15,fx.y+Math.sin(fx.a)*15);ctx.lineTo(fx.x+Math.cos(fx.a)*d,fx.y+Math.sin(fx.a)*d);ctx.stroke();}
+  if(fx.kind==='bottle'){let t=1-alpha,x=lerp(fx.x,fx.tx,t),y=lerp(fx.y,fx.ty,t)-Math.sin(t*Math.PI)*38;ctx.fillStyle=fx.c;ctx.fillRect(x-5,y-7,10,14);}
+  if(fx.kind==='hookline'){ctx.moveTo(fx.x,fx.y);ctx.lineTo(fx.tx,fx.ty);ctx.stroke();}
+  ctx.restore();
+ }
+ if(p.drone){let d=p.drone;ctx.fillStyle='#eac87c';ctx.strokeStyle='#fff1c6';ctx.lineWidth=2;ctx.beginPath();ctx.arc(d.x,d.y,11,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(d.x-16,d.y);ctx.lineTo(d.x+16,d.y);ctx.moveTo(d.x,d.y-16);ctx.lineTo(d.x,d.y+16);ctx.stroke();}
+ if(w.type==='potion'&&weaponHold>0){let ph=potionPhases[Math.floor(weaponHold/.48)%5];ctx.fillStyle='#14191fe5';ctx.fillRect(p.x-41,p.y+29,82,14);ctx.fillStyle=ph.color;ctx.fillRect(p.x-39,p.y+31,78*(weaponHold%.48)/.48,10);ctx.fillStyle=ph.color;ctx.font='bold 11px Segoe UI';ctx.fillText(ph.name,p.x-30,p.y+25);}
+ if(w.type==='camera'&&weaponChargeMode&&weaponHold>0){ctx.strokeStyle='#fff0bc';ctx.lineWidth=4;ctx.beginPath();ctx.arc(p.x,p.y,31,-Math.PI/2,-Math.PI/2+clamp(weaponHold/.85,0,1)*Math.PI*2);ctx.stroke();}
+ if(w.type==='sonic'&&weaponHold>0){ctx.strokeStyle='#c79def';ctx.lineWidth=4;ctx.beginPath();ctx.arc(p.x,p.y,31,-Math.PI/2,-Math.PI/2+clamp(weaponHold/.85,0,1)*Math.PI*2);ctx.stroke();}
+ if(w.type==='carbine'){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(aim());ctx.fillStyle='#4b5153';ctx.strokeStyle='#dac59d';ctx.lineWidth=2;ctx.fillRect(14,-5,30,10);ctx.strokeRect(14,-5,30,10);ctx.fillStyle='#b8b7a4';ctx.fillRect(41,-2,15,4);ctx.fillStyle='#6f6860';ctx.fillRect(26,5,7,12);ctx.restore();}
+ if(w.type==='extinguisher'){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(aim());ctx.fillStyle='#cb383e';ctx.strokeStyle='#fff3d6';ctx.lineWidth=2;ctx.fillRect(12,-9,23,18);ctx.strokeRect(12,-9,23,18);ctx.fillStyle='#e8e8db';ctx.fillRect(32,-5,12,10);ctx.restore();}
+ if(p.c4){ctx.save();ctx.fillStyle=p.c4.armed>0?'#8b8c88':'#ddba74';ctx.strokeStyle='#fff0c4';ctx.lineWidth=2;ctx.fillRect(p.c4.x-12,p.c4.y-9,24,18);ctx.strokeRect(p.c4.x-12,p.c4.y-9,24,18);ctx.font='bold 9px ui-monospace';ctx.textAlign='center';ctx.fillStyle='#141618';ctx.fillText('C4',p.c4.x,p.c4.y+3);ctx.restore();}
+
+}
+
+function fire(){attackOnce();}
+function magic(){
+ if(restOn||!player||player.mode||player.rec>0||player.spellCD>0||player.weaponLock>0||mouse.down||weaponFX.some(f=>f.kind==='melee'&&f.t>0))return false;
+ const s=book[spell];if(!s)return false;
+ const p=player,pos=spellTargetPoint(s),ang=aim(),d={x:Math.cos(ang),y:Math.sin(ang)},c=colors[ci],maxR=s.range;
+ // Stop direct-target spells at walls; the existing projectile simulation handles
+ // wall impacts for bolts. Failed sight checks preserve slots and cooldown.
+ if(spellRequiresSight(s)&&spellSightBlocked(p,pos)){
+  showToast(s.name.toUpperCase()+' · LINE OF SIGHT BLOCKED');return false;
+ }
+ if(!spellAvailable(s)){showToast('NO '+(classBooks[ci].pact?'PACT':'LEVEL '+s.level)+' SPELL SLOTS · HOLD CTRL TO REST');return false}
+ const tx=maxR?pos.x:p.x,ty=maxR?pos.y:p.y;
+ // Validate solid target locations before charging any resource.
+ if(['misty','illusion','hand','grease','faerie','darkness','hold','sleep'].includes(s.fx)&&maxR&&!['hold','sleep'].includes(s.fx)&&solidAt(tx,ty,13)){showToast('SPELL TARGET BLOCKED');return false}
+ if(p.sneakT>0)endSneak('SPELLCAST');
+ if(s.level>0){if(classBooks[ci].pact)spellResources.slots[2]--;else spellResources.slots[s.level]--;}
+ let power=spellResources.empowered?1.45:1;
+ if(spellResources.empowered&&ci===0&&spellResources.points>=1){spellResources.points--;showToast('EMPOWERED '+s.name.toUpperCase());}
+ spellResources.empowered=false;
+ p.spellCD=s.level===2?.92:s.level===1?.68:.29;
+ p.castLock=.24;
+ const burst=(x,y,r,dmg,color=c)=>{effects.push({x,y,r,t:.28,c:color,kind:'pulse'});damageArea(x,y,r,dmg*power,true);spawnParticles(x,y,8,color)};
+ const fireBolt=(speed,damage,color=c,radius=7)=>{shots.push({x:p.x+d.x*23,y:p.y+d.y*23,vx:d.x*speed,vy:d.y*speed,r:radius,team:'player',castleSpell:true,t:Math.max(.1,maxR/speed),damage:damage*power,c:color});};
+ switch(s.fx){
+  case 'sliver':case 'whispers':case 'toll':case 'chill':burst(tx,ty,s.fx==='whispers'?78:54,s.fx==='whispers'?29:19,'#a98eef');break;
+  case 'bolt':case 'missile':case 'catapult':case 'flame':fireBolt(s.fx==='catapult'?780:1050,s.fx==='missile'?32:s.fx==='catapult'?36:22,s.fx==='flame'?'#fff0b1':'#e7bd75',7);break;
+  case 'shock':case 'thunder':burst(p.x+d.x*65,p.y+d.y*65,s.fx==='thunder'?126:80,s.fx==='thunder'?39:24,'#8adeff');break;
+  case 'hand':case 'illusion':effects.push({x:tx,y:ty,r:25,t:4,c:'#bda9ff',kind:'decoy'});break;
+  case 'ward':p.inv=Math.max(p.inv,1.6);effects.push({x:p.x,y:p.y,r:42,t:1.6,c:'#e8cc81',kind:'ward'});break;
+  case 'heal':p.hp=Math.min(100,p.hp+32);spawnParticles(p.x,p.y,22,'#9fffc8');break;
+  case 'mending':p.hp=Math.min(100,p.hp+10);spawnParticles(p.x,p.y,14,'#9fffc8');break;
+  case 'aid':p.hp=Math.min(100,p.hp+28);spawnParticles(p.x,p.y,22,'#9fffc8');effects.push({x:p.x,y:p.y,r:100,t:1.2,c:'#90f6c2',kind:'ward'});break;
+  case 'guidance':case 'bless':p.inv=Math.max(p.inv,.7);effects.push({x:p.x,y:p.y,r:100,t:1.3,c:'#f0d58a',kind:'ward'});break;
+  case 'hex':case 'hold':case 'sleep':{const t=towers.filter(t=>t.hp>0&&vlen(t.x-tx,t.y-ty)<95&&!spellSightBlocked(p,t)).sort((a,b)=>vlen(a.x-tx,a.y-ty)-vlen(b.x-tx,b.y-ty))[0];if(t){t.fire+=s.fx==='hex'?1.2:3.1;spawnParticles(t.x,t.y,18,'#c698e8');if(s.fx==='hex')t.hp=Math.max(0,t.hp-12);}else effects.push({x:tx,y:ty,r:65,t:.3,c:'#c698e8',kind:'pulse'});break;}
+  case 'misty':{if(!solidAt(tx,ty,p.r)){p.x=tx;p.y=ty;p.vx=0;p.vy=0;spawnParticles(tx,ty,23,'#d3b2ff')}break;}
+  case 'shatter':burst(tx,ty,128,44,'#af8bf5');break;
+  case 'darkness':effects.push({x:tx,y:ty,r:120,t:4,c:'#6b5691',kind:'gravity'});break;
+  case 'faerie':effects.push({x:tx,y:ty,r:110,t:4,c:'#b69cf0',kind:'chain'});damageArea(tx,ty,100,12,true);break;
+  case 'grease':effects.push({x:tx,y:ty,r:125,t:4,c:'#88ded7',kind:'frost'});break;
+  case 'spiritual':burst(tx,ty,90,40,'#ead6a2');break;
+  case 'disguise':p.inv=Math.max(p.inv,.25);effects.push({x:p.x,y:p.y,r:22,t:1.3,c:'#92d5d4',kind:'ward'});break;
+ }
+ refreshSpellUI();return true;
+}
+function damageArea(x,y,r,dmg,checkSight=false){for(const t of towers){if(t.hp>0&&vlen(t.x-x,t.y-y)<r&&(!checkSight||!spellSightBlocked({x,y},t))){t.hp=Math.max(0,t.hp-dmg);spawnParticles(t.x,t.y,14,'#f5b65f')}}}
+function friendlyBulletCollision(b){for(const t of towers){if(t.hp>0&&vlen(t.x-b.x,t.y-b.y)<t.r+b.r){
+ if(b.hitTargets?.includes(t))continue;
+ let amount=b.damage||14;
+ if(player.focus&&player.focus.target===t&&player.focus.t>0){amount+=20;player.focus=null;
+  effects.push({x:t.x,y:t.y,r:42,t:.3,c:'#ffe0a0',kind:'pulse'});
+  showToast('SHUTTER FOCUS · +20 PRECISION DAMAGE');}
+ t.hp=Math.max(0,t.hp-amount);
+ if(b.crossMode==='SNARE'){t.fire+=1.5;effects.push({x:t.x,y:t.y,r:66,t:3.4,c:'#89dfe0',kind:'frost'});}
+ spawnParticles(b.x,b.y,8,'#f5cb83');
+ if(b.crossMode==='PIERCING'&&b.pierce>0){b.pierce--;b.hitTargets.push(t);return false;}
+ return true}}return false}
+// Deadweight is a *bullet-phasing* dodge: gun projectiles continue through the
+// crawling Veteran without registering damage, collision, or being consumed.
+// This applies only to proneDive / crawl, not the landing recovery.
+function deadweightPhasesBullets(p=player){return ci===2&&(p.mode==='proneDive'||p.mode==='crawl')}
+function hostileBulletCollision(b){let p=player;
+ if(deadweightPhasesBullets(p))return false;
+ let dist=vlen(b.x-p.x,b.y-p.y);if(dist>17+b.r)return false;if(p.inv>0)return true;
+ if(p.sneakT>0)endSneak('HIT BY PROJECTILE');
+ if(p.mode==='counter'){let d=norm0(p.x-b.x,p.y-b.y);p.mode='recoil';p.modeT=.33;p.modeDur=.33;p.vx=d.x*650;p.vy=d.y*650;effects.push({x:p.x,y:p.y,r:40,t:.3,c:'#ffd4a0',kind:'pulse'});spawnParticles(p.x,p.y,24,colors[ci]);return true}
+ // Shutter evasion has a brief defensive window AFTER a real threat triggers it.
+ if(p.mode==='signal')return false; // still vulnerable in signal phase
+ let dmg=9;
+ if(scoped()&&isGuardWeapon()&&guard>0){const a=aim();const incoming=vlen(b.vx,b.vy)>1?norm0(-b.vx,-b.vy):norm0(b.x-p.x,b.y-p.y);if(Math.cos(a)*incoming.x+Math.sin(a)*incoming.y>=Math.cos(BLOCK_HALF_ANGLE)){dmg=3;guard=Math.max(0,guard-22);spawnParticles(p.x+Math.cos(a)*27,p.y+Math.sin(a)*27,8,'#eed59b');}}
+ p.hp=Math.max(0,p.hp-dmg);p.damageFlash=.13;spawnParticles(p.x,p.y,9,'#fa7684');if(p.hp===0){p.hp=100;p.x=810;p.y=575;p.vx=0;p.vy=0;showToast('TEST RESET · HEALTH RESTORED')}return true}
+// Practice-range melee hit. Enemy melee attacks must call this separate path,
+// so bullet phasing cannot silently grant immunity to physical attacks.
+function hostileMeleeHit(damage=16){
+ const p=player;
+ if(p.inv>0){showToast('MELEE STOPPED BY WARD');return false;}
+ if(p.sneakT>0)endSneak('HIT BY MELEE');
+ const dmg=Math.max(0,damage);
+ p.hp=Math.max(0,p.hp-dmg);p.damageFlash=.18;
+ effects.push({x:p.x,y:p.y,r:40,t:.24,c:'#f19274',kind:'pulse'});
+ spawnParticles(p.x,p.y,14,'#eaa28e');
+ showToast('MELEE PRACTICE HIT · -'+dmg+' HP');
+ if(p.hp===0){p.hp=100;p.x=810;p.y=575;p.vx=0;p.vy=0;showToast('TEST RESET · HEALTH RESTORED');}
+ return true;
+}
+function update(dt){tickRest(dt);simT+=dt;let p=player,def=defs[ci];
+ p.weaponLock=Math.max(0,p.weaponLock-dt);p.castLock=Math.max(0,p.castLock-dt);
+ updateWeapon(dt);if(p.mode!=='rewind')p.prev.push({x:p.x,y:p.y,t:simT});while(p.prev.length&&simT-p.prev[0].t>1.2)p.prev.shift();if(p.focus){p.focus.t-=dt;if(p.focus.t<=0)p.focus=null;}p.fireCD=Math.max(0,p.fireCD-dt);p.firePosture=Math.max(0,p.firePosture-dt);if(!restOn&&mouse.down&&(!p.mode&&!p.rec)&&!isMelee())p.firePosture=.18;p.spellCD=Math.max(0,p.spellCD-dt);p.dodgeCD=Math.max(0,p.dodgeCD-dt);p.rec=Math.max(0,p.rec-dt);p.inv=Math.max(0,p.inv-dt);p.damageFlash=Math.max(0,p.damageFlash-dt);if(p.anchor){p.anchor.t-=dt;if(p.anchor.t<=0)p.anchor=null}
+ let inp=moveInput(),motion={wall:false},mm=p.mode;
+ if(mm){p.modeT-=dt;
+ switch(mm){
+ case 'signal':{let g=p.data.proj;let a=inp.x||inp.y?inp:p.dir;let speed=345;g.vx=lerp(g.vx,a.x*speed,.12);g.vy=lerp(g.vy,a.y*speed,.12);let gg={x:g.x,y:g.y,vx:g.vx,vy:g.vy,r:14};moveCircle(gg,gg.vx*dt,gg.vy*dt);const o=p.data.origin,off=norm0(gg.x-o.x,gg.y-o.y),dist=vlen(gg.x-o.x,gg.y-o.y);if(dist>245){gg.x=o.x+off.x*245;gg.y=o.y+off.y*245;}g.x=gg.x;g.y=gg.y;addTrail(g.x,g.y,colors[ci],12,.24);if(!keys.has('Space')||p.modeT<=0)endSignal();break}
+ case 'rewind':{
+   const hist=p.data.history||[],start=p.data.rewindStart||simT;
+   const past=rewindSample(hist,start-(p.modeDur-p.modeT)*1.5);
+   motion=moveCircle(p,past.x-p.x,past.y-p.y);
+   addTrail(p.x,p.y,colors[ci],16,.4);
+   if(motion.wall||p.modeT<=0||!keys.has('Space'))endRewind();
+   break;}
+ case 'shutterArmed':{
+   // Still walking (slowly) while arming; can't shoot or cast.
+   const target=def.speed*.66,ease=1-Math.exp(-def.accel*dt);
+   p.vx=lerp(p.vx,inp.x*target,ease);p.vy=lerp(p.vy,inp.y*target,ease);
+   motion=moveCircle(p,p.vx*dt,p.vy*dt);
+   if(p.modeT<=0){finishMode(.12);showToast('SHUTTER REFLEX · NO THREAT');}
+   break;}
+ case 'shutterEvade':{
+   motion=moveCircle(p,p.vx*dt,p.vy*dt);
+   p.vx*=Math.exp(-2*dt);p.vy*=Math.exp(-2*dt);
+   addTrail(p.x,p.y,colors[ci],16,.18);
+   if(motion.wall||p.modeT<=0)finishMode(.12);
+   break;}
+ case 'knight':case 'castleSwap':if(p.modeT<=0)finishMode(.17);break;
+ case 'castlingAnchor':p.mode=null;break;
+ case 'fox':{p.vx*=Math.exp(-2.9*dt);p.vy*=Math.exp(-2.9*dt);motion=moveCircle(p,p.vx*dt,p.vy*dt);addTrail(p.x,p.y,colors[ci]);if(motion.wall){p.dodgeCD=0;p.foxReset=true;showToast('FOXHOLE HIT! COOLDOWN RESET');finishMode(.16)}else if(p.modeT<=0)finishMode(.27);break}
+ case 'proneDive':{motion=moveCircle(p,p.vx*dt,p.vy*dt);p.vx*=Math.exp(-8*dt);p.vy*=Math.exp(-8*dt);addTrail(p.x,p.y,colors[ci],17,.25);if(motion.wall||p.modeT<=0){p.mode='crawl';p.modeT=1.55;p.vx=0;p.vy=0}break;}
+ case 'crawl':{let speed=66;motion=moveCircle(p,inp.x*speed*dt,inp.y*speed*dt);addTrail(p.x,p.y,colors[ci],11,.12);if(p.modeT<=0)finishMode(.12);break;}
+ case 'barge':{let speed=vlen(p.vx,p.vy);speed=Math.min(695,speed+1015*dt);steerForeclosure(p,inp,dt,.83);p.vx=p.dir.x*speed;p.vy=p.dir.y*speed;motion=moveCircle(p,p.vx*dt,p.vy*dt,{breakCrate:true});addTrail(p.x,p.y,colors[ci],18,.38);if(motion.wall){finishMode(.5);spawnParticles(p.x,p.y,25,'#f8a56f');showToast('WALL IMPACT · STAGGER')}else if(p.modeT<=0){p.mode='bargeCoast';p.modeT=.46;showToast('FORECLOSURE · MOMENTUM PRESERVED')}break;}
+ case 'bargeCoast':{let speed=vlen(p.vx,p.vy);steerForeclosure(p,inp,dt,.32);p.vx=p.dir.x*speed;p.vy=p.dir.y*speed;motion=moveCircle(p,p.vx*dt,p.vy*dt,{breakCrate:true});p.vx*=Math.exp(-2.05*dt);p.vy*=Math.exp(-2.05*dt);addTrail(p.x,p.y,colors[ci],16,.26);if(motion.wall){finishMode(.36);showToast('COAST COLLISION')}else if(p.modeT<=0)finishMode(.15,true);break;}
+ case 'counter':if(p.modeT<=0){p.vx=p.dir.x*-320;p.vy=p.dir.y*-320;p.mode='recoil';p.modeT=.23}break;
+ case 'recoil':motion=moveCircle(p,p.vx*dt,p.vy*dt);p.vx*=Math.exp(-5*dt);p.vy*=Math.exp(-5*dt);addTrail(p.x,p.y,colors[ci]);if(p.modeT<=0)finishMode(.2);break;
+ case 'doubleFirst':motion=moveCircle(p,p.vx*dt,p.vy*dt);p.vx*=Math.exp(-8*dt);p.vy*=Math.exp(-8*dt);addTrail(p.x,p.y,colors[ci]);if(p.modeT<=0){p.mode='doubleWindow';p.modeT=.35;p.vx*=.1;p.vy*=.1;showToast('DOUBLE EXPOSURE · SPACE FOR SECOND STEP')}break;
+ case 'doubleWindow':if(p.modeT<=0)finishMode(0);break;
+ case 'doubleSecond':motion=moveCircle(p,p.vx*dt,p.vy*dt);p.vx*=Math.exp(-7*dt);p.vy*=Math.exp(-7*dt);addTrail(p.x,p.y,colors[ci]);if(p.modeT<=0)finishMode(0);break;
+ 
+ case 'thrust':{if(p.data.phase===0&&p.modeT<=0)thrustStageTwo();motion=moveCircle(p,p.vx*dt,p.vy*dt);p.vx*=Math.exp(-1.35*dt);p.vy*=Math.exp(-1.35*dt);addTrail(p.x,p.y,colors[ci],14,.26);if(p.data.phase===1&&p.modeT<=0)finishMode(.16);break;}
+ case 'skim':{let s=vlen(p.vx,p.vy),wanted=inp.x||inp.y?Math.atan2(inp.y,inp.x):Math.atan2(p.vy,p.vx);if(s>1&&(inp.x||inp.y)){let now=Math.atan2(p.vy,p.vx);let delta=Math.atan2(Math.sin(wanted-now),Math.cos(wanted-now));let turn=clamp(delta,-2.45*dt,2.45*dt);p.vx=Math.cos(now+turn)*s;p.vy=Math.sin(now+turn)*s;}motion=moveCircle(p,p.vx*dt,p.vy*dt,{bank:true});p.vx*=Math.exp(-.38*dt);p.vy*=Math.exp(-.38*dt);addTrail(p.x,p.y,colors[ci],13,.2);if(p.modeT<=0)finishMode(.22,true);break;}
+ } }
+ else if(p.rec<=0&&!restOn){
+  // V7: tactical locomotion BEFORE gunplay. No new weapon or shooting mechanics.
+  // Retain V6's existing shooting posture as a temporary test rule; tune weapons later.
+  const precision=scoped();
+  const firing=p.firePosture>0&&!isMelee();
+  const mult=firing?def.fireMult:1;
+  const facing=aim(),facingDot=inp.x*Math.cos(facing)+inp.y*Math.sin(facing);
+  const dirFactor=(!firing||ci===1||(!inp.x&&!inp.y))?1:(.86+.14*Math.max(0,facingDot)-.10*Math.max(0,-facingDot));
+  const target=def.speed*mult*dirFactor*(precision?(isMelee()?.74:.55):1)*(hasteT>0?1.18:1);
+  if(ci===0){
+    // V8: Flight with soft air resistance, stable deceleration and counter-thrust.
+    applyHoverMovement(p,inp,dt,target,precision,firing?.72*dirFactor:1);
+  }else{
+    applyGroundMovement(p,ci,inp,dt,target,precision);
+  }
+  motion=moveCircle(p,p.vx*dt,p.vy*dt);if(mouse.down&&isMelee())fire()}
+ else{if(ci===0){motion=moveCircle(p,p.vx*dt,p.vy*dt);const drag=Math.exp(-3.1*dt);p.vx*=drag;p.vy*=drag;}else if(p.data.coastRecovery){motion=moveCircle(p,p.vx*dt,p.vy*dt);p.vx*=Math.exp(-2.7*dt);p.vy*=Math.exp(-2.7*dt);}else{p.vx*=Math.exp(-14*dt);p.vy*=Math.exp(-14*dt);}}
+ // Temporary foam protection dissolves without accumulating obstacles.
+ for(let i=crates.length-1;i>=0;i--)if(crates[i].foam){crates[i].foamLife-=dt;if(crates[i].foamLife<=0)crates.splice(i,1);}
+ // Hostile turrets, shots, and demo effects
+ for(const t of towers){if(t.hp<=0)continue;t.fire-=dt;let dist=vlen(p.x-t.x,p.y-t.y);if(t.fire<=0&&dist<780&&p.sneakT<=0){let dir=norm(p.x-t.x,p.y-t.y);let frost=effects.some(e=>e.kind==='frost'&&e.t>0&&vlen(t.x-e.x,t.y-e.y)<e.r);if(frost)t.fire=.8;else {shots.push({x:t.x,y:t.y,vx:dir.x*310,vy:dir.y*310,r:6,team:'enemy',t:2.9,owner:t});t.fire=1.3+Math.random()*.32}}
+ }
+ if(p.mode==='shutterArmed'){const threat=shots.filter(b=>b.team==='enemy'&&detectIncomingShot(p,b,.24))
+    .sort((a,b)=>vlen(a.x-p.x,a.y-p.y)-vlen(b.x-p.x,b.y-p.y))[0];
+    if(threat)triggerShutter(p,threat);
+  }
+ for(let i=shots.length-1;i>=0;i--){let b=shots[i],remaining=Math.max(0,b.t);
+  const flight=Math.min(dt,remaining),steps=Math.max(1,Math.ceil(vlen(b.vx,b.vy)*flight/6));
+  let hit=false;
+  for(let j=0;j<steps;j++){
+   const ox=b.x,oy=b.y; b.x+=b.vx*flight/steps;b.y+=b.vy*flight/steps;
+   if(absorbEchoProjectile(b)){hit=true;break;}
+   if(solidAt(b.x,b.y,b.r)){
+    if(b.crossMode==='RICOCHET'&&b.bounces>0){
+     const onX=solidAt(b.x,oy,b.r),onY=solidAt(ox,b.y,b.r);
+     if(onX||(!onX&&!onY))b.vx*=-1;
+     if(onY||(!onX&&!onY))b.vy*=-1;
+     b.bounces--;b.x=ox;b.y=oy;
+     spawnParticles(ox,oy,7,'#cba7f4');continue;
+    }
+    if(b.crossMode==='SNARE'){effects.push({x:ox,y:oy,r:60,t:3.4,c:'#89dfe0',kind:'frost'});spawnParticles(ox,oy,12,'#89dfe0');}
+    hit=true;break;
+   }
+   if(b.team==='player'?friendlyBulletCollision(b):hostileBulletCollision(b)){hit=true;break;}
+  }
+  b.t-=dt;
+  if(hit||b.t<=0)shots.splice(i,1);
+ }
+ for(let i=effects.length-1;i>=0;i--){let e=effects[i];e.t-=dt;if(e.t<=0)effects.splice(i,1)}
+ for(let i=mines.length-1;i>=0;i--){let m=mines[i];m.t-=dt;let victim=towers.find(t=>t.hp>0&&vlen(t.x-m.x,t.y-m.y)<m.r+22);if(victim){damageArea(m.x,m.y,88,48);effects.push({x:m.x,y:m.y,r:100,t:.35,c:'#f1ac70',kind:'pulse'});mines.splice(i,1)}else if(m.t<=0)mines.splice(i,1)}
+ for(let i=trail.length-1;i>=0;i--){trail[i].t-=dt;if(trail[i].t<=0)trail.splice(i,1)}for(let i=particles.length-1;i>=0;i--){let a=particles[i];a.t-=dt;a.x+=a.vx*dt;a.y+=a.vy*dt;a.vx*=.91;a.vy*=.91;if(a.t<=0)particles.splice(i,1)}
+ if(toastTime>0){toastTime-=dt;if(toastTime<=0)$('toast').style.opacity=0}
+ $('speedText').textContent=Math.round(vlen(p.vx,p.vy))+' u/s';$('healthText').textContent=Math.ceil(p.hp)+' / 100';$('hpFill').style.width=p.hp+'%';$('cooldownText').textContent=p.dodgeCD>0?p.dodgeCD.toFixed(1)+'s':(p.mode?'COMMITTED':p.rec>0?'RECOVERY':'READY');$('cdFill').style.width=(100*(1-p.dodgeCD/Math.max(p.dodgeTotal,.001)))+'%';$('spellText').textContent=book[spell]?(p.spellCD>0?p.spellCD.toFixed(1)+'s':(spellAvailable(book[spell])?'READY':'NO SLOTS')):'EMPTY';$('spellFill').style.width=(p.spellCD>0?20:100)+'%';$('turretText').textContent=towers.filter(t=>t.hp>0).length;if(Math.floor(simT*10)!==Math.floor((simT-dt)*10))updateWeaponUI();
+}
+function roundRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
+function draw(frameDt=1/60){
+ ctx.clearRect(0,0,W,H);
+ const w=weaponNow(),look=scopeActive(),dir=scopeLookDir();
+ // Look-ahead like Terraria's sniper scope: bias the camera toward the cursor.
+ // Do not zoom out: the test map is small, and doing so prevented meaningful camera panning.
+ const desiredZoom=1; // Terraria-style look-ahead is CAMERA PANNING, not zooming out of the arena.
+ viewZoom=lerp(viewZoom,desiredZoom,1-Math.exp(-7.0*frameDt));
+ const vw=W/viewZoom,vh=H/viewZoom;
+ const lead=Math.min(Math.max(0,w.range-Math.min(vw,vh)*.5),Math.min(vw,vh)*.36);
+ const baseX=player.x-vw*.5,baseY=player.y-vh*.5;
+ const toX=clamp(baseX+(look?dir.x*lead:0),0,Math.max(0,world.w-vw));
+ const toY=clamp(baseY+(look?dir.y*lead:0),0,Math.max(0,world.h-vh));
+ const follow=1-Math.exp(-10.2*frameDt);cam.x=lerp(cam.x,toX,follow);cam.y=lerp(cam.y,toY,follow);
+ ctx.save();ctx.scale(viewZoom,viewZoom);ctx.translate(-cam.x,-cam.y);
+ ctx.fillStyle='#151c22';ctx.fillRect(0,0,world.w,world.h);
+ ctx.strokeStyle='#27343a';ctx.lineWidth=1;ctx.beginPath();for(let x=0;x<world.w;x+=48){ctx.moveTo(x,0);ctx.lineTo(x,world.h)}for(let y=0;y<world.h;y+=48){ctx.moveTo(0,y);ctx.lineTo(world.w,y)}ctx.stroke();
+ // road lanes and construction work markings
+ ctx.strokeStyle='#333a3e';ctx.lineWidth=95;ctx.beginPath();ctx.moveTo(0,570);ctx.lineTo(world.w,570);ctx.moveTo(800,0);ctx.lineTo(800,world.h);ctx.stroke();ctx.strokeStyle='#6d6960';ctx.lineWidth=2;ctx.setLineDash([25,25]);ctx.beginPath();ctx.moveTo(0,570);ctx.lineTo(world.w,570);ctx.moveTo(800,0);ctx.lineTo(800,world.h);ctx.stroke();ctx.setLineDash([]);
+ // urban cover
+ for(const r of rectangles){ctx.fillStyle='#222931';ctx.strokeStyle='#66655f';ctx.lineWidth=3;roundRect(r.x,r.y,r.w,r.h,8);ctx.fill();ctx.stroke();ctx.strokeStyle='#353d45';ctx.lineWidth=1;ctx.strokeRect(r.x+12,r.y+12,r.w-24,r.h-24)}for(const r of crates){ctx.fillStyle=r.foam?'#9bdfd4':'#63523c';ctx.fillRect(r.x,r.y,r.w,r.h);ctx.strokeStyle='#e2bd6c';ctx.lineWidth=2;ctx.strokeRect(r.x+5,r.y+5,r.w-10,r.h-10);ctx.beginPath();ctx.moveTo(r.x+5,r.y+5);ctx.lineTo(r.x+r.w-5,r.y+r.h-5);ctx.stroke()}
+ for(const e of effects){let alpha=Math.min(.65,e.t*1.7);ctx.globalAlpha=alpha;ctx.fillStyle=e.c;ctx.strokeStyle=e.c;ctx.lineWidth=3;ctx.beginPath();ctx.arc(e.x,e.y,e.r*(e.kind==='pulse'?1-e.t*.5:1),0,Math.PI*2);if(e.kind==='ward'||e.kind==='frost'||e.kind==='gravity')ctx.fill();else ctx.stroke();if(e.kind==='rewindEcho'){ctx.globalAlpha=alpha*.44;ctx.beginPath();ctx.arc(e.x,e.y,14,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1}
+ if(player.focus&&player.focus.target.hp>0){const t=player.focus.target;ctx.strokeStyle='#f5e1a5';ctx.lineWidth=2;ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(t.x,t.y,t.r+14,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#ffedbb';ctx.font='bold 11px Segoe UI';ctx.fillText('FOCUS +20',t.x-31,t.y-t.r-25)}
+ for(const m of mines){ctx.strokeStyle='#f8ac5b';ctx.lineWidth=2;ctx.beginPath();ctx.arc(m.x,m.y,19,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#f8ac5b';ctx.fillRect(m.x-4,m.y-4,8,8)}
+ for(const ally of allies){ctx.fillStyle='#8ccde0';ctx.beginPath();ctx.arc(ally.x,ally.y,ally.r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#e4f9ff';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#d4f5fa';ctx.font='11px Segoe UI';ctx.fillText(ally.name,ally.x-31,ally.y-27)}
+ for(const t of towers){if(t.hp<=0){ctx.fillStyle='#53585b';ctx.fillRect(t.x-20,t.y-7,40,14);continue}ctx.fillStyle='#d9747e';ctx.beginPath();ctx.arc(t.x,t.y,t.r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#ffd4ca';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#283039';ctx.fillRect(t.x-29,t.y-31,58,5);ctx.fillStyle='#e3a3a4';ctx.fillRect(t.x-29,t.y-31,58*t.hp/100,5)}
+ for(const b of shots){ctx.strokeStyle=b.team==='enemy'?'#ff9a88':b.c||'#ffe1aa';ctx.lineWidth=b.team==='enemy'?3:2;ctx.beginPath();ctx.moveTo(b.x-b.vx*.025,b.y-b.vy*.025);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.fillStyle=b.team==='enemy'?'#ff8790':(b.c||'#ffdf9a');ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();}
+ for(const t of trail){ctx.globalAlpha=t.t/t.life*.27;ctx.fillStyle=t.color;ctx.beginPath();ctx.arc(t.x,t.y,t.r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
+ for(const q of particles){ctx.globalAlpha=clamp(q.t*3,0,1);ctx.fillStyle=q.color;ctx.fillRect(q.x-2,q.y-2,4,4)}ctx.globalAlpha=1;
+ if(ci===1&&slot===0&&!player.mode){let q=knightLanding();for(const [nx,ny] of knightSquares){let x=player.x+nx*72,y=player.y+ny*72,block=solidAt(x,y,player.r);ctx.fillStyle=block?'#e2676666':'#78d6e522';ctx.strokeStyle=block?'#d06566':'#78d6e588';ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y,12,0,Math.PI*2);ctx.fill();ctx.stroke()}if(q){ctx.strokeStyle=q.blocked?'#e86e76':'#ffe09e';ctx.lineWidth=3;ctx.setLineDash([6,5]);ctx.beginPath();ctx.moveTo(player.x,player.y);ctx.lineTo(q.corner.x,q.corner.y);ctx.lineTo(q.x,q.y);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.arc(q.x,q.y,19,0,Math.PI*2);ctx.stroke();}}
+ if(ci===1&&slot===1&&!player.mode){ctx.strokeStyle='#e8cc8166';ctx.lineWidth=1;ctx.setLineDash([8,10]);ctx.beginPath();ctx.arc(player.x,player.y,300,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);const t=castleTarget();if(t){ctx.strokeStyle='#ffe09e';ctx.lineWidth=2;ctx.setLineDash([6,6]);ctx.beginPath();ctx.moveTo(player.x,player.y);ctx.lineTo(t.x,t.y);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.arc(t.x,t.y,24,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#fbe3ad';ctx.font='bold 11px Segoe UI';ctx.fillText('SWAP '+t.type,t.x+22,t.y-15)}}
+ if(player.mode==='signal'&&player.data.proj){let g=player.data.proj;ctx.strokeStyle=colors[ci];ctx.globalAlpha=.7;ctx.lineWidth=2;ctx.setLineDash([7,6]);ctx.beginPath();ctx.moveTo(player.x,player.y);ctx.lineTo(g.x,g.y);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;ctx.fillStyle=colors[ci];ctx.globalAlpha=.7;ctx.beginPath();ctx.arc(g.x,g.y,13,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1}
+ if(player.mode==='rewind'&&player.data.history){
+   let h=player.data.history;ctx.strokeStyle='#bda1f5';ctx.lineWidth=2;
+   ctx.globalAlpha=.66;ctx.setLineDash([5,7]);ctx.beginPath();
+   h.forEach((pt,i)=>i?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y));ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+ }
+ if(ci===4&&slot===1&&!player.mode){ctx.strokeStyle='#d9b45f50';ctx.lineWidth=2;ctx.beginPath();ctx.arc(player.x,player.y,60,0,Math.PI*2);ctx.stroke();}
+ if(deadweightPhasesBullets()){
+   ctx.save();ctx.textAlign='center';ctx.font='bold 12px ui-monospace,monospace';
+   ctx.fillStyle='#a5e5ef';ctx.fillText('BULLETS PHASE THROUGH',player.x,player.y+50);
+   ctx.fillStyle='#edb39c';ctx.font='bold 10px ui-monospace,monospace';
+   ctx.fillText('MELEE STILL HITS',player.x,player.y+63);ctx.restore();
+ }
+ if(player.mode==='shutterArmed'){ctx.strokeStyle='#ffe5a8';ctx.lineWidth=3;ctx.setLineDash([4,6]);ctx.beginPath();ctx.arc(player.x,player.y,55,0,Math.PI*2);ctx.stroke();ctx.setLineDash([])}
+ // Range preview for currently equipped spell; out-of-range cursor turns red.
+ if(book[spell]&&spellRanges[spell]>0){
+  const selected=book[spell],target=spellTargetPoint(selected),sx=target.x,sy=target.y,range=selected.range;
+  const obstructed=spellRequiresSight(selected)&&spellSightBlocked(player,target);
+  const preview=keys.has('AltLeft')||keys.has('AltRight');
+  if(preview){ctx.lineWidth=1;ctx.setLineDash([8,11]);ctx.strokeStyle='#d9b45f5c';ctx.beginPath();ctx.arc(player.x,player.y,range,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
+  ctx.strokeStyle=obstructed?'#f17084':target.clamped?'#f4d98b':'#d9b45f99';ctx.lineWidth=target.clamped?2:1.4;
+  ctx.beginPath();ctx.arc(sx,sy,preview?(spellEffectRadii[spell]||7):6,0,Math.PI*2);ctx.stroke();
+  if(target.clamped||obstructed){ctx.save();ctx.fillStyle=obstructed?'#ff8794':'#f4d98b';ctx.textAlign='center';ctx.font='bold 10px ui-monospace,monospace';ctx.fillText(obstructed?'NO LINE OF SIGHT':'MAX RANGE',sx,sy-16);ctx.restore();}
+ }
+ // player marker
+ let ang=aim();ctx.save();ctx.globalAlpha=player.sneakT>0?.40:1;ctx.translate(player.x,player.y);ctx.rotate(ang);ctx.fillStyle=player.damageFlash>0?'#fff':colors[ci];if(player.mode==='crawl'||player.mode==='proneDive'){ctx.beginPath();ctx.ellipse(0,0,17,7,0,0,Math.PI*2);ctx.fill()}else{ctx.beginPath();ctx.arc(0,0,16,0,Math.PI*2);ctx.fill()}ctx.strokeStyle='#fff5d2';ctx.lineWidth=2;ctx.stroke();if(!player.mode&&!player.rec){ctx.fillStyle='#fff0c7';ctx.fillRect(11,-3,isMelee()?7:17,isMelee()?5:6)}ctx.restore();if(player.sneakT>0){ctx.save();ctx.strokeStyle='#9bd9e3';ctx.setLineDash([4,5]);ctx.lineWidth=2;ctx.beginPath();ctx.arc(player.x,player.y,27,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#c6edf0';ctx.font='bold 11px ui-monospace';ctx.textAlign='center';ctx.fillText('SNEAK '+player.sneakT.toFixed(1)+'s',player.x,player.y-37);ctx.restore();}if(player.mode==='counter'){ctx.strokeStyle='#f9c67f';ctx.lineWidth=5;ctx.beginPath();ctx.arc(player.x,player.y,28,0,Math.PI*2);ctx.stroke()}
+ drawWeapon();ctx.strokeStyle='#ead6ad';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(player.x,player.y,22,-Math.PI*.5,-Math.PI*.5+2*Math.PI*(1-player.dodgeCD/Math.max(player.dodgeTotal,.001)));ctx.stroke();
+ ctx.fillStyle='#a8aaac';ctx.font='10px Segoe UI';ctx.fillText('HOSTILE PRACTICE RANGE',660,55);ctx.restore();
+ if(scopeActive()){
+   ctx.save();ctx.fillStyle='#111820cb';ctx.fillRect(W*.5-122,61,244,29);
+   ctx.fillStyle='#f5dea3';ctx.textAlign='center';ctx.font='bold 11px ui-monospace,monospace';
+   ctx.fillText('LOOK AHEAD  ·  VISIBLE RANGE '+Math.round(effectiveWeaponRange())+'u',W*.5,80);
+   ctx.textAlign='left';ctx.restore();
+ }
+
+}
+function tick(t){if(!tick.prev)tick.prev=t;let dt=clamp((t-tick.prev)/1000,0,.08);tick.prev=t;tick.acc=(tick.acc||0)+dt;let iter=0;while(tick.acc>=1/60&&iter<6){update(1/60);tick.acc-=1/60;iter++}draw(dt||1/60);requestAnimationFrame(tick)}
+addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;const r=$('reticle');r.style.left=e.clientX+'px';r.style.top=e.clientY+'px';r.style.display='block'});
+addEventListener('mousedown',e=>{if(e.target!==canvas)return;
+ if(e.button===0){if(!mouse.down&&!mouse.castDown&&player.castLock<=0){mouse.down=true;weaponHold=0;weaponChargeMode=weaponNow().type==='camera'&&scoped();if(!weaponChargeMode)attackOnce();}}
+ if(e.button===2){e.preventDefault();if(!mouse.castDown){mouse.castDown=true;if(!mouse.down)magic();}}});
+addEventListener('mouseup',e=>{if(e.button===0)stopWeaponHold();if(e.button===2)mouse.castDown=false;});
+$('helpToggle').addEventListener('click',()=>document.body.classList.toggle('help-hidden'));
+addEventListener('contextmenu',e=>e.preventDefault());
+addEventListener('blur',()=>{if(restOn)finishRest();cancelWeaponHold();mouse.castDown=false;keys.clear();if(player.mode==='signal')endSignal();if(player.mode==='rewind')endRewind()});
+addEventListener('keydown',e=>{if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','F1','F2','F3','F4','F5','F6','Backspace','Tab','ControlLeft','ControlRight'].includes(e.code))e.preventDefault();if(e.repeat)return;
+ keys.add(e.code);
+ if(e.code==='ControlLeft'||e.code==='ControlRight'){startRest();return;}
+ if(/^F[1-6]$/.test(e.code)){cancelWeaponHold();chooseCharacter(Number(e.code.slice(1))-1);return;}
+ if(e.code==='KeyZ'){chooseDodge(0);return;}
+ if(e.code==='KeyX'){chooseDodge(1);return;}
+ if(e.code==='KeyQ'||e.code==='Tab'){cancelWeaponHold();selectWeapon(1-weaponSlot);return;}
+ if(e.code==='Space'){dodgePressed();return;}
+ if(e.code==='KeyR'){pressReloadOrSpecial();return;}
+ if(e.code==='KeyH'){document.body.classList.toggle('help-hidden');return;}
+ if(e.code==='KeyM'){hostileMeleeHit();return;}
+ if(e.code==='Backspace'){cancelWeaponHold();resetWorld();showToast('ARENA RESET');return;}
+ if(/^Digit[0-9]$/.test(e.code)){const idx=e.code==='Digit0'?9:Number(e.code.slice(5))-1;if(book[idx]){spell=idx;updateUI();}}
+});
+addEventListener('keyup',e=>{keys.delete(e.code);if(e.code==='ControlLeft'||e.code==='ControlRight'){if(!keys.has('ControlLeft')&&!keys.has('ControlRight'))finishRest();return;}if(e.code==='Space'){if(player.mode==='signal')endSignal();if(player.mode==='rewind')endRewind()}});
+// Basic smoke-test interface; no multiplayer or hidden dependencies.
+window.__lab={defs,spells,dodgeBalance,groundMotion,applyHoverMovement,get state(){return {character:ci,slot,spell,precision:keys.has("ShiftLeft")||keys.has("ShiftRight"),speed:vlen(player.vx,player.vy),mode:player.mode,dodgeCD:player.dodgeCD,hp:player.hp,x:player.x,y:player.y,vx:player.vx,vy:player.vy,rec:player.rec,turnUsed:player.data.turnUsed||0,modeDistance:player.data.distance||0,focus:!!player.focus,echoes:effects.filter(e=>e.kind==='rewindEcho').length,firePosture:player.firePosture,turrets:towers.filter(t=>t.hp>0).length,ally:{...allies[0]},shots:shots.length}},spellRanges,spellCast:magic,castleTarget,knightLanding,rewindSample,detectIncomingShot,steerForeclosure,deadweightPhasesBullets,hostileMeleeHit,get echoCount(){return effects.filter(e=>e.kind==='rewindEcho').length},get echoes(){return effects.filter(e=>e.kind==='rewindEcho').map(e=>({...e}))},get targets(){return towers.map(t=>({x:t.x,y:t.y,hp:t.hp}))},aimAtWorld:(x,y)=>{mouse.x=(x-cam.x)*viewZoom;mouse.y=(y-cam.y)*viewZoom},setFire:(down)=>{mouse.down=!!down},get focus(){return player.focus?.target||null},get hostileShots(){return shots.filter(b=>b.team==='enemy').map(b=>({...b}))},get allShots(){return shots.map(b=>({...b}))},get viewport(){return {x:cam.x,y:cam.y,zoom:viewZoom,weaponRange:effectiveWeaponRange(),scoped:scopeActive()}},get spellEffects(){return effects.filter(e=>['decoy','gravity','frost'].includes(e.kind)).map(e=>({...e}))},addSpellAnchor:(x,y)=>effects.push({x,y,r:22,t:10,c:'#ffb5f1',kind:'decoy'}),addBullet:(x,y)=>shots.push({x,y,vx:0,vy:0,r:4,team:'enemy',t:10,castleSpell:false}),addSpellBolt:(x,y)=>shots.push({x,y,vx:0,vy:0,r:7,team:'player',t:10,castleSpell:true}),addEnemyShot:(x,y,vx,vy)=>shots.push({x,y,vx,vy,r:6,team:'enemy',t:3}),press:(code,down)=>{if(down)keys.add(code);else keys.delete(code)},selectCharacter:chooseCharacter,selectDodge:chooseDodge,triggerDodge:dodgePressed,step:update,reset:resetWorld,setPlayer:(x,y)=>{player.x=x;player.y=y;player.vx=0;player.vy=0;player.prev=[]},render:()=>draw(1/60),get walls(){return rectangles},get crates(){return crates}};
+window.__magicLab={classes:classBooks,get state(){return {character:ci,selected:spell,book:book.map(s=>({...s})),slots:{...spellResources.slots},max:{...spellResources.max},points:spellResources.points,empowered:spellResources.empowered,restOn,restClock,spellCD:player.spellCD}},select:(n)=>{if(book[n]){spell=n;refreshSpellUI()}},cast:magic,startRest,finishRest,step:update,createSlot,reset:resetWorld,target:()=>spellTargetPoint(book[spell]),blocked:()=>spellRequiresSight(book[spell])&&spellSightBlocked(player,spellTargetPoint(book[spell])),get weaponLock(){return player.weaponLock},get castLock(){return player.castLock}};
+window.__weaponLab={catalog:weaponCatalog,chooseWeapon:selectWeapon,get state(){const w=weaponNow(),s=weaponState();return {character:ci,weaponSlot,weapon:w.name,type:w.type,ammo:s.ammo,reloading:s.reloading,specialCooldown:s.special,dodge:slot,scope:scopeActive(),visibleRange:effectiveWeaponRange(),guard,weaponHold,drone:!!player.drone,c4:player.c4?{...player.c4}:null,chargeMode:weaponChargeMode,enchant:enchants[player.enchant||0].name,fx:weaponFX.length,meleeAttacks:weaponFX.filter(f=>f.kind==='melee').length,meleeHits:weaponFX.filter(f=>f.kind==='melee').reduce((n,f)=>n+f.hits.length,0),meleeCombo,sneakT:player.sneakT,turrets:towers.map(t=>t.hp)}},attack:attackOnce,special:pressReloadOrSpecial,release:stopWeaponHold,get player(){return player},get effects(){return effects},get crates(){return crates},get shots(){return shots},get testTowers(){return towers},setCrossbowMode:(m)=>{player.enchant=clamp(m|0,0,3);updateWeaponUI()},get meleeFX(){return weaponFX.filter(f=>f.kind==='melee')},get blockHalfAngle(){return BLOCK_HALF_ANGLE},get meleeSegment(){const fx=weaponFX.find(f=>f.kind==='melee');return fx?meleeBladeSegment(fx,meleeAttackPose(fx)):null},step:update,moveTo:(x,y)=>{player.x=x;player.y=y;player.vx=0;player.vy=0},reset:resetWorld};
+book=classBooks[0].slots;spellResources={max:{...classBooks[0].max},slots:{...classBooks[0].max},points:3,empowered:false};buildUI();resetWorld();requestAnimationFrame(tick);
+})();
+</script></body></html>

@@ -1,13 +1,18 @@
 {
   "name": "soulseekers-seeking",
-  "version": "3.5.0",
+  "version": "3.6.0-m1",
   "private": true,
   "type": "module",
-  "description": "SoulSeekers: Seeking R03.5 clean, compact gold UI with collapsible inventory/shop and performance diagnostics and dedicated WebSocket server",
+  "description": "Seeking R03.5 legacy website and dedicated WebSocket server with integrated M1 multiplayer dungeon builder/lobby; Party V22.4 / DM R05.4 source references",
   "scripts": {
     "start": "node server/index.mjs",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "test:m1": "node --test tests/dungeon-*.test.mjs"
   },
-  "engines": {"node": ">=20"},
-  "dependencies": {"ws": "^8.18.3"}
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
 }

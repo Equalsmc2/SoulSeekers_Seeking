@@ -1,0 +1,136 @@
+
+> soulseekers-seeking@3.5.0 test
+> node --test tests/*.test.mjs
+
+TAP version 13
+# ✓ Original Boston renderer and authoritative geometry retained; accidental tile art absent
+# Subtest: tests/art.test.mjs
+ok 1 - tests/art.test.mjs
+  ---
+  duration_ms: 48.919636
+  type: 'test'
+  ...
+# ✓ Clean HUD: essential controls present, drawers closed by default, canvas full-width
+# Subtest: tests/clean-hud.test.mjs
+ok 2 - tests/clean-hud.test.mjs
+  ---
+  duration_ms: 47.470873
+  type: 'test'
+  ...
+# ✓ R02.2 server-clock motion remains monotonic through irregular snapshot delivery
+# ✓ Local prediction compensates normal one-way latency without backwards corrections
+# ✓ Fixed-timestep scheduler tracks wall clock and bounds delayed callbacks
+# Subtest: tests/clock-stability.test.mjs
+ok 3 - tests/clock-stability.test.mjs
+  ---
+  duration_ms: 91.300168
+  type: 'test'
+  ...
+# ✓ Battlefield has 6 heroes, 6 forts and 6 bosses
+# ✓ Tower is shielded until 4 forts are destroyed
+# ✓ Grid inventory enforces shape, rotations and boundaries
+# ✓ Shop purchase requires proximity, gold and open inventory space
+# ✓ Chests open once, award gold and XP
+# ✓ Rare jungle signal caches grant premium rewards
+# ✓ DM summons cost threat and must avoid western spawn and buildings
+# ✓ Match advances, bullets and waves work, and timer gives DM victory
+# ✓ AI training can reach and destroy the Tower without a human
+# All engine tests passed.
+# Subtest: tests/engine.test.mjs
+ok 4 - tests/engine.test.mjs
+  ---
+  duration_ms: 358.585615
+  type: 'test'
+  ...
+# ✓ Gold identity and original non-tiled Boston renderer verified
+# Subtest: tests/gold-native.test.mjs
+ok 5 - tests/gold-native.test.mjs
+  ---
+  duration_ms: 50.117634
+  type: 'test'
+  ...
+# ✓ R03 all three lanes start/end together, split visibly, and remain collision-clear
+# ✓ 6 forts, bosses, 2 shops, 16 chests and cross-town links remain accessible
+# ✓ DM marching orders traverse cross-town paths without wall traps
+# ✓ Enemy deployment follows curved lane geometry; AI can complete the map
+# ✓ Both jungles exceed 2.2x former width, with three open routes and interior loops
+# ✓ Distinct park/cargo cover collision matches world art; 6 landmarks and 16 loot sites
+# ✓ Two premium jungle caches, 15 vehicle covers and access-safe routes
+# Subtest: tests/map-layout.test.mjs
+ok 6 - tests/map-layout.test.mjs
+  ---
+  duration_ms: 356.416054
+  type: 'test'
+  ...
+# ✓ Boston map, two large jungles, road curves and gameplay collision visuals retained
+# Subtest: tests/map-polish.test.mjs
+ok 7 - tests/map-polish.test.mjs
+  ---
+  duration_ms: 46.981841
+  type: 'test'
+  ...
+# ✓ Prediction is immediate and render-only; remote snapshots interpolate
+# ✓ Network payload 4843 → 3160 bytes (35% smaller)
+# Subtest: tests/prediction.test.mjs
+ok 8 - tests/prediction.test.mjs
+  ---
+  duration_ms: 127.872327
+  type: 'test'
+  ...
+# ✓ Actual game render draws cached map without JS exceptions
+# Subtest: tests/render.test.mjs
+ok 9 - tests/render.test.mjs
+  ---
+  duration_ms: 2492.295699
+  type: 'test'
+  ...
+# ✓ Match hosted independently of browsers; two joined Party seats
+# ✓ Character reservation, protected commands, validated movement and snapshots
+# ✓ DM disconnect continues simulation; DM and Party rejoin with session tokens
+# ✓ Server address supports Render HTTPS to WSS conversion
+# Subtest: tests/server.test.mjs
+ok 10 - tests/server.test.mjs
+  ---
+  duration_ms: 92.259462
+  type: 'test'
+  ...
+# ✓ R02.1 smooth remote interpolation, 60fps prediction, bounded extrapolation
+# ✓ 20Hz snapshots preserve DM full view and filter Party interest areas
+# Subtest: tests/smoothing.test.mjs
+ok 11 - tests/smoothing.test.mjs
+  ---
+  duration_ms: 79.633978
+  type: 'test'
+  ...
+# ✓ Real browser-client protocol matched against the server room implementation
+# ✓ Host, join, movement, server snapshots and DM spawn work in simulated socket transport
+# Subtest: tests/socket-client.test.mjs
+ok 12 - tests/socket-client.test.mjs
+  ---
+  duration_ms: 81.889437
+  type: 'test'
+  ...
+# ✓ All six character choices appear; offline Party and DM start even without network.js
+# ✓ Local game server URL is detected without connecting to it
+# Subtest: tests/startup.test.mjs
+ok 13 - tests/startup.test.mjs
+  ---
+  duration_ms: 2470.644476
+  type: 'test'
+  ...
+# ✓ ACT III identity, SoulSeekers assets, responsive panels and all original gameplay IDs preserved
+# Subtest: tests/ui-theme.test.mjs
+ok 14 - tests/ui-theme.test.mjs
+  ---
+  duration_ms: 40.083538
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3018.702258
