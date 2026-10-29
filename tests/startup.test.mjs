@@ -9,7 +9,7 @@ const root=join(dirname(fileURLToPath(import.meta.url)),'..');
 const tmp=mkdtempSync(join(tmpdir(),'seeking-startup-'));
 function copy(rel){const out=join(tmp,rel);mkdirSync(dirname(out),{recursive:true});copyFileSync(join(root,rel),out);}
 try {
-  for (const f of ['src/main.js','src/city-art.js','src/data.js','src/engine.js','src/sync.js','src/prediction.js','src/socket-network.js'])copy(f);
+  for (const f of ['src/main.js','src/data.js','src/engine.js','src/sync.js','src/prediction.js','src/socket-network.js'])copy(f);
   // The new small socket networking module is offline-safe; no external SDK required.
   const elements=new Map();
   function el(){

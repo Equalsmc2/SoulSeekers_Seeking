@@ -83,6 +83,13 @@ if %ROBORESULT% GEQ 8 (
   echo ERROR: File copy failed. robocopy returned %ROBORESULT%.
   goto END
 )
+REM R03.4.1: retire only the accidentally included Kenney art renderer.
+REM Robocopy /E keeps destination-only files, so remove known old artifacts explicitly.
+if exist "%REPO%\src\city-art.js" del /f /q "%REPO%\src\city-art.js" >nul 2>nul
+if exist "%REPO%\assets\kenney\city_tiles.png" del /f /q "%REPO%\assets\kenney\city_tiles.png" >nul 2>nul
+if exist "%REPO%\assets\kenney\LICENSE.txt" del /f /q "%REPO%\assets\kenney\LICENSE.txt" >nul 2>nul
+if exist "%REPO%\assets\kenney\" rmdir "%REPO%\assets\kenney" >nul 2>nul
+
 if not exist "%REPO%\index.html" (
   echo ERROR: index.html is missing from the destination!
   goto END
@@ -156,7 +163,7 @@ echo.
 echo GitHub Desktop steps:
 echo   1. Switch to GitHub Desktop and select SoulSeekers_Seeking.
 echo   2. Under Changes, you should now see the game files.
-echo   3. Enter a summary, for example: SoulSeekers Seeking R03.4 SoulSeekers UI.
+echo   3. Enter a summary, for example: SoulSeekers Seeking R03.4.1 No Accidental Tiles.
 echo   4. Click Commit to main at the bottom left.
 echo   5. Click Push origin (or Publish repository) at the top.
 echo.

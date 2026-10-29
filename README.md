@@ -1,108 +1,32 @@
-# SoulSeekers: Seeking R03.4 — SoulSeekers ACT III UI
+# SoulSeekers: Seeking R03.4.2 — Gold UI / Clean Boston Map
 
-**Full game + Node WebSocket server + GitHub sync BAT**; all R03.3 Boston map art, expanded jungles, and R02.2 networking are intact.
+Complete playable browser game, separate WebSocket game server, and GitHub Desktop sync BAT.
 
-This release updates the **interface** to match the user-provided SoulSeekers V40.10 website: cream/charcoal/red panels, Soul Seal, Boston night splash, ACT III lettering, character selection, Party and DM HUDs, inventory, shops, summons, mission/connection status, and performance diagnostics. No extra UI animation loops or new networking dependencies.
+## This release fixes
+- The accidentally inherited Kenney city tiles are **not** loaded or drawn. The game now uses the original cached vector/procedural Boston renderer from the expanded-jungle build.
+- SoulSeekers branding is **gold first**, based on the V40.10 website palette: antique gold `#d9b45f`, bright gold `#f4d98b`, deep gold `#97752f`, charcoal, and ivory. Red is reserved for health and danger.
+- The six heroes, HUD, inventory, shop, DM interface, offline training, game server, and game rules are preserved.
+- The old tile screenshot assets and source renderer are absent from this ZIP. `MAP_OVERVIEW.png` shows the returned native renderer style.
+- HTML/CSS/module cache keys are bumped to R0342 to avoid old art being retained by the browser after deployment.
 
-**How to install:** Extract the ZIP, run `SYNC_TO_GITHUB.bat`, choose 1 for GitHub Desktop, then Commit to main → Push origin. Allow Render/GitHub Pages to deploy, then hard-refresh and confirm **PROTOTYPE R03.4 · SOULSEEKERS UI** appears. No Firebase changes.
+## Installation
+1. Extract the ZIP to a new folder.
+2. Run `SYNC_TO_GITHUB.bat` (Windows). It copies this release into the existing `SoulSeekers_Seeking` GitHub Desktop repository, without deleting `.git`.
+3. Choose `1` for GitHub Desktop, then **Commit to main** and **Push origin**.
+4. Wait for Render and/or GitHub Pages to deploy, then hard-refresh both game windows.
+5. Verify `PROTOTYPE R03.4.2 · GOLD UI / CLEAN MAP` in the header.
 
-**Tests:** `npm test`. Review `R03_4_UI_STYLE_GUIDE.md` and `CHANGELOG_R03_4.md`. Preview screenshot is included as `UI_PREVIEW.png`.
+The BAT removes only known obsolete Kenney tile-renderer files at `src/city-art.js` and `assets/kenney/`; unrelated files and Git history are not touched.
 
----
+## Testing
+Run `npm test` for the 12 project test suites. Solo training runs without a live server. For online play, deploy the included Node service (see `R02_SERVER_SETUP.md`). Offline preview: launch `START_LOCAL.bat` and choose Party or DM training.
 
-# SoulSeekers: Seeking R03.3 — Boston Map Polish
+### Map and controls
+Three curving roads converge, branch, and converge again. The upper jungle is the Hollow Common, and the lower jungle is the Underworks; both retain internal paths, shops, chests, cover and connections. The six forts, boss AI, and DM commands use the same coordinates as the prior build.
 
-**This is the complete, playable R03.3 build.** It preserves the R03.2
-three-lane Boston map, expanded jungles, bosses, forts, DM controls,
-inventories, dedicated WebSocket server, and GitHub sync BAT. No Firebase changes.
+**Party:** WASD move, mouse aim/fire, Q spell, E Echo, Space dash, F chest, B shop, I inventory. **DM:** Select and place enemies, possess on click, right-click to command, and press Esc to release.
 
+## Scope
+No game networking or combat rules were intentionally changed. Local automated tests passed; live Render networking and a full visual/browser test still need validation on your device.
 
-## What is new in R03.3
-
-The city art is intentionally less noisy and more readable. This is a **visual polish update**, not a rework of game rules or netcode.
-
-- **Street construction**: curves have consistent asphalt, curb edges, centerline paint, realistic bridge parapets and deliberate crosswalk markings.
-- **Urban fabric**: single-material rooftops with cornices, hatches, skylights, vents, and subtle shop awnings. Street edges and shadow footprints are more cohesive.
-- **Hollow Common**: three landscaped park promenades, planted courts, flower islands, gatherings and connected paths; key features remain traversable.
-- **Underworks**: parallel steel rails, sidings, service aisles, hazard accents, and a much more recognizable freight-yard identity.
-- **Blackout tone**: restrained evening grading and warm street lamps; high-contrast game actors remain readable.
-- **Rendering**: static art is still cached as one background layer; multiplayer input, 30Hz server logic, and 20Hz snapshots were not modified.
-
-**Important:** Roads, rail sidings and park paths are artistic interpretation of existing playable corridors. Visual decorations do not introduce new collision. The shared map collision and paths are unchanged from R03.2.
-
-For visual review, open `MAP_PREVIEW.png` then `MAP_OVERVIEW.png` to zoom, or see `NORTH_GARDEN.png`, `UNDERWORKS.png` and `BEACON_CITY.png`.
-
-## Art upgrade
-
-- **Original source:** User-supplied Kenney Roguelike Modern City 2.0 artwork
-  (Creative Commons Zero, CC0), copied to `assets/kenney/city_tiles.png`.
-  License text is included in `assets/kenney/LICENSE.txt`.
-- **Game renderer:** `src/city-art.js` now builds a pixel-art version of the actual
-  6,800 × 2,000 world from the same server-side buildings, parks, lanes, road
-  junctions, shop positions, jungle landmarks, and obstacle coordinates.
-- **Artwork:** Crisp 16px tiles, drawn at 32 world units using nearest-neighbor
-  sampling. Roads, sidewalks, park trails, freight routes, varied rooftops,
-  cars, trees, crates, transit equipment, shop canopies and fort/chest art.
-- **Performance:** The static map is still drawn once to an offscreen canvas,
-  then cropped every frame; no new per-frame background tile loops.
-- **Graceful fallback:** If the sprite atlas hasn't loaded yet, the previous R03.1
-  map temporarily displays. The pixel-art cache replaces it on atlas load.
-- **Unchanged:** Server ticking/snapshots, movement prediction, aiming, damage,
-  jungle navigation, cover collision, DM possession and gameplay rules.
-
-`MAP_OVERVIEW.png` and `MAP_PREVIEW.png` are generated from the actual
-pixel-art drawing routines (not AI mockups).
-
-## Updating GitHub / Render
-
-Extract the full ZIP, double-click `SYNC_TO_GITHUB.bat`, choose **1**, then
-**Commit to main → Push origin** in GitHub Desktop. Allow Render to redeploy,
-and hard-refresh the game. The title should read **R03.3 · BOSTON MAP POLISH**.
-
-## Visual note
-
-The Kenney pack is retro pixel art. This is an art-direction foundation, not a
-claim of final bespoke Boston artwork. The existing map geometry is unchanged.
-Detailed bespoke neighborhood architecture and character sprites can follow.
-
----
-
-# SoulSeekers: Seeking — R03.1 Boston Expanded
-
-**Complete browser game + dedicated WebSocket game server.** R03.1 upgrades the R03 Boston map with much larger jungles, more distinct architecture, and more tactical play while preserving R02.2's smooth multiplayer and the working GitHub sync BAT. The stylized geography is inspired by Boston rather than geographically exact.
-
-## New playable map
-
-- **Three curved lanes** begin from the Party's shared western approach, fan out across town, and converge on the DM Tower.
-- **Upper jungle: The Hollow Common.** A broad park district with a Public Garden-style Swan Pond, Silent Memorial, spectral Bandstand, three navigable trails, six short internal connector paths, a shop, chests and planter cover.
-- **Lower jungle: The Underworks.** An equally broad transit/industrial district with a Red Line depot, blackout substation, freight yard, three separate trails, six internal connectors, a shop, chests and cargo cover.
-- Each jungle reaches roughly **480 world units across** at the broadest points, compared with R03's 207-unit strip. The jungle tapers naturally near the converging ends of the map.
-- **Strongly differentiated lanes:** historic brick north, civic downtown center and industrial harbor south, with 15 abandoned vehicles that block movement and shots.
-- **16 chests**, including two premium signal caches rewarding 220 gold and 130 XP each. Ordinary chests still give 90 gold and 55 XP.
-- Six fort/boss pairs, level progression, item purchases, 8×5 inventory, DM troops/possession, and the 20-minute win condition remain.
-
-See `MAP_OVERVIEW.png` for the full overhead map and `R03_1_MAP_TEST_PLAN.md` for testing.
-
-## Update your GitHub Pages + Render game
-
-1. Extract the **whole R03.1 ZIP** into a new folder.
-2. Double-click **`SYNC_TO_GITHUB.bat`** beside `index.html`. The BAT remembers the GitHub Desktop repository location from previous releases. Confirm the file copy, choose **1** for GitHub Desktop.
-3. In GitHub Desktop, **Commit to main** and **Push origin**.
-4. Allow **both Render and GitHub Pages** to finish deploying. Render should show **Live**.
-5. In Zen, hard-refresh with **Ctrl + Shift + R** (or use a private window). Confirm `PROTOTYPE R03.1 · BOSTON EXPANDED` appears.
-6. Create a **fresh DM room** and join with a new Party connection; deploys restart the in-memory match server.
-
-There are **no new Firebase steps** and **no need to create another Render service**. R03.1 uses the existing dedicated Node WebSocket server for live combat and rooms; your historical Firebase config is preserved, not used for live snapshots.
-
-## Local testing
-
-- Start offline training by opening `index.html` via an editor's Live Preview, or run `START_LOCAL.bat` (Python required).
-- To play locally with a server, run `START_GAME_SERVER.bat` (Node >= 20).
-- Run `npm install`, then `npm test` to run the nine local test suites.
-
-## Performance and limitations
-
-R03.1 retains the cached 6800×2000 Canvas world, server-side 30Hz simulation, 20Hz network snapshots, local player prediction and server-timestamped interpolation from R02.2. Cover/city geometry is deterministic and shared by the client and server. A ten-second, roughly hundred-enemy engine sample completed well within the tick budget **in this environment**, but a live Render + Zen seven-player stress test remains necessary.
-
-The map is still a stylized game prototype, not hand-painted final artwork. Decorative pond/landmark art remains walkable where no collision cover appears. Matches still reset on server restarts and are not durable competitive sessions.
-
+Change details: `CHANGELOG_R03_4_2.md`, `CHANGELOG_R03_4_1.md`.

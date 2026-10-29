@@ -1,9 +1,8 @@
-import {cityTilesReady,drawKenneyWorld,drawKenneyFort,drawKenneyChest,onCityTilesLoaded} from './city-art.js?v=R033';
 // R02: dedicated Node/WebSocket server owns online gameplay. Offline training is standalone.
-import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,CHEST_SPOTS,MAP_X,BOSTON_DISTRICTS,JUNGLES,JUNGLE_COVER,STREET_COVER,JUNGLE_LANDMARKS,JUNGLE_LOOP_CROSSINGS,jungleHalfWidth,jungleTrailY,LANE_NAMES,CONNECTORS,laneY,jungleY,nearestLane,clamp,dist} from './data.js?v=R033';
-import {createGame,tick,dmSpawn,giveMarchOrder,teamHasShop,towerExposed} from './engine.js?v=R033';
-import {newPrediction,predictStep,reconcileWithLatency,tweenPosition,receiveEntityMotion,createPlaybackClock} from './prediction.js?v=R033';
-import {connectMatch,normalizeEndpoint,describeSocketError} from './socket-network.js?v=R033';
+import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,CHEST_SPOTS,MAP_X,BOSTON_DISTRICTS,JUNGLES,JUNGLE_COVER,STREET_COVER,JUNGLE_LANDMARKS,JUNGLE_LOOP_CROSSINGS,jungleHalfWidth,jungleTrailY,LANE_NAMES,CONNECTORS,laneY,jungleY,nearestLane,clamp,dist} from './data.js?v=R0342';
+import {createGame,tick,dmSpawn,giveMarchOrder,teamHasShop,towerExposed} from './engine.js?v=R0342';
+import {newPrediction,predictStep,reconcileWithLatency,tweenPosition,receiveEntityMotion,createPlaybackClock} from './prediction.js?v=R0342';
+import {connectMatch,normalizeEndpoint,describeSocketError} from './socket-network.js?v=R0342';
 function normalizeRoomCode(code){return String(code??'').trim().toUpperCase().replace(/[\s-]/g,'');}
 function describeNetworkError(error){return describeSocketError(error);}
 function getServerAddress(){return $('gameServerUrl').value.trim();}
@@ -26,7 +25,6 @@ function checkServerConfig(){
 const $=id=>document.getElementById(id);
 const canvas=$('gameCanvas');let ctx=canvas.getContext('2d');const screenCtx=ctx;
 let worldCache=null;
-onCityTilesLoaded(()=>{ worldCache=null; });
 let game=null,mode='menu',net=null,activeSlot=0,selectedHero=0,lane=1,possessed=null,placementType=null;
 let netInputs={},netSlots={},selectedItem=null,inventoryVisible=true,renderedWinner=null;
 let actionSeq=0,pendingAction=null,lastTime=performance.now(),lastInputSend=0,lastUI=0;
@@ -483,7 +481,6 @@ function drawBuilding(b,i){
 }
 
 function drawWorld(){
-  if(cityTilesReady()){drawKenneyWorld(ctx);return;}
   // Canvas is rendered once into the world cache. Streets, obstacles and travel
   // paths share the exact same exported geometry used by the server.
   ctx.fillStyle='#17262d';ctx.fillRect(0,0,WORLD.width,WORLD.height);
@@ -594,7 +591,7 @@ function drawWorld(){
 }
 function hpBar(x,y,w,fraction,c='#e17f83'){ctx.fillStyle='#08151bbd';ctx.fillRect(x-w/2,y,w,6);ctx.fillStyle=c;ctx.fillRect(x-w/2,y,w*clamp(fraction,0,1),6);}
 function shapeCircle(x,y,r,fill,stroke='#0d171b',line=3){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=stroke;ctx.lineWidth=line;ctx.stroke();}
-function drawFort(f){if(cityTilesReady()){drawKenneyFort(ctx,f);ctx.fillStyle='#fff4f1';ctx.font='bold 12px Consolas';ctx.textAlign='center';ctx.fillText(`FORT ${f.lane+1}-${f.tier+1}`,f.x,f.y+4);ctx.textAlign='left';if(!f.broken)hpBar(f.x,f.y-64,105,f.hp/f.maxHp);return;}if(f.broken){ctx.fillStyle='#172325';ctx.fillRect(f.x-52,f.y-48,104,96);ctx.strokeStyle='#7b4b4e';ctx.lineWidth=5;ctx.strokeRect(f.x-52,f.y-48,104,96);ctx.strokeStyle='#d57f7c';ctx.beginPath();ctx.moveTo(f.x-40,f.y-30);ctx.lineTo(f.x+37,f.y+34);ctx.stroke();return;}
+function drawFort(f){if(f.broken){ctx.fillStyle='#172325';ctx.fillRect(f.x-52,f.y-48,104,96);ctx.strokeStyle='#7b4b4e';ctx.lineWidth=5;ctx.strokeRect(f.x-52,f.y-48,104,96);ctx.strokeStyle='#d57f7c';ctx.beginPath();ctx.moveTo(f.x-40,f.y-30);ctx.lineTo(f.x+37,f.y+34);ctx.stroke();return;}
   ctx.fillStyle='#4c3439';ctx.fillRect(f.x-57,f.y-52,114,104);ctx.strokeStyle='#eb9ca0';ctx.lineWidth=5;ctx.strokeRect(f.x-57,f.y-52,114,104);
   ctx.fillStyle='#be8084';for(const xx of [-50,30])for(const yy of [-45,25])ctx.fillRect(f.x+xx,f.y+yy,20,20);
   ctx.fillStyle='#e8c5c6';ctx.font='bold 13px Consolas';ctx.textAlign='center';ctx.fillText(`FORT ${f.lane+1}-${f.tier+1}`,f.x,f.y+4);ctx.textAlign='left';hpBar(f.x,f.y-75,105,f.hp/f.maxHp);
@@ -632,7 +629,7 @@ function drawEnemy(e){const v=entityPosition(e),boss=e.kind==='boss';
   if(boss){ctx.fillStyle='#ffd2da';ctx.textAlign='center';ctx.font='bold 13px Segoe UI';ctx.fillText('WARDEN',v.x,v.y-50);ctx.textAlign='left';}
   hpBar(v.x,v.y-e.r-20,boss?83:44,e.hp/e.maxHp);
 }
-function drawChest(c){if(c.opened)return;if(cityTilesReady()){drawKenneyChest(ctx,c);return;}ctx.save();ctx.translate(c.x,c.y);ctx.fillStyle=c.grade==='relic'?'#3e225c':'#422c1b';ctx.fillRect(-20,-16,40,32);ctx.strokeStyle=c.grade==='relic'?'#d9abff':'#dbb77d';ctx.lineWidth=3;ctx.strokeRect(-20,-16,40,32);ctx.fillStyle=c.grade==='relic'?'#e3b9ff':'#edca8b';ctx.fillRect(-3,-15,6,30);ctx.fillRect(-18,-3,36,6);ctx.restore();}
+function drawChest(c){if(c.opened)return;ctx.save();ctx.translate(c.x,c.y);ctx.fillStyle=c.grade==='relic'?'#3e225c':'#422c1b';ctx.fillRect(-20,-16,40,32);ctx.strokeStyle=c.grade==='relic'?'#d9abff':'#dbb77d';ctx.lineWidth=3;ctx.strokeRect(-20,-16,40,32);ctx.fillStyle=c.grade==='relic'?'#e3b9ff':'#edca8b';ctx.fillRect(-3,-15,6,30);ctx.fillRect(-18,-3,36,6);ctx.restore();}
 function drawFX(fx){ctx.save();const v=1-fx.ttl/.38;ctx.globalAlpha=Math.max(0,1-v);
   ctx.strokeStyle=fx.type==='ability'?'#b7a4ff':fx.type==='nova'?'#ffd18d':fx.type==='loot'?'#ffd18d':'#f4bac2';
   ctx.lineWidth=fx.type==='ability'||fx.type==='nova'?6:3;
