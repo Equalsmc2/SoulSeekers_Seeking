@@ -1,0 +1,12 @@
+R03.1 — BOSTON EXPANDED / JUNGLE REBUILD
+
+- Jungles increased from 207-unit-wide strips to up to 480-unit-wide combat districts (approximately 2.3x wider where the lanes fully split).
+- Both jungles now have three longitudinal traversal routes, six internal loop connections, and the original cross-town lane connectors.
+- Upper jungle: Boston Common / Public Garden district, swan pond, civic memorial, signal-haunted bandstand, planters and warm lamps.
+- Lower jungle: Red Line depot, rail sidings, substations, Fort Point freight structures and cargo cover.
+- Distinct visuals for historic north lane, civic center lane and industrial southern lane.
+- 15 abandoned vehicles supply collision-solid combat cover along the roads; jungle planters and cargo are also collision-solid.
+- Increased chests from 10 to 16. Added a valuable objective cache to each jungle (220 gold / 130 XP compared to 90 / 55).
+- Map art, cover, AI routing, shops/chests and minimap use the shared deterministic world layout.
+- R02.2 dedicated WebSocket server and interpolation model are retained. No Firebase changes or new Render service needed.
+- Includes full MAP_OVERVIEW.png and R03_1_MAP_TEST_PLAN.md.

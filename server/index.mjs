@@ -13,7 +13,7 @@ const server=http.createServer((req,res)=>{
   const pathname=new URL(req.url,'http://localhost').pathname;
   if(pathname==='/health'){
     res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});
-    return res.end(JSON.stringify({status:'ok',game:'seeking',version:'R03'}));
+    return res.end(JSON.stringify({status:'ok',game:'seeking',version:'R03.2'}));
   }
   let decoded;
   try{decoded=decodeURIComponent(pathname);}catch{res.writeHead(400);return res.end('Bad URL');}
@@ -33,6 +33,6 @@ server.on('upgrade',(req,socket,head)=>{
   if(new URL(req.url,'http://localhost').pathname!=='/ws'){socket.destroy();return;}
   wss.handleUpgrade(req,socket,head,ws=>service.attach(ws));
 });
-server.listen(port,host,()=>console.log(`SoulSeekers R03 game server running at http://localhost:${port} (WebSocket /ws)`));
+server.listen(port,host,()=>console.log(`SoulSeekers R03.2 game server running at http://localhost:${port} (WebSocket /ws)`));
 function shutdown(){service.stop();for(const c of service.clients)try{c.close(1001,'Server restarting');}catch{}server.close(()=>process.exit(0));setTimeout(()=>process.exit(0),1500).unref();}
 process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);

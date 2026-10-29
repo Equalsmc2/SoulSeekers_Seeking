@@ -1,7 +1,7 @@
-import {WORLD,BUILDINGS,clamp} from './data.js?v=R03';
+import {WORLD,OBSTACLES,clamp} from './data.js?v=R031';
 
 function blocked(x,y,r){
-  return BUILDINGS.some(b=>{
+  return OBSTACLES.some(b=>{
     const xx=clamp(x,b.x,b.x+b.w),yy=clamp(y,b.y,b.y+b.h);
     return (x-xx)**2+(y-yy)**2 < r*r;
   });

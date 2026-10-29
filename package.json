@@ -1,9 +1,9 @@
 {
   "name": "soulseekers-seeking",
-  "version": "3.0.0",
+  "version": "3.3.0",
   "private": true,
   "type": "module",
-  "description": "SoulSeekers: Seeking R03 branching Boston map with dedicated WebSocket server",
+  "description": "SoulSeekers: Seeking R03.3 refined Boston district and jungle map art with dedicated WebSocket server",
   "scripts": {
     "start": "node server/index.mjs",
     "test": "node --test tests/*.test.mjs"

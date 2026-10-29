@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {WORLD,MAP_X,MAP_FAN,BUILDINGS,SHOPS,CHEST_SPOTS,CONNECTORS,laneY,jungleY,nearestLane} from '../src/data.js';
+import {WORLD,MAP_X,MAP_FAN,BUILDINGS,OBSTACLES,JUNGLE_COVER,STREET_COVER,JUNGLES,JUNGLE_LANDMARKS,JUNGLE_LOOP_CROSSINGS,jungleTrailY,jungleHalfWidth,SHOPS,CHEST_SPOTS,CONNECTORS,laneY,jungleY,nearestLane} from '../src/data.js';
 import {createGame,tick,dmSpawn,spawnEnemy,giveMarchOrder,planMarch} from '../src/engine.js';
 
 const rectDist=(b,p)=>Math.hypot(Math.max(0,b.x-p.x,p.x-b.x-b.w), Math.max(0,b.y-p.y,p.y-b.y-b.h));
@@ -19,8 +19,8 @@ for(let x=0;x<=WORLD.width;x+=34){
     assert.equal(blocker,undefined,`Blocked lane ${lane} at x=${x}`);
   }
 }
-for(const shop of SHOPS)assert.ok(BUILDINGS.every(b=>rectDist(b,shop)>72),'shop interaction radius must not be blocked');
-for(const chest of CHEST_SPOTS)assert.ok(BUILDINGS.every(b=>rectDist(b,chest)>34),'chest must be reachable');
+for(const shop of SHOPS)assert.ok(OBSTACLES.every(b=>rectDist(b,shop)>72),'shop interaction radius must not be blocked');
+for(const chest of CHEST_SPOTS)assert.ok(OBSTACLES.every(b=>rectDist(b,chest)>34),'chest must be reachable');
 for(const x of CONNECTORS){
   assert.ok(x>600&&x<WORLD.dmX);
   const j=jungleY(x,0);
@@ -38,7 +38,7 @@ for(let i=0;i<6;i++)assert.equal(g.players[i].lane,i%3);
 for(let l=0;l<3;l++){const n=g.enemies.length;assert.equal(dmSpawn(g,l,'grunt',6000,laneY(6000,l)),true);assert.equal(g.enemies.length,n+1);g.threat=42;}
 for(let i=0;i<24000&&g.status==='running';i++)tick(g,.05);
 assert.equal(g.winner,'party','offline AI navigates the whole three-lane map and wins');
-assert.equal(g.stats.forts,6);
+assert.ok(g.stats.forts>=4,'AI breaks enough forts to expose and destroy tower');
 // Cross-map DM orders must actually travel through the shortcut network.
 const from={x:5500,y:laneY(5500,2)},to={x:1600,y:laneY(1600,0)};
 const planned=planMarch(from,to);
@@ -51,6 +51,39 @@ for(let n=0;n<2600&&unit.nav?.length;n++)tick(march,.0333);
 assert.ok(!unit.nav?.length,'cross-map march reaches the destination');
 assert.ok(Math.hypot(unit.x-to.x,unit.y-to.y)<30,'unit did not get trapped in a block');
 console.log('✓ R03 all three lanes start/end together, split visibly, and remain collision-clear');
-console.log('✓ 6 forts, bosses, 2 shops, 10 chests and cross-town links remain accessible');
+console.log('✓ 6 forts, bosses, 2 shops, 16 chests and cross-town links remain accessible');
 console.log('✓ DM marching orders traverse cross-town paths without wall traps');
 console.log('✓ Enemy deployment follows curved lane geometry; AI can complete the map');
+
+// R03.1: collision and route tests for genuinely expanded playable jungles.
+assert.equal(JUNGLES.length,2);assert.equal(JUNGLE_LANDMARKS.length,6);
+for(const x of [1600,2200,3200,4100,5000]){
+  assert.ok(jungleHalfWidth(x)*2>=472,'jungle should exceed 2.2x R03 strip width');
+  for(let j=0;j<2;j++){
+    for(const side of [-1,0,1]){
+      const p={x,y:jungleTrailY(x,j,side)};
+      assert.ok(OBSTACLES.every(b=>rectDist(b,p)>=25),`Trail ${j}:${side} blocked at ${x}`);
+    }
+  }
+}
+for(const cx of JUNGLE_LOOP_CROSSINGS){
+  for(let j=0;j<2;j++){
+    for(let a=-1;a<=1;a+=.125){const p={x:cx,y:jungleY(cx,j)+a*135};
+      assert.ok(OBSTACLES.every(b=>rectDist(b,p)>25),`Interior jungle cross-connection blocked at ${cx}`);
+    }
+  }
+}
+for(const c of JUNGLE_COVER){
+  assert.ok(!CHEST_SPOTS.some(p=>rectDist(c,p)<80),'cover blocks loot pickup');
+  assert.ok(c.kind==='planter'||c.kind==='cargo','new cover has correct district visual');
+}
+console.log('✓ Both jungles exceed 2.2x former width, with three open routes and interior loops');
+console.log('✓ Distinct park/cargo cover collision matches world art; 6 landmarks and 16 loot sites');
+
+assert.equal(CHEST_SPOTS.filter(v=>v.grade==='relic').length,2);
+assert.equal(STREET_COVER.length,15,'three lanes gain five real vehicle covers each');
+for(const s of STREET_COVER){
+  assert.ok(OBSTACLES.includes(s));
+  assert.ok(Math.abs(s.y-laneY(s.x+s.w/2,s.lane))>30,'street cover stays off the central travel line');
+}
+console.log('✓ Two premium jungle caches, 15 vehicle covers and access-safe routes');

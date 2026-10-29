@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join,dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const root=join(dirname(fileURLToPath(import.meta.url)),'..');
+const art=readFileSync(join(root,'src/city-art.js'),'utf8');
+const html=readFileSync(join(root,'index.html'),'utf8');
+assert.match(html,/R03\.3 · BOSTON MAP POLISH/);
+assert.match(art,/paintStreetNetwork\(ctx\)/);
+assert.match(art,/paintJungleIdentity\(ctx\)/);
+assert.match(art,/jungleTrailY\(x,1,side\)/);
+assert.match(art,/JUNGLE_LOOP_CROSSINGS/);
+assert.match(art,/for\(const \[i,b\] of BUILDINGS.entries\(\)\)building\(ctx,b,i\)/);
+assert.match(art,/for\(const c of JUNGLE_COVER\)cover\(ctx,c\)/);
+assert.match(art,/img.onload=/);
+assert.match(art,/ctx.imageSmoothingEnabled=false/);
+console.log('✓ Street and jungle identity passes wired into static city renderer; authoritative geometry reused');

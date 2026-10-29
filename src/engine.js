@@ -1,4 +1,4 @@
-import { WORLD, MATCH_SECONDS, HEROES, ITEMS, BUILDINGS, SHOPS, CHEST_SPOTS, laneY, lanePoint, nearestLane, jungleY, CONNECTORS, clamp, dist, makeId } from './data.js?v=R03';
+import { WORLD, MATCH_SECONDS, HEROES, ITEMS, BUILDINGS, OBSTACLES, SHOPS, CHEST_SPOTS, laneY, lanePoint, nearestLane, jungleY, CONNECTORS, clamp, dist, makeId } from './data.js?v=R031';
 const INV_W=8, INV_H=5;
 const shortest=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 
@@ -53,9 +53,9 @@ function collideCircleRect(x,y,r,rect) {
 function moveUnit(e, dx, dy,dt, spd){
   const oldX=e.x,oldY=e.y;
   e.x=clamp(e.x+dx*spd*dt,e.r+12,WORLD.width-e.r-12);
-  if(BUILDINGS.some(b=>collideCircleRect(e.x,e.y,e.r,b)))e.x=oldX;
+  if(OBSTACLES.some(b=>collideCircleRect(e.x,e.y,e.r,b)))e.x=oldX;
   e.y=clamp(e.y+dy*spd*dt,e.r+12,WORLD.height-e.r-12);
-  if(BUILDINGS.some(b=>collideCircleRect(e.x,e.y,e.r,b)))e.y=oldY;
+  if(OBSTACLES.some(b=>collideCircleRect(e.x,e.y,e.r,b)))e.y=oldY;
 }
 /** Route DM marching orders along mapped lanes and cross-town shortcuts.
  * Computed only when a new order is issued, never in the render or network loop.
@@ -152,8 +152,9 @@ export function openChest(g,slot){
   const p=g.players[slot];if(!p||p.hp<=0)return {ok:false,msg:'Unavailable.'};
   const chest=nearest(p,g.chests,90,c=>!c.opened);
   if(!chest)return {ok:false,msg:'No unopened chest nearby.'};
-  chest.opened=true;p.gold+=90;p.xp+=55;effect(g,chest.x,chest.y,'loot');g.log.unshift(`${HEROES[p.hero].name} uncovered 90 gold.`);
-  return {ok:true,msg:'+90 gold / +55 XP'};
+  const gold=chest.grade==='relic'?220:90,xp=chest.grade==='relic'?130:55;
+  chest.opened=true;p.gold+=gold;p.xp+=xp;effect(g,chest.x,chest.y,'loot');g.log.unshift(`${HEROES[p.hero].name} uncovered ${gold} gold.`);
+  return {ok:true,msg:`+${gold} gold / +${xp} XP`};
 }
 export function playerAction(g,slot,action){
   if(!action)return null;
@@ -178,7 +179,7 @@ export function dmSpawn(g,lane,kind,x=6120,y=null){
   const price={grunt:12,brute:30,sniper:24}[kind];if(!price||g.threat<price)return false;
   const yy=y===null?laneY(x,lane):y;
   if(x<650||x>WORLD.width-40||yy<40||yy>WORLD.height-40)return false;
-  if(BUILDINGS.some(b=>collideCircleRect(x,yy,30,b)))return false;
+  if(OBSTACLES.some(b=>collideCircleRect(x,yy,30,b)))return false;
   g.threat-=price;return spawnEnemy(g,lane,kind,x,yy);
 }
 export function fireEnemy(g,e,tx,ty){if(e.atkCd>0||e.hp<=0)return;
@@ -187,7 +188,7 @@ export function fireEnemy(g,e,tx,ty){if(e.atkCd>0||e.hp<=0)return;
 function updateBullets(g,dt){
   for(const b of g.bullets){if(b.life<=0)continue;
     b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
-    if(BUILDINGS.some(o=>collideCircleRect(b.x,b.y,b.r,o))){b.life=0;effect(g,b.x,b.y,'stone');continue;}
+    if(OBSTACLES.some(o=>collideCircleRect(b.x,b.y,b.r,o))){b.life=0;effect(g,b.x,b.y,'stone');continue;}
     if(b.team==='party'){
       const e=nearest(b,g.enemies,22,e=>e.hp>0);if(e){damageEnemy(g,e,b.damage,g.players[b.slot]);b.life=0;continue;}
       const f=nearest(b,g.forts,39,f=>!f.broken);if(f){damageFort(g,f,b.damage,g.players[b.slot]);b.life=0;continue;}

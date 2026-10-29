@@ -26,7 +26,7 @@ function el(tag='div'){
  return obj;
 }
 try{
- for(const f of ['src/main.js','src/data.js','src/engine.js','src/sync.js','src/prediction.js','src/socket-network.js']){
+ for(const f of ['src/main.js','src/city-art.js','src/data.js','src/engine.js','src/sync.js','src/prediction.js','src/socket-network.js']){
   const dest=join(tmp,f);mkdirSync(dirname(dest),{recursive:true});copyFileSync(join(root,f),dest);
  }
  const elements=new Map();

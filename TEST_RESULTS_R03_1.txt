@@ -1,0 +1,15 @@
+SoulSeekers: Seeking — R03.1 local checks — October 23, 2026
+
+npm test
+- 9 test suites passed, 0 failed.
+- Map tests: lane convergence, open route centerlines, shops/chests, 2 wide jungles with separate trails and interior crossing paths, cover geometry, premium objectives, AI victory and cross-town orders.
+- Engine tests: inventory, boss/fort win conditions, DM summons, normal and rare chests, time victory, AI Party victory.
+- Browser mock rendering: cached Canvas world draws without a JS exception.
+- Server/network tests: dedicated 30Hz simulation, online room protocol, movement prediction, interpolation and reconnect behavior.
+- Static map overview rendered in Chromium without JS exceptions.
+- Local simulation sample: 300 ticks (10 seconds) with approximately 100 enemies, ~0.38 ms average Node engine tick on this machine, excluding real networking/rendering.
+
+Limitations:
+- Not a real seven-player multiplayer load/latency test.
+- Not a guarantee of 60 FPS on the user's machine or Render free tier.
+- Headless browser check confirms static-map drawing; host deployment and full graphics UX require field testing.

@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {join,dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root=join(dirname(fileURLToPath(import.meta.url)),'..');
+const atlas=readFileSync(join(root,'assets/kenney/city_tiles.png'));
+assert.equal(atlas.toString('hex',0,8),'89504e470d0a1a0a');
+assert.equal(atlas.readUInt32BE(16),592,'37 tiles wide × 16 pixels');
+assert.equal(atlas.readUInt32BE(20),448,'28 tiles tall × 16 pixels');
+const main=readFileSync(join(root,'src/main.js'),'utf8');
+const art=readFileSync(join(root,'src/city-art.js'),'utf8');
+assert.match(main,/drawKenneyWorld\(ctx\)/);
+assert.match(main,/worldCache=null/);
+assert.match(art,/for\(const \[i,b\] of BUILDINGS.entries\(\)\)building\(ctx,b,i\)/);
+assert.match(art,/for\(const c of JUNGLE_COVER\)cover\(ctx,c\)/);
+assert.match(art,/ctx.imageSmoothingEnabled=false/);
+console.log('✓ CC0 tile atlas included, loaded lazily, matched to shared collision geometry');

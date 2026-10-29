@@ -5,7 +5,7 @@ const check=(name,fn)=>{fn();console.log('✓',name);};
 check('Battlefield has 6 heroes, 6 forts and 6 bosses',()=>{
  const g=createGame();assert.equal(g.players.length,6);assert.equal(g.forts.length,6);
  assert.equal(g.enemies.filter(e=>e.kind==='boss').length,6);
- assert.equal(g.chests.length,10);assert.equal(g.towerHp,4200);
+ assert.equal(g.chests.length,16);assert.equal(g.towerHp,4200);
  assert.equal(g.time,1200);assert.equal(HEROES.length,6);
 });
 check('Tower is shielded until 4 forts are destroyed',()=>{
@@ -31,6 +31,14 @@ check('Shop purchase requires proximity, gold and open inventory space',()=>{
 check('Chests open once, award gold and XP',()=>{
  const g=createGame(),p=g.players[0];p.x=g.chests[0].x;p.y=g.chests[0].y;
  const first=playerAction(g,0,{type:'chest'});assert.equal(first.ok,true);assert.equal(p.gold,170);
+ assert.equal(playerAction(g,0,{type:'chest'}).ok,false);
+});
+check('Rare jungle signal caches grant premium rewards',()=>{
+ const g=createGame(),p=g.players[0],relic=g.chests.find(c=>c.grade==='relic');
+ assert.ok(relic,'at least one rare jungle objective');
+ p.x=relic.x;p.y=relic.y;
+ const result=playerAction(g,0,{type:'chest'});
+ assert.equal(result.ok,true);assert.equal(p.gold,300);assert.equal(p.xp,130);
  assert.equal(playerAction(g,0,{type:'chest'}).ok,false);
 });
 check('DM summons cost threat and must avoid western spawn and buildings',()=>{
