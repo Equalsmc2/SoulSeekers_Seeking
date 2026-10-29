@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const root=join(dirname(fileURLToPath(import.meta.url)),'..');
 const art=readFileSync(join(root,'src/city-art.js'),'utf8');
 const html=readFileSync(join(root,'index.html'),'utf8');
-assert.match(html,/R03\.3 · BOSTON MAP POLISH/);
+assert.match(html,/R03\.4 · SOULSEEKERS UI/);
 assert.match(art,/paintStreetNetwork\(ctx\)/);
 assert.match(art,/paintJungleIdentity\(ctx\)/);
 assert.match(art,/jungleTrailY\(x,1,side\)/);

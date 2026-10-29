@@ -1,3 +1,15 @@
+# SoulSeekers: Seeking R03.4 — SoulSeekers ACT III UI
+
+**Full game + Node WebSocket server + GitHub sync BAT**; all R03.3 Boston map art, expanded jungles, and R02.2 networking are intact.
+
+This release updates the **interface** to match the user-provided SoulSeekers V40.10 website: cream/charcoal/red panels, Soul Seal, Boston night splash, ACT III lettering, character selection, Party and DM HUDs, inventory, shops, summons, mission/connection status, and performance diagnostics. No extra UI animation loops or new networking dependencies.
+
+**How to install:** Extract the ZIP, run `SYNC_TO_GITHUB.bat`, choose 1 for GitHub Desktop, then Commit to main → Push origin. Allow Render/GitHub Pages to deploy, then hard-refresh and confirm **PROTOTYPE R03.4 · SOULSEEKERS UI** appears. No Firebase changes.
+
+**Tests:** `npm test`. Review `R03_4_UI_STYLE_GUIDE.md` and `CHANGELOG_R03_4.md`. Preview screenshot is included as `UI_PREVIEW.png`.
+
+---
+
 # SoulSeekers: Seeking R03.3 — Boston Map Polish
 
 **This is the complete, playable R03.3 build.** It preserves the R03.2

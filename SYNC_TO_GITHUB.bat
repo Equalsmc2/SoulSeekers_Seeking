@@ -156,7 +156,7 @@ echo.
 echo GitHub Desktop steps:
 echo   1. Switch to GitHub Desktop and select SoulSeekers_Seeking.
 echo   2. Under Changes, you should now see the game files.
-echo   3. Enter a summary, for example: SoulSeekers Seeking R03.2 Kenney city art.
+echo   3. Enter a summary, for example: SoulSeekers Seeking R03.4 SoulSeekers UI.
 echo   4. Click Commit to main at the bottom left.
 echo   5. Click Push origin (or Publish repository) at the top.
 echo.
