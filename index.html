@@ -1,57 +1,64 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0c1016"><title>SOULSEEKERS / SEEKING</title>
-<link rel="stylesheet" href="./style.css?v=R0342"><link rel="stylesheet" href="./soulseekers-ui.css?v=R0342"></head>
+<link rel="stylesheet" href="./style.css?v=R035"><link rel="stylesheet" href="./soulseekers-ui.css?v=R035"><link rel="stylesheet" href="./clean-hud.css?v=R035"></head>
 <body>
 <div id="app">
 <div class="ss-top-rail" aria-label="Soul Seekers game status"><span class="ss-rail-mark">◈</span><strong>SOUL SEEKERS</strong><span class="ss-rail-slash">/</span><span class="ss-rail-sub">ACT III · BOSTON METRO · THE BLACKOUT</span><span class="ss-rail-coordinate">42.3601° N / 71.0589° W</span><span class="ss-rail-live"><i></i> LIVE FIELD SYSTEM</span></div>
 <header class="mast">
-  <div class="brand"><div class="sigil"><img src="./assets/soulseekers/soul-seal.svg" alt="" decoding="async"></div><div><div class="eyebrow">THE WOUNDED ETERNITY / FIELD OPERATIONS <span class="test-tag">PROTOTYPE R03.4.2 · GOLD UI / CLEAN MAP</span></div><h1>SEEKING<span class="dot">.</span></h1></div></div>
+  <div class="brand"><div class="sigil"><img src="./assets/soulseekers/soul-seal.svg" alt="" decoding="async"></div><div><div class="eyebrow">FIELD OPERATIONS <span class="test-tag">R03.5</span></div><h1>SEEKING<span class="dot">.</span></h1></div></div>
   <div class="topmeta"><span class="pulse"></span><span id="connection">OFFLINE TRAINING</span><span class="separator">/</span><span id="roomLabel">BOSTON // THE BLACKOUT</span></div>
   <button class="outline tiny hidden" id="copyRoomCode" title="Click to copy the 6-character room code">COPY ROOM CODE</button><button class="outline tiny hidden" id="copyInvite" title="Copy an invite link with game server and room code">COPY INVITE LINK</button><button class="outline tiny" id="menuButton">MAIN MENU</button>
 </header>
 <div class="game-layout">
   <main class="viewport" id="viewport">
     <canvas id="gameCanvas" aria-label="Top-down game world"></canvas>
-    <div class="world-title"><span class="eyebrow">ACT III / OPERATION 001 / 42.3601 N</span><strong>BOSTON <em>BLACKOUT</em></strong></div>
+    <div class="world-title"><strong>BOSTON <em>BLACKOUT</em></strong></div>
     <div class="hud hud-left"><div class="mini-label">FIELD TIMER / 001</div><strong id="clock">20:00</strong><div class="tiny-text" id="victoryRule">Destroy 4 forts to expose the Tower</div></div>
     <div class="hud hud-right"><div class="mini-label">HOSTILE OBJECTIVE / FINAL</div><strong id="towerHp">SHIELDED</strong><div class="bar"><div id="towerBar"></div></div></div>
     <div class="crosshair" id="crosshair">✛</div>
-    <div class="perf-stats" id="perfStats" title="Live diagnostic: FPS is browser rendering, NET/s is snapshot delivery, RTT is network round-trip, NET JITTER is update irregularity; P95 is frame time for 95% of frames">PERFORMANCE MONITOR LOADING</div>
+    <div class="perf-stats hidden" id="perfStats" title="Live diagnostic: FPS is browser rendering, NET/s is snapshot delivery, RTT is network round-trip, NET JITTER is update irregularity; P95 is frame time for 95% of frames">PERFORMANCE MONITOR LOADING</div>
+    <nav class="tool-dock" id="toolDock" aria-label="Game panels">
+      <button id="toggleInventory" type="button" class="dock-btn" aria-controls="inventoryDrawer" aria-expanded="false"><span class="dock-icon">▦</span> INVENTORY <kbd>I</kbd></button>
+      <button id="toggleShop" type="button" class="dock-btn" aria-controls="shopDrawer" aria-expanded="false"><span class="dock-icon">◇</span> SHOP <kbd>B</kbd></button>
+      <button id="toggleFeed" type="button" class="dock-btn" aria-controls="logDrawer" aria-expanded="false">FEED <kbd>L</kbd></button>
+      <button id="toggleDiagnostics" type="button" class="dock-btn" aria-controls="perfStats" aria-expanded="false">STATS <kbd>F3</kbd></button>
+    </nav>
+    <section id="inventoryDrawer" class="tool-drawer hidden" aria-label="Grid inventory"><header><div><small>FIELD GEAR</small><h2>INVENTORY</h2></div><button class="drawer-close" id="closeInventory" aria-label="Close inventory">✕</button></header>
+      <div id="inventoryWrap"><div class="inv-note">Click an item, then an empty cell to move it. Press R to rotate.</div><div class="inv-grid" id="invGrid"></div><div class="item-description" id="itemInfo">Select an item for details.</div><button id="useItemButton" class="outline tiny" disabled>USE SELECTED ITEM</button></div>
+    </section>
+    <section id="shopDrawer" class="tool-drawer hidden" aria-label="Jungle market"><header><div><small>LOCAL TRADE</small><h2>JUNGLE MARKET</h2></div><button class="drawer-close" id="closeShop" aria-label="Close shop">✕</button></header><p class="market-state" id="shopRange">OUT OF RANGE</p><div id="shopItems" class="shop-items"></div></section>
+    <section id="logDrawer" class="tool-drawer small-drawer hidden" aria-label="Combat feed"><header><div><small>FIELD REPORTS</small><h2>COMBAT FEED</h2></div><button class="drawer-close" id="closeFeed" aria-label="Close combat feed">✕</button></header><div id="log" class="combat-log"></div></section>
     <div id="toast" class="toast"></div><div id="syncAlert" class="sync-alert hidden" role="alert"></div>
     <div id="endOverlay" class="end-overlay hidden"><span class="eyebrow">OPERATION COMPLETE</span><div id="endTitle" class="end-title"></div><button class="primary" id="endRestart">BACK TO MENU</button></div>
   </main>
-  <aside class="side-panel" id="sidePanel"><div class="side-banner"><span>SOUL SEEKERS / FIELD DOSSIER</span><strong>THE BOSTON INCIDENT</strong><em>III</em></div>
-    <div class="side-head"><span id="roleBadge" class="role-badge">PARTY OPERATIVE</span><span class="eyebrow">FIELD TERMINAL / 01</span></div>
+  <aside class="side-panel" id="sidePanel" aria-label="Character and DM summary">
+    <div class="side-head"><span id="roleBadge" class="role-badge">PARTY OPERATIVE</span><span class="eyebrow">ACT III</span></div>
     <div id="playerPanel">
-      <div class="hero-overline" id="heroTitle">THE DEAD FREQUENCY</div><div class="hero-name" id="heroName">ASYA</div>
+      <div class="operative-heading"><div><div class="hero-overline" id="heroTitle">THE DEAD FREQUENCY</div><div class="hero-name" id="heroName">ASYA</div></div><div class="operative-level"><span>LV</span><strong id="level">01</strong></div></div>
       <div class="stat-row"><span>HEALTH</span><b id="hpText">160/160</b></div><div class="bar thick"><div id="hpBar" class="hp-color"></div></div>
-      <div class="stats-three"><div><span>LV</span><strong id="level">01</strong></div><div><span>GOLD</span><strong id="gold">80</strong></div><div><span>KILLS</span><strong id="kills">0</strong></div></div>
-      <div class="stat-row"><span>EXPERIENCE</span><b id="xpText">0 / 90</b></div><div class="bar"><div id="xpBar" class="xp-color"></div></div>
-      <div class="panel-section-title">LOADOUT <button id="toggleInventory" class="text-btn">[ I ] INVENTORY</button></div>
-      <div id="inventoryWrap"><div class="inv-note">Click an item, then an empty cell to move it. Press R to rotate the selected item.</div><div class="inv-grid" id="invGrid"></div><div class="item-description" id="itemInfo">Select an item for details.</div><button id="useItemButton" class="outline tiny" disabled>USE SELECTED ITEM</button></div>
-      <div class="panel-section-title">JUNGLE MARKET <span class="eyebrow" id="shopRange">OUT OF RANGE</span></div>
-      <div id="shopItems" class="shop-items"></div>
+      <div class="stat-row xp-label"><span>XP</span><b id="xpText">0 / 90</b></div><div class="bar xp-track"><div id="xpBar" class="xp-color"></div></div>
+      <div class="compact-resources"><span><i>GOLD</i><strong id="gold">80</strong></span><span><i>KILLS</i><strong id="kills">0</strong></span></div>
     </div>
     <div id="dmPanel" class="hidden">
       <div class="hero-overline">THE OPPOSITION</div><div class="hero-name">DUNGEON MASTER</div>
-      <div class="stats-three"><div><span>THREAT</span><strong id="threat">42</strong></div><div><span>ARMY</span><strong id="armySize">0</strong></div><div><span>FORTS</span><strong id="fortCount">6</strong></div></div>
-      <div class="panel-section-title">SELECT THE FRONT</div>
+      <div class="dm-stats"><span>THREAT <strong id="threat">42</strong></span><span>ARMY <strong id="armySize">0</strong></span><span>FORTS <strong id="fortCount">6</strong></span></div>
+      <div class="dm-controls-label">FRONT</div>
       <div class="lane-select"><button class="lane active" data-lane="0">NORTH</button><button class="lane" data-lane="1">CENTER</button><button class="lane" data-lane="2">SOUTH</button></div>
-      <div class="panel-section-title">SUMMON REINFORCEMENTS</div><div id="dmUnits" class="dm-units"></div>
-      <p class="dm-tip">Choose a reinforcement, then click anywhere in eligible DM territory on the map to deploy it. Click an enemy on the field to possess it. WASD to move; hold left mouse to shoot. Press ESC to release. Right-click the battlefield to issue a move order.</p>
+      <div class="dm-controls-label">REINFORCEMENTS <small>SELECT, THEN CLICK MAP</small></div>
+      <div id="dmUnits" class="dm-units"></div>
       <div class="possession" id="possession">NO UNIT POSSESSED</div>
+      <p class="dm-tip">Click enemies to possess. Right-click to command. Esc releases.</p>
     </div>
-    <div class="panel-section-title log-heading">COMBAT FEED</div><div id="log" class="combat-log"></div>
   </aside>
 </div>
-<footer class="bottom-hud"><div class="controls" id="controls">WASD MOVE <b>·</b> MOUSE AIM / FIRE <b>·</b> Q SPELL <b>·</b> E ECHO <b>·</b> SPACE DASH <b>·</b> F OPEN CHEST <b>·</b> B SHOP <b>·</b> I INVENTORY</div><div class="statusline"><span id="onlineRoster">TRAINING SIMULATION</span><span>© SOULSEEKERS</span></div></footer>
+<footer class="bottom-hud"><div class="controls" id="controls">WASD MOVE <b>·</b> LMB FIRE <b>·</b> SPACE DASH <b>·</b> Q / E ABILITIES</div><div class="statusline"><span id="onlineRoster">TRAINING SIMULATION</span><span>© SOULSEEKERS</span></div></footer>
 </div>
 <div class="menu-layer" id="menuLayer"><div class="menu-sheen"></div><div class="menu-box">
   <div class="ss-menu-banner"><div class="ss-menu-photo" aria-hidden="true"></div><div class="ss-menu-banner-content"><div class="menu-eyebrow"><span class="ss-menu-diamond">◈</span> SOUL SEEKERS <span class="ss-muted-slash">//</span> ACT III <span class="ss-muted-slash">//</span> BOSTON METRO</div>
     <div class="menu-title">SEEKING<span>.</span></div>
     <p class="menu-subtitle">SIX SOULS AGAINST THE CITY. <b>ONE MIND COMMANDING THE DARK.</b></p>
-    <div class="ss-menu-dateline">THE WOUNDED ETERNITY <i>◆</i> FIELD OPERATION / 001</div></div>
+    </div>
     <div class="ss-act-stamp" aria-hidden="true">ACT <strong>III</strong><small>2026</small></div></div>
   <div class="menu-divider"><span><i class="ss-diamond">◈</i> SELECT YOUR SOUL <small>— CHOOSE OPERATIVE</small></span><span>ROSTER / 01—06</span></div><div id="heroChoices" class="hero-choices"></div>
   <div class="mode-grid"><button class="mode-choice" id="soloParty"><span>01 — TRAINING</span><strong>PLAY AS PARTY</strong><small>Solo practice with five AI allies. No setup.</small></button>
@@ -76,4 +83,4 @@ window.__SEEKING_BOOTSTRAPPED__=false;
   },2400);
 })();
 </script>
-<script type="module" src="./src/main.js?v=R0342"></script></body></html>
+<script type="module" src="./src/main.js?v=R035"></script></body></html>

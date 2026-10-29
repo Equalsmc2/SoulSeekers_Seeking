@@ -83,6 +83,8 @@ if %ROBORESULT% GEQ 8 (
   echo ERROR: File copy failed. robocopy returned %ROBORESULT%.
   goto END
 )
+REM R03.5: retire the old, cluttered UI preview; functionality is unchanged.
+if exist "%REPO%\UI_PREVIEW.png" del /f /q "%REPO%\UI_PREVIEW.png" >nul 2>nul
 REM R03.4.1: retire only the accidentally included Kenney art renderer.
 REM Robocopy /E keeps destination-only files, so remove known old artifacts explicitly.
 if exist "%REPO%\src\city-art.js" del /f /q "%REPO%\src\city-art.js" >nul 2>nul

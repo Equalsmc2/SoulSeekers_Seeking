@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+const css=readFileSync(new URL('../clean-hud.css',import.meta.url),'utf8');
+assert.match(html,/R03\.5/);
+for(const id of ['toggleInventory','toggleShop','toggleFeed','toggleDiagnostics','inventoryDrawer','shopDrawer','logDrawer','closeInventory','closeShop','closeFeed','inventoryWrap','shopItems','invGrid','dmPanel','sidePanel','gameCanvas']) assert.ok(html.includes('id="'+id+'"'),'missing '+id);
+assert.match(html,/class="perf-stats hidden"/);
+assert.match(html,/id="inventoryDrawer" class="tool-drawer hidden"/);
+assert.match(html,/id="shopDrawer" class="tool-drawer hidden"/);
+assert.match(main,/openDrawer=openDrawer===next\?null:next/);
+assert.match(main,/k==='f3'/);
+assert.match(main,/k==='b'&&!isDM\(\)/);
+assert.match(main,/k==='i'&&!isDM\(\)/);
+assert.match(css,/\.game-layout\{display:block/);
+assert.match(css,/\.side-panel\{position:absolute/);
+assert.doesNotMatch(css,/animation\s*:/);
+console.log('✓ Clean HUD: essential controls present, drawers closed by default, canvas full-width');

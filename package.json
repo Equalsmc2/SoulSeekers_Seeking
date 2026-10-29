@@ -1,9 +1,9 @@
 {
   "name": "soulseekers-seeking",
-  "version": "3.4.2",
+  "version": "3.5.0",
   "private": true,
   "type": "module",
-  "description": "SoulSeekers: Seeking R03.4.2 SoulSeekers UI with the unintended Kenney map renderer removed and dedicated WebSocket server",
+  "description": "SoulSeekers: Seeking R03.5 clean, compact gold UI with collapsible inventory/shop and performance diagnostics and dedicated WebSocket server",
   "scripts": {
     "start": "node server/index.mjs",
     "test": "node --test tests/*.test.mjs"

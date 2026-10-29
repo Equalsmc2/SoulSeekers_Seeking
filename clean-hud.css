@@ -1,0 +1,148 @@
+/* R03.5 — Quiet, spacious field UI. Pure CSS; no GPU-heavy blur or animations.
+   No gameplay, simulation, server, or rendering code is modified here. */
+:root{--ui-ivory:#f3eee2;--ui-gold:#d9b45f;--ui-gold-soft:#ab9158;--ui-quiet:#9fa7aa;--ui-line:#ffffff24}
+body{background:#0c1014}
+.ss-top-rail{display:none}
+.mast{height:56px;min-height:56px;padding:0 20px;background:#11171b;border-bottom:1px solid #c5a25870}
+.mast:after{height:2px;bottom:-1px;width:105px;background:var(--ui-gold)}
+.brand{gap:9px}
+.sigil{height:32px;width:32px;border:0;clip-path:none;transform:none;background:transparent}
+.sigil img{padding:0;transform:none;width:100%;height:100%}
+.brand h1{font:italic 900 26px/.95 var(--ss-title);letter-spacing:0;margin:2px 0}
+.brand .eyebrow{font:650 8px var(--ss-body);letter-spacing:.12em;color:#8f9697}
+.brand .eyebrow>span.test-tag{display:inline;background:none;border:0;box-shadow:none;margin:0 0 0 6px;padding:0;color:#d3ad61;font:700 8px var(--ss-mono);letter-spacing:0}
+.topmeta{margin-left:auto;font:600 9px var(--ss-mono);letter-spacing:.04em;color:#b2b7b4;white-space:nowrap;max-width:46%;overflow:hidden}
+.topmeta .separator{display:none}
+.topmeta .pulse{background:#7aaf9e;box-shadow:none;width:5px;height:5px}
+.mast #menuButton,.mast #copyRoomCode,.mast #copyInvite{min-height:30px;padding:7px 10px;clip-path:none;background:transparent;border:1px solid #ffffff26;box-shadow:none;color:#e6dcc9;font-size:9px;letter-spacing:.06em}
+.mast #menuButton:hover,.mast #copyRoomCode:hover,.mast #copyInvite:hover{background:#2a302f;border-color:var(--ui-gold)}
+/* Canvas has ALL available game area. UI floats over it only where required. */
+.game-layout{display:block;position:relative;min-height:0;flex:1;background:#0a1014}
+.viewport{width:100%;height:100%;min-height:0;position:relative;background:#11191d}
+.viewport:after{border:0}
+.world-title{display:none}
+.hud{z-index:4;top:15px;min-width:0;max-width:220px;padding:10px 13px;background:#10181de8;border:1px solid #ffffff25;box-shadow:0 6px 18px #0004;clip-path:none}
+.hud-left{left:17px;border-left:2px solid #d9b45f}
+.hud-right{right:17px;border-left:0;border-right:2px solid #d9b45f;text-align:right}
+.hud .mini-label{font:650 9px var(--ss-mono);color:#9ea7a7;letter-spacing:.05em}
+.hud strong{font:italic 900 27px/.95 var(--ss-title);color:var(--ui-ivory);margin:4px 0 0;letter-spacing:.01em}
+.hud-right strong{font-size:20px;color:#e7c579}
+.hud .tiny-text{font:10px/1.4 var(--ss-body);max-width:185px;color:#a8afa9}
+.hud .bar{height:3px;margin:7px 0 0}
+/* Character card: a compact, always-readable status summary. */
+.side-panel{position:absolute;left:17px;bottom:18px;width:262px;max-height:calc(100% - 104px);z-index:9;overflow-y:auto;scrollbar-width:thin;background:#10171deb;border:1px solid #ffffff2f;border-left:2px solid #d9b45f;border-radius:3px;padding:13px 14px 12px;margin:0;box-shadow:0 14px 28px #0006;backdrop-filter:none}
+.side-panel .side-head{padding:0 0 9px;min-height:0}
+.side-panel .side-head .eyebrow{font:650 9px var(--ss-mono);letter-spacing:.04em;color:#7c8a8e}
+.role-badge{padding:0;min-height:0;border:0!important;background:none!important;color:#d8bd7e!important;font:750 9px var(--ss-body);letter-spacing:.11em}
+.operative-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px}
+.hero-overline{font:700 9px var(--ss-body);letter-spacing:.08em;color:#bfb49e}
+.hero-name{font:italic 900 28px/.95 var(--ss-title);letter-spacing:0;margin:3px 0 0;color:#f2ede2;text-shadow:none}
+.operative-level{text-align:right;display:flex;align-items:baseline;gap:6px}
+.operative-level span{color:#a3a79c;font:750 10px var(--ss-mono)}
+.operative-level strong{color:#e8c576;font:italic 900 23px var(--ss-title)}
+.stat-row{font:600 10px var(--ss-body);letter-spacing:.02em;color:#b3b8b5}
+.stat-row b{font:650 10px var(--ss-mono);color:#f1ede4}
+.side-panel .bar{transform:none;background:#344049;height:4px;margin:5px 0 9px}
+.side-panel .bar.thick{height:7px;margin:5px 0 8px}
+.side-panel .xp-label{margin-top:7px}
+.side-panel .xp-track{height:3px;margin:4px 0 7px}
+.compact-resources{display:flex;gap:18px;border-top:1px solid #ffffff25;margin-top:8px;padding-top:7px}
+.compact-resources>span{display:flex;align-items:baseline;gap:6px}
+.compact-resources i{font:650 9px var(--ss-body);font-style:normal;color:#a8a9a0}
+.compact-resources strong{font:900 16px var(--ss-title);color:#f3e9d1}
+/* DM gets a compact console, still fully functional. */
+.side-panel:has(#dmPanel:not(.hidden)){width:285px}
+.side-panel #dmPanel>.hero-name{font-size:26px;margin:3px 0 8px}
+.dm-stats{display:flex;justify-content:space-between;gap:7px;border-top:1px solid #ffffff25;border-bottom:1px solid #ffffff25;padding:9px 0;margin:8px 0}
+.dm-stats>span{font:650 9px var(--ss-body);color:#a5aaa4;display:flex;flex-direction:column;gap:1px}
+.dm-stats strong{font:850 21px var(--ss-title);color:#e5c57e}
+.dm-controls-label{margin:11px 0 7px;display:flex;justify-content:space-between;gap:5px;font:750 9px var(--ss-body);letter-spacing:.08em;color:#d9cfbe}
+.dm-controls-label small{font-size:8px;font-weight:500;letter-spacing:0;color:#92999a}
+.lane-select{gap:4px}
+.lane{border:1px solid #ffffff22!important;background:#202931!important;color:#c6c7c2!important;padding:8px 4px;font:750 9px var(--ss-body);letter-spacing:.02em;min-width:0}
+.lane.active{background:#685633!important;border-color:#d9b45f!important;color:#fff0cb!important}
+.dm-units{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.dm-unit{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;min-height:55px;padding:9px 6px;border:1px solid #ffffff24;border-left:1px solid #ffffff24;background:#1e272e;font:700 10px var(--ss-body)}
+.dm-unit b{font:650 9px var(--ss-mono);white-space:nowrap;color:#e1c583}
+.dm-tip{font:10px/1.4 var(--ss-body);color:#8d9899;margin:9px 0 0}
+.possession{margin:8px 0 0;padding:6px 8px;border:1px solid #ffffff24;background:#172229;font:9px var(--ss-mono);color:#ddd3ba}
+/* The tool dock is small and action-oriented, never a permanent inventory panel. */
+.tool-dock{position:absolute;z-index:10;bottom:18px;left:50%;transform:translateX(-34%);display:flex;align-items:center;gap:5px;padding:5px;background:#10171cec;border:1px solid #ffffff29;border-radius:4px;box-shadow:0 6px 22px #0006}
+.dock-btn{border:0;border-radius:3px!important;background:transparent;color:#d9d9cf;display:flex;align-items:center;gap:7px;padding:10px 11px;font:760 10px var(--ss-body);letter-spacing:.04em;white-space:nowrap;transition:background .12s,color .12s;clip-path:none!important}
+.dock-btn:hover,.dock-btn.active{color:#f5e6b9;background:#5d4d2d9c}
+.dock-icon{font-size:15px;color:#dfbd70;line-height:0}
+kbd{font:650 9px var(--ss-mono);border:1px solid #ffffff30;color:#a9aba5;background:#ffffff0a;border-radius:2px;padding:2px 4px}
+.dock-btn.active kbd{color:#f8e6bb}
+/* One popover at a time; no permanent right third of the screen. */
+.tool-drawer{position:absolute;z-index:20;top:90px;right:17px;width:345px;max-height:calc(100% - 165px);overflow:auto;scrollbar-color:#8f7740 #172027;background:#131b21f5;border:1px solid #ffffff39;border-top:2px solid #d9b45f;border-radius:4px;padding:16px;box-shadow:0 20px 55px #0009}
+.tool-drawer header{display:flex;align-items:center;justify-content:space-between;margin:0 0 13px}
+.tool-drawer header small{display:block;font:700 9px var(--ss-body);letter-spacing:.12em;color:#b6b0a3}
+.tool-drawer h2{font:italic 900 29px var(--ss-title);letter-spacing:.025em;color:var(--ui-ivory);margin:2px 0 0}
+.drawer-close{border:1px solid #ffffff2c;background:#242c31;color:#dcd2c4;width:30px;height:30px;border-radius:3px}
+.drawer-close:hover{border-color:#d9b45f;color:#fff0c6}
+.inv-note{font:11px/1.4 var(--ss-body);color:#a7b0ae;margin:0 0 12px}
+.inv-grid{grid-template-rows:repeat(5,33px);border:1px solid #ffffff26;padding:4px;gap:3px;background:#0e151b}
+.inv-cell{background:#273037;border:1px solid #ffffff0d}
+.inv-item{background:#635239;border:1px solid #ddba73}
+.item-description{margin:12px 0 9px;color:#c0c4bf}
+.tool-drawer #useItemButton{background:#e0bd70;color:#211a0f;border:0;box-shadow:none;clip-path:none;padding:10px 12px;font:750 10px var(--ss-body)}
+.tool-drawer #useItemButton:disabled{background:#33373a;color:#92938d}
+.shop-items{gap:8px}
+.shop-card{padding:11px;min-height:75px;border:1px solid #ffffff30;border-left:2px solid #d9b45f;background:#1c282d;text-align:left;clip-path:none}
+.shop-card b{font:700 12px var(--ss-body);color:#efe8d9}
+.shop-card span{color:#e6c37d}
+.market-state{margin:0 0 12px;font:750 10px var(--ss-mono);letter-spacing:.06em;color:#b2bbb7}
+.small-drawer{width:308px;max-height:310px}
+.combat-log{max-height:200px;font:11px/1.6 var(--ss-mono);color:#c1c6c1}
+.combat-log div{padding:7px 0;border-bottom:1px solid #ffffff1e}
+/* Diagnostic panel appears only on request with F3. It keeps processing offscreen. */
+.perf-stats{top:auto;left:auto;bottom:83px;right:19px;border:1px solid #ffffff2a;border-left:2px solid #ad9460;border-radius:3px;padding:7px 10px;background:#10171df0;color:#d4dbc6;font:9px/1.5 var(--ss-mono);box-shadow:0 8px 28px #0007;max-width:calc(100% - 40px)}
+.perf-stats.warning{border-left-color:#e68078;color:#fad4be}
+/* Minimal footer is just a legend, not a second toolbar. */
+.bottom-hud{height:25px;min-height:25px;max-height:25px;background:#10161a;color:#89918c;border-top:1px solid #ffffff18;padding:4px 17px;font:9px/1.5 var(--ss-mono)}
+.controls{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bottom-hud .controls b{margin:0 8px;color:#6d695d}
+.statusline{gap:10px;color:#838c85}
+.statusline span:last-child{display:none}
+/* Menu: quiet hierarchy, fewer boxes, more space. */
+.menu-layer{background:#0b0f13f5}
+.menu-sheen{background:radial-gradient(ellipse at 50% 30%,#4c40291f,transparent 66%)}
+.menu-box{max-width:915px;background:#151b20;padding:0 22px 21px;border:1px solid #ffffff29;box-shadow:0 25px 70px #0009}
+.menu-box:before{height:2px;width:110px}
+.ss-menu-banner{height:142px;margin:0 -22px;border-bottom:1px solid #d9b45f80}
+.ss-menu-banner:before{background:linear-gradient(90deg,#10161beF 0%,#10161bc0 50%,#10161b45 100%)}
+.ss-menu-banner-content{padding:16px 23px}
+.menu-title{font:italic 900 69px/.9 var(--ss-title);margin:8px 0 8px;letter-spacing:0;text-shadow:none}
+.menu-subtitle{font:700 11px/1.4 var(--ss-body);color:#d3d4cd;letter-spacing:.01em}
+.menu-eyebrow{font:750 9px var(--ss-body);letter-spacing:.09em}
+.ss-act-stamp{opacity:.45;right:27px}.ss-act-stamp strong{font-size:77px}
+.menu-divider{margin:15px 0 9px;padding-bottom:7px;color:#ddd7c7;font:750 10px var(--ss-body)}
+.menu-divider:after{display:none}
+.menu-divider small,.menu-divider>span:last-child{color:#929a9b;font-size:9px}
+.hero-choices{gap:6px}
+.hero-choice{min-height:82px;padding:10px;background:#1e272d;border:1px solid #ffffff2a;clip-path:none}
+.hero-choice:before{height:2px}
+.hero-choice .hero-icon{font:italic 900 22px var(--ss-title);margin-bottom:4px}
+.hero-choice b{font:italic 900 17px/.95 var(--ss-title)}
+.hero-choice small{margin-top:3px;font:600 9px var(--ss-body)}
+.hero-choice:hover{background:#293138;transform:none}
+.hero-choice.chosen{background:#302e28;border-color:#dfbe7a;box-shadow:none}
+.hero-choice.chosen:after{font-size:0;content:'✓';font-size:13px;right:8px;top:6px;color:#ebca8b}
+.mode-grid{gap:8px;margin-top:9px}
+.mode-choice{min-height:60px;display:flex;flex-direction:column;gap:3px;justify-content:center;padding:12px 15px;border:1px solid #ffffff36;border-left:2px solid #d9b45f;background:#202a31;color:#e7e6dc;clip-path:none}
+.mode-choice span{font:750 9px var(--ss-body);color:#bdab84;max-width:none}
+.mode-choice strong{font:italic 900 21px var(--ss-title);margin:0}
+.mode-choice small{font:600 10px var(--ss-body);color:#a9b0ae}
+.mode-choice:hover{transform:none;background:#2e3537;border-color:#dbbc78}
+.server-address-row{margin:8px 0}
+.server-address-row label{font-size:9px}
+.server-address-row input,.join-row input{background:#10171e;border:1px solid #ffffff3d;border-radius:3px;padding:9px 11px;min-height:36px}
+.online-menu{gap:8px;grid-template-columns:165px minmax(0,1fr)}
+.online-menu .primary,.online-menu .outline{min-height:37px;clip-path:none;box-shadow:none;border-radius:3px!important}
+.join-hint{color:#919c9e;font:10px/1.45 var(--ss-body);margin:8px 0 0}
+.menu-message{border-left:2px solid #d9b45f;padding:7px 10px;font:11px/1.3 var(--ss-body);margin:9px 0 0;background:#202b30;min-height:29px}
+/* Respond to narrow Zen splits / laptop windows without hiding crucial controls. */
+@media(max-width:1090px){.game-layout{display:block}.side-panel{width:248px}.tool-dock{left:50%;transform:translateX(-50%)}.mast .topmeta{max-width:37%}}
+@media(max-width:790px){.mast{padding:0 10px}.mast .topmeta{display:none}.tool-dock{left:auto;right:12px;bottom:12px;transform:none;padding:4px}.dock-btn{padding:9px 7px;font-size:9px;gap:4px}.dock-btn .dock-icon{display:none}.dock-btn kbd{font-size:8px}.side-panel{left:10px;bottom:12px;width:216px;padding:10px 11px}.hero-name{font-size:24px}.tool-drawer{right:10px;top:70px;width:min(330px,calc(100% - 20px));max-height:calc(100% - 145px)}.hud{top:9px;padding:8px 10px}.hud-left{left:10px}.hud-right{right:10px}.bottom-hud{padding:4px 10px}.statusline{display:none}.menu-box{padding:0 15px 15px}.ss-menu-banner{margin:0 -15px}.ss-menu-banner-content{padding:14px}.menu-title{font-size:56px}.hero-choices{grid-template-columns:repeat(3,minmax(0,1fr))}.menu-layer{padding:10px}}
+@media(max-width:530px){.mast .brand .eyebrow{display:none}.brand h1{font-size:23px}.mast #menuButton{padding:6px}.hud-right{max-width:125px}.hud .tiny-text{display:none}.hud strong{font-size:22px}.hud-right strong{font-size:17px}.side-panel{width:199px;max-height:43%;padding:9px}.side-panel:has(#dmPanel:not(.hidden)){width:215px;max-height:70%}.dm-unit{padding:6px 3px;font-size:9px}.dm-unit b{font-size:8px}.tool-dock{bottom:11px;right:7px;display:grid;grid-template-columns:repeat(2,1fr);gap:2px}.dock-btn{padding:8px 7px}.tool-drawer{top:63px;bottom:85px;max-height:none}.ss-act-stamp{display:none}.menu-title{font-size:46px}.menu-subtitle{font-size:10px}.mode-grid{grid-template-columns:1fr}.online-menu{grid-template-columns:1fr}.join-row{grid-template-columns:1fr 1fr}}
+@media(prefers-reduced-motion:reduce){.dock-btn,.hero-choice,.mode-choice{transition:none!important}}

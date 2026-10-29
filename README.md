@@ -30,3 +30,8 @@ Three curving roads converge, branch, and converge again. The upper jungle is th
 No game networking or combat rules were intentionally changed. Local automated tests passed; live Render networking and a full visual/browser test still need validation on your device.
 
 Change details: `CHANGELOG_R03_4_2.md`, `CHANGELOG_R03_4_1.md`.
+
+## R03.5: a quieter field interface
+The game viewport is now full width. Inventory (`I`), shop (`B`), combat feed (`L`), and performance details (`F3`) open only when needed. `Esc` dismisses optional panels. The smaller DM controls still allow enemy placement and possession. See `R03_5_CONTROLS.md`.
+
+Version R03.5 is visible next to **Field Operations** on the upper-left menu bar. Deploy normally using `SYNC_TO_GITHUB.bat`; this UI update requires no Firebase or Render settings changes.

@@ -1,8 +1,8 @@
 // R02: dedicated Node/WebSocket server owns online gameplay. Offline training is standalone.
-import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,CHEST_SPOTS,MAP_X,BOSTON_DISTRICTS,JUNGLES,JUNGLE_COVER,STREET_COVER,JUNGLE_LANDMARKS,JUNGLE_LOOP_CROSSINGS,jungleHalfWidth,jungleTrailY,LANE_NAMES,CONNECTORS,laneY,jungleY,nearestLane,clamp,dist} from './data.js?v=R0342';
-import {createGame,tick,dmSpawn,giveMarchOrder,teamHasShop,towerExposed} from './engine.js?v=R0342';
-import {newPrediction,predictStep,reconcileWithLatency,tweenPosition,receiveEntityMotion,createPlaybackClock} from './prediction.js?v=R0342';
-import {connectMatch,normalizeEndpoint,describeSocketError} from './socket-network.js?v=R0342';
+import {WORLD,HEROES,ITEMS,BUILDINGS,SHOPS,CHEST_SPOTS,MAP_X,BOSTON_DISTRICTS,JUNGLES,JUNGLE_COVER,STREET_COVER,JUNGLE_LANDMARKS,JUNGLE_LOOP_CROSSINGS,jungleHalfWidth,jungleTrailY,LANE_NAMES,CONNECTORS,laneY,jungleY,nearestLane,clamp,dist} from './data.js?v=R035';
+import {createGame,tick,dmSpawn,giveMarchOrder,teamHasShop,towerExposed} from './engine.js?v=R035';
+import {newPrediction,predictStep,reconcileWithLatency,tweenPosition,receiveEntityMotion,createPlaybackClock} from './prediction.js?v=R035';
+import {connectMatch,normalizeEndpoint,describeSocketError} from './socket-network.js?v=R035';
 function normalizeRoomCode(code){return String(code??'').trim().toUpperCase().replace(/[\s-]/g,'');}
 function describeNetworkError(error){return describeSocketError(error);}
 function getServerAddress(){return $('gameServerUrl').value.trim();}
@@ -26,7 +26,7 @@ const $=id=>document.getElementById(id);
 const canvas=$('gameCanvas');let ctx=canvas.getContext('2d');const screenCtx=ctx;
 let worldCache=null;
 let game=null,mode='menu',net=null,activeSlot=0,selectedHero=0,lane=1,possessed=null,placementType=null;
-let netInputs={},netSlots={},selectedItem=null,inventoryVisible=true,renderedWinner=null;
+let netInputs={},netSlots={},selectedItem=null,inventoryVisible=false,renderedWinner=null;
 let actionSeq=0,pendingAction=null,lastTime=performance.now(),lastInputSend=0,lastUI=0;
 let toastTimeout=null,chosenMouse={x:0,y:0,down:false,worldX:0,worldY:0},keys=new Set();
 const camera={x:WORLD.partyX+280,y:1000,zoom:.95},remotePositions=new Map();
@@ -70,7 +70,31 @@ function setupChoices(){
   $('shopItems').innerHTML=Object.entries(ITEMS).map(([id,d])=>`<button class="shop-card" data-buy="${id}"><b>${d.icon} ${d.name}</b><span>${d.price} GOLD</span></button>`).join('');
   $('shopItems').querySelectorAll('button').forEach(b=>b.onclick=()=>queueAction({type:'buy',item:b.dataset.buy}));
   document.querySelectorAll('.lane').forEach(b=>b.onclick=()=>{lane=Number(b.dataset.lane);if(isDM()&&!possessed)camera.y=laneY(camera.x,lane);document.querySelectorAll('.lane').forEach(el=>el.classList.toggle('active',el===b));});
-  $('toggleInventory').onclick=()=>{inventoryVisible=!inventoryVisible;$('inventoryWrap').classList.toggle('hidden',!inventoryVisible);};
+  // All optional panes are mutually exclusive; the main scene stays unobstructed by default.
+  const drawers={inventory:'inventoryDrawer',shop:'shopDrawer',feed:'logDrawer'};
+  const dockButtons={inventory:'toggleInventory',shop:'toggleShop',feed:'toggleFeed'};
+  let openDrawer=null;
+  function setDrawer(next){
+    openDrawer=openDrawer===next?null:next;
+    inventoryVisible=openDrawer==='inventory';
+    for(const [name,id] of Object.entries(drawers)){
+      $(id).classList.toggle('hidden',openDrawer!==name);
+      $(dockButtons[name]).classList.toggle('active',openDrawer===name);
+      $(dockButtons[name]).setAttribute('aria-expanded',String(openDrawer===name));
+    }
+  }
+  $('toggleInventory').onclick=()=>setDrawer('inventory');
+  $('toggleShop').onclick=()=>setDrawer('shop');
+  $('toggleFeed').onclick=()=>setDrawer('feed');
+  $('closeInventory').onclick=()=>setDrawer('inventory');
+  $('closeShop').onclick=()=>setDrawer('shop');
+  $('closeFeed').onclick=()=>setDrawer('feed');
+  $('toggleDiagnostics').onclick=()=>{
+    const showing=$('perfStats').classList.toggle('hidden')===false;
+    $('toggleDiagnostics').classList.toggle('active',showing);
+    $('toggleDiagnostics').setAttribute('aria-expanded',String(showing));
+  };
+  window.addEventListener('seeking-close-panels',()=>{if(openDrawer)setDrawer(openDrawer);});
   $('useItemButton').onclick=()=>{if(selectedItem)queueAction({type:'item',id:selectedItem});};
   $('soloParty').onclick=()=>startLocal('party');$('soloDM').onclick=()=>startLocal('dm');
   $('menuButton').onclick=()=>location.reload();$('endRestart').onclick=()=>location.reload();
@@ -107,9 +131,10 @@ function setupChoices(){
     finally{$('joinOnline').disabled=false;}
   };
 }
-function leaveMenu(){ $('menuLayer').classList.add('hidden');$('roleBadge').textContent=isDM()?'DUNGEON MASTER':'PARTY OPERATIVE';
+function leaveMenu(){ $('menuLayer').classList.add('hidden');
+  $('toggleInventory').classList.toggle('hidden',isDM());$('toggleShop').classList.toggle('hidden',isDM());$('roleBadge').textContent=isDM()?'DUNGEON MASTER':'PARTY OPERATIVE';
   $('dmPanel').classList.toggle('hidden',!isDM());$('playerPanel').classList.toggle('hidden',isDM());
-  $('controls').innerHTML=isDM()?'WASD POSSESSED ENEMY <b>·</b> CLICK ENEMY TO POSSESS <b>·</b> MOUSE FIRE <b>·</b> RIGHT CLICK TO COMMAND <b>·</b> ARROWS PAN <b>·</b> ESC RELEASE':'WASD MOVE <b>·</b> MOUSE FIRE <b>·</b> Q SPELL <b>·</b> E ECHO <b>·</b> SPACE DASH <b>·</b> F CHEST <b>·</b> B SHOP <b>·</b> I INVENTORY';
+  $('controls').innerHTML=isDM()?'CLICK POSSESS <b>·</b> RMB COMMAND <b>·</b> WASD MOVE <b>·</b> ESC RELEASE':'WASD MOVE <b>·</b> LMB FIRE <b>·</b> Q / E ABILITIES <b>·</b> SPACE DASH <b>·</b> F CHEST';
 }
 function acceptNetworkState(state,serverTimeMs){
   const arrived=performance.now();
@@ -634,7 +659,9 @@ function drawFX(fx){ctx.save();const v=1-fx.ttl/.38;ctx.globalAlpha=Math.max(0,1
   ctx.strokeStyle=fx.type==='ability'?'#b7a4ff':fx.type==='nova'?'#ffd18d':fx.type==='loot'?'#ffd18d':'#f4bac2';
   ctx.lineWidth=fx.type==='ability'||fx.type==='nova'?6:3;
   ctx.beginPath();ctx.arc(fx.x,fx.y,(fx.type==='ability'?165:fx.type==='nova'?220:12)*Math.max(.2,v),0,Math.PI*2);ctx.stroke();ctx.restore();}
-function drawMinimap(){if(!game)return;const w=210,h=125,x=width-w-18,y=height-h-18;
+// Keep the minimap away from the lower action dock in split-window / mobile layouts.
+function minimapBounds(){const w=210,h=125;return {w,h,x:width-w-18,y:width<790?Math.min(146,Math.max(90,height-h-15)):height-h-18};}
+function drawMinimap(){if(!game)return;const {w,h,x,y}=minimapBounds();
   ctx.save();ctx.fillStyle='#101a21e8';ctx.fillRect(x-5,y-5,w+10,h+10);ctx.strokeStyle='#88a3a0';ctx.lineWidth=1;ctx.strokeRect(x-5,y-5,w+10,h+10);
   ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();ctx.fillStyle='#2d4147';ctx.fillRect(x,y,w,h);
   // Minimap traces the same curved three-lane topology as the world.
@@ -741,9 +768,11 @@ function frame(now){
 function events(){window.addEventListener('resize',resize);window.addEventListener('keydown',e=>{
   const tag=document.activeElement?.tagName;if(tag==='INPUT'||tag==='TEXTAREA')return;
   const k=e.key.toLowerCase();keys.add(k);if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
-  if(k==='escape'){possessed=null;selectedItem=null;placementType=null;}
-  if(k==='i'&&!isDM()){$('toggleInventory').click();}
-  if(k==='b'&&!isDM()){$('sidePanel').scrollTo({top:$('shopItems').offsetTop,behavior:'smooth'});}
+  if(k==='escape'){possessed=null;selectedItem=null;placementType=null;window.dispatchEvent(new Event('seeking-close-panels'));}
+  if(k==='i'&&!isDM()&&!e.repeat){$('toggleInventory').click();}
+  if(k==='b'&&!isDM()&&!e.repeat){$('toggleShop').click();}
+  if(k==='l'&&!e.repeat){$('toggleFeed').click();}
+  if(k==='f3'&&!e.repeat){e.preventDefault();$('toggleDiagnostics').click();}
   if(k==='f'&&!isDM())queueAction({type:'chest'});
   if(k==='r'&&selectedItem&&!isDM()){
     const p=game?.players?.[activeSlot],it=p?.inventory?.find(i=>i.id===selectedItem);if(it)queueAction({type:'moveItem',id:it.id,x:it.x,y:it.y,rotate:true});
@@ -768,7 +797,7 @@ function events(){window.addEventListener('resize',resize);window.addEventListen
   canvas.addEventListener('wheel',e=>{e.preventDefault();camera.zoom=clamp(camera.zoom*(e.deltaY>0?.9:1.1),.52,1.52);},{passive:false});
   canvas.addEventListener('click',e=>{
     if(!isDM()||possessed||!game)return;const box=canvas.getBoundingClientRect(),px=e.clientX-box.left,py=e.clientY-box.top;
-    const w=210,h=125,x=width-w-18,y=height-h-18;
+    const {w,h,x,y}=minimapBounds();
     if(px>=x&&px<=x+w&&py>=y&&py<=y+h){camera.x=(px-x)/w*WORLD.width;camera.y=(py-y)/h*WORLD.height;}
   });
 }

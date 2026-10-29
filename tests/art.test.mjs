@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 const root=join(dirname(fileURLToPath(import.meta.url)),'..');
 const main=readFileSync(join(root,'src/main.js'),'utf8');
 const html=readFileSync(join(root,'index.html'),'utf8');
-assert.match(html,/PROTOTYPE R03\.4\.2/);
+assert.match(html,/R03\.5/);
 assert.match(main,/function drawWorld\(\)/);
 assert.match(main,/function drawJungleDistrict\(/);
 assert.match(main,/for\(const \[i,b\] of BUILDINGS\.entries\(\)\)drawBuilding\(b,i\)/);

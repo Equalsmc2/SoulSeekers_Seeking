@@ -101,3 +101,8 @@ Push the ZIP through GitHub Desktop as usual. If you already deployed the Render
 ## Unchanged limitation
 
 A Render free instance may have variable resources/latency. No client patch can guarantee 60fps on every device or eliminate real network delays. The diagnostic readout is intended to identify what is still limiting smoothness in live tests.
+
+## R03.5 — Clean Field UI
+- Replaced the permanent right sidebar with compact player/DM overlays; restored full-width gameplay view.
+- Added toggleable inventory, shop, combat feed, and optional FPS/network diagnostics; see `CHANGELOG_R03_5.md`.
+- Kept R03.4.2 gold identity, native Boston map rendering, all multiplayer/game systems, and GitHub sync.
