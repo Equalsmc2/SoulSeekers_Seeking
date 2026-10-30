@@ -1,3 +1,9 @@
+# R1.1 notice
+
+Read `README_R1_1_REPAIR.md` before using this release: character → dodge → weapon selection, the fixed Render endpoint, and updated testing caveats supersede R1 instructions where they differ. No live deployment has been modified.
+
+---
+
 # Installation and sharing
 
 ## Local server

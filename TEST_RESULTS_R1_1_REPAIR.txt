@@ -1,0 +1,265 @@
+
+> soulseekers-seeking@4.0.1-rc.1 test
+> node --test tests/*.test.mjs
+
+TAP version 13
+# ✓ Original Boston renderer and authoritative geometry retained; accidental tile art absent
+# Subtest: tests/art.test.mjs
+ok 1 - tests/art.test.mjs
+  ---
+  duration_ms: 79.448154
+  type: 'test'
+  ...
+# ✓ Clean HUD: essential controls present, drawers closed by default, canvas full-width
+# Subtest: tests/clean-hud.test.mjs
+ok 2 - tests/clean-hud.test.mjs
+  ---
+  duration_ms: 80.332255
+  type: 'test'
+  ...
+# ✓ R02.2 server-clock motion remains monotonic through irregular snapshot delivery
+# ✓ Local prediction compensates normal one-way latency without backwards corrections
+# ✓ Fixed-timestep scheduler tracks wall clock and bounds delayed callbacks
+# Subtest: tests/clock-stability.test.mjs
+ok 3 - tests/clock-stability.test.mjs
+  ---
+  duration_ms: 142.700967
+  type: 'test'
+  ...
+# Subtest: full V22.4 data and all 43 spell effects execute without browser globals
+ok 4 - full V22.4 data and all 43 spell effects execute without browser globals
+  ---
+  duration_ms: 78.797373
+  type: 'test'
+  ...
+# Subtest: all twelve weapons fire/reload/special and all twelve dodge states run
+ok 5 - all twelve weapons fire/reload/special and all twelve dodge states run
+  ---
+  duration_ms: 137.692954
+  type: 'test'
+  ...
+# Subtest: wall radius, rotated obstacles, swept fast movement, doors, LOS and navigation
+ok 6 - wall radius, rotated obstacles, swept fast movement, doors, LOS and navigation
+  ---
+  duration_ms: 117.087054
+  type: 'test'
+  ...
+# Subtest: camp hostile spawn, uncontested seal, no allies, recapture, resume and all Tarot modifiers
+ok 7 - camp hostile spawn, uncontested seal, no allies, recapture, resume and all Tarot modifiers
+  ---
+  duration_ms: 115.319597
+  type: 'test'
+  ...
+# Subtest: 40 minute wall-clock outcome is immutable; seven souls require Entrance interaction
+ok 8 - 40 minute wall-clock outcome is immutable; seven souls require Entrance interaction
+  ---
+  duration_ms: 231.458579
+  type: 'test'
+  ...
+# Subtest: server ownership, resource restrictions, collision, down/respawn and input expiry
+ok 9 - server ownership, resource restrictions, collision, down/respawn and input expiry
+  ---
+  duration_ms: 128.919305
+  type: 'test'
+  ...
+# Subtest: combat prevents spell-slot spend through walls and Deadweight phases bullets only
+ok 10 - combat prevents spell-slot spend through walls and Deadweight phases bullets only
+  ---
+  duration_ms: 2.60628
+  type: 'test'
+  ...
+# Subtest: real seven WebSockets build, ready, move, combat, DM possession, reconnect, collect seven and extract
+ok 11 - real seven WebSockets build, ready, move, combat, DM possession, reconnect, collect seven and extract
+  ---
+  duration_ms: 2602.535429
+  type: 'test'
+  ...
+# ✓ M1 room geometry, finite decks, exact-card undo and 7 reachable souls
+# ✓ M1 six Party slots, filtered lobby snapshots, reconnect, anti-spoof, idempotent seq
+# Subtest: tests/dungeon-m1.test.mjs
+ok 6 - tests/dungeon-m1.test.mjs
+  ---
+  duration_ms: 118.732191
+  type: 'test'
+  ...
+# Subtest: full V22.4 data and all 43 spell effects execute without browser globals
+ok 13 - full V22.4 data and all 43 spell effects execute without browser globals
+  ---
+  duration_ms: 80.618305
+  type: 'test'
+  ...
+# Subtest: all twelve weapons fire/reload/special and all twelve dodge states run
+ok 14 - all twelve weapons fire/reload/special and all twelve dodge states run
+  ---
+  duration_ms: 70.691032
+  type: 'test'
+  ...
+# Subtest: wall radius, rotated obstacles, swept fast movement, doors, LOS and navigation
+ok 15 - wall radius, rotated obstacles, swept fast movement, doors, LOS and navigation
+  ---
+  duration_ms: 67.374664
+  type: 'test'
+  ...
+# Subtest: camp hostile spawn, uncontested seal, no allies, recapture, resume and all Tarot modifiers
+ok 16 - camp hostile spawn, uncontested seal, no allies, recapture, resume and all Tarot modifiers
+  ---
+  duration_ms: 143.231202
+  type: 'test'
+  ...
+# Subtest: 40 minute wall-clock outcome is immutable; seven souls require Entrance interaction
+ok 17 - 40 minute wall-clock outcome is immutable; seven souls require Entrance interaction
+  ---
+  duration_ms: 221.533726
+  type: 'test'
+  ...
+# Subtest: server ownership, resource restrictions, collision, down/respawn and input expiry
+ok 18 - server ownership, resource restrictions, collision, down/respawn and input expiry
+  ---
+  duration_ms: 76.258533
+  type: 'test'
+  ...
+# Subtest: combat prevents spell-slot spend through walls and Deadweight phases bullets only
+ok 19 - combat prevents spell-slot spend through walls and Deadweight phases bullets only
+  ---
+  duration_ms: 0.979808
+  type: 'test'
+  ...
+# Subtest: strict exactly-one loadout validation
+ok 20 - strict exactly-one loadout validation
+  ---
+  duration_ms: 0.48832
+  type: 'test'
+  ...
+# Subtest: six seats persist unique weapons/dodges, reject mid-match changes and reconnect retains original
+ok 21 - six seats persist unique weapons/dodges, reject mid-match changes and reconnect retains original
+  ---
+  duration_ms: 123.536797
+  type: 'test'
+  ...
+# Subtest: server explicitly acknowledges newest input seq without using client positions
+ok 22 - server explicitly acknowledges newest input seq without using client positions
+  ---
+  duration_ms: 128.912661
+  type: 'test'
+  ...
+# Subtest: live role guard, replay, malformed input, fog serialization, terminal clock and reset
+ok 23 - live role guard, replay, malformed input, fog serialization, terminal clock and reset
+  ---
+  duration_ms: 182.079272
+  type: 'test'
+  ...
+# ✓ Real Node/WebSocket 1 DM + 6 Party connections, session edit, permissions, map privacy
+# Subtest: tests/dungeon-wire.test.mjs
+ok 9 - tests/dungeon-wire.test.mjs
+  ---
+  duration_ms: 540.097064
+  type: 'test'
+  ...
+# ✓ Battlefield has 6 heroes, 6 forts and 6 bosses
+# ✓ Tower is shielded until 4 forts are destroyed
+# ✓ Grid inventory enforces shape, rotations and boundaries
+# ✓ Shop purchase requires proximity, gold and open inventory space
+# ✓ Chests open once, award gold and XP
+# ✓ Rare jungle signal caches grant premium rewards
+# ✓ DM summons cost threat and must avoid western spawn and buildings
+# ✓ Match advances, bullets and waves work, and timer gives DM victory
+# ✓ AI training can reach and destroy the Tower without a human
+# All engine tests passed.
+# Subtest: tests/engine.test.mjs
+ok 10 - tests/engine.test.mjs
+  ---
+  duration_ms: 509.825359
+  type: 'test'
+  ...
+# ✓ Gold identity and original non-tiled Boston renderer verified
+# Subtest: tests/gold-native.test.mjs
+ok 11 - tests/gold-native.test.mjs
+  ---
+  duration_ms: 66.95548
+  type: 'test'
+  ...
+# ✓ R03 all three lanes start/end together, split visibly, and remain collision-clear
+# ✓ 6 forts, bosses, 2 shops, 16 chests and cross-town links remain accessible
+# ✓ DM marching orders traverse cross-town paths without wall traps
+# ✓ Enemy deployment follows curved lane geometry; AI can complete the map
+# ✓ Both jungles exceed 2.2x former width, with three open routes and interior loops
+# ✓ Distinct park/cargo cover collision matches world art; 6 landmarks and 16 loot sites
+# ✓ Two premium jungle caches, 15 vehicle covers and access-safe routes
+# Subtest: tests/map-layout.test.mjs
+ok 12 - tests/map-layout.test.mjs
+  ---
+  duration_ms: 578.342634
+  type: 'test'
+  ...
+# ✓ Boston map, two large jungles, road curves and gameplay collision visuals retained
+# Subtest: tests/map-polish.test.mjs
+ok 13 - tests/map-polish.test.mjs
+  ---
+  duration_ms: 87.924286
+  type: 'test'
+  ...
+# ✓ Prediction is immediate and render-only; remote snapshots interpolate
+# ✓ Network payload 4842 → 3161 bytes (35% smaller)
+# Subtest: tests/prediction.test.mjs
+ok 14 - tests/prediction.test.mjs
+  ---
+  duration_ms: 143.257464
+  type: 'test'
+  ...
+# ✓ Actual game render draws cached map without JS exceptions
+# Subtest: tests/render.test.mjs
+ok 15 - tests/render.test.mjs
+  ---
+  duration_ms: 2549.796724
+  type: 'test'
+  ...
+# ✓ Match hosted independently of browsers; two joined Party seats
+# ✓ Character reservation, protected commands, validated movement and snapshots
+# ✓ DM disconnect continues simulation; DM and Party rejoin with session tokens
+# ✓ Server address supports Render HTTPS to WSS conversion
+# Subtest: tests/server.test.mjs
+ok 16 - tests/server.test.mjs
+  ---
+  duration_ms: 121.230131
+  type: 'test'
+  ...
+# ✓ R02.1 smooth remote interpolation, 60fps prediction, bounded extrapolation
+# ✓ 20Hz snapshots preserve DM full view and filter Party interest areas
+# Subtest: tests/smoothing.test.mjs
+ok 17 - tests/smoothing.test.mjs
+  ---
+  duration_ms: 178.225151
+  type: 'test'
+  ...
+# ✓ Real browser-client protocol matched against the server room implementation
+# ✓ Host, join, movement, server snapshots and DM spawn work in simulated socket transport
+# Subtest: tests/socket-client.test.mjs
+ok 18 - tests/socket-client.test.mjs
+  ---
+  duration_ms: 131.662694
+  type: 'test'
+  ...
+# ✓ All six character choices appear; offline Party and DM start even without network.js
+# ✓ Local game server URL is detected without connecting to it
+# Subtest: tests/startup.test.mjs
+ok 19 - tests/startup.test.mjs
+  ---
+  duration_ms: 2505.891719
+  type: 'test'
+  ...
+# ✓ ACT III identity, SoulSeekers assets, responsive panels and all original gameplay IDs preserved
+# Subtest: tests/ui-theme.test.mjs
+ok 20 - tests/ui-theme.test.mjs
+  ---
+  duration_ms: 138.472081
+  type: 'test'
+  ...
+1..35
+# tests 35
+# suites 0
+# pass 35
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5336.329411

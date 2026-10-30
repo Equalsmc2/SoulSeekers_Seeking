@@ -1,0 +1,64 @@
+{
+  "scenario": "1 DM + 6 Party sockets, server 30Hz, snapshot 20Hz, per-direction delay 55 +/-15 ms",
+  "simulatedRttMs": 110,
+  "jitterOneWayMs": 15,
+  "durationMs": 4261,
+  "clients": 7,
+  "serverTicks": 180,
+  "parties": [
+    {
+      "slot": 0,
+      "snapshots": 87,
+      "lastAckInputSeq": 232,
+      "medianDeliveryGapMs": 49,
+      "p95DeliveryGapMs": 77,
+      "medianPingRttMs": 112,
+      "p95PingRttMs": 139
+    },
+    {
+      "slot": 1,
+      "snapshots": 86,
+      "lastAckInputSeq": 232,
+      "medianDeliveryGapMs": 50,
+      "p95DeliveryGapMs": 68,
+      "medianPingRttMs": 112,
+      "p95PingRttMs": 135
+    },
+    {
+      "slot": 2,
+      "snapshots": 86,
+      "lastAckInputSeq": 232,
+      "medianDeliveryGapMs": 51,
+      "p95DeliveryGapMs": 73,
+      "medianPingRttMs": 112,
+      "p95PingRttMs": 138
+    },
+    {
+      "slot": 3,
+      "snapshots": 87,
+      "lastAckInputSeq": 232,
+      "medianDeliveryGapMs": 49,
+      "p95DeliveryGapMs": 76,
+      "medianPingRttMs": 112,
+      "p95PingRttMs": 129
+    },
+    {
+      "slot": 4,
+      "snapshots": 87,
+      "lastAckInputSeq": 232,
+      "medianDeliveryGapMs": 48,
+      "p95DeliveryGapMs": 73,
+      "medianPingRttMs": 103,
+      "p95PingRttMs": 134
+    },
+    {
+      "slot": 5,
+      "snapshots": 87,
+      "lastAckInputSeq": 232,
+      "medianDeliveryGapMs": 48,
+      "p95DeliveryGapMs": 75,
+      "medianPingRttMs": 108,
+      "p95PingRttMs": 137
+    }
+  ]
+}

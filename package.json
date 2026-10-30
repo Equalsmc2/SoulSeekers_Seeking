@@ -1,6 +1,6 @@
 {
   "name": "soulseekers-seeking",
-  "version": "4.0.0-rc.1",
+  "version": "4.0.1-rc.1",
   "private": true,
   "type": "module",
   "description": "SoulSeekers Seeking: integrated authoritative six-Party versus human-DM dungeon game",
@@ -8,7 +8,8 @@
     "start": "node server/index.mjs",
     "test": "node --test tests/*.test.mjs",
     "test:m1": "node --test tests/dungeon-*.test.mjs",
-    "benchmark": "node tools/benchmark.mjs"
+    "benchmark": "node tools/benchmark.mjs",
+    "test:lag": "node tools/lag-qa.mjs"
   },
   "engines": {
     "node": ">=20"

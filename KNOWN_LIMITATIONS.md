@@ -1,3 +1,11 @@
+# R1.1 Repair Candidate — added limitations
+
+The original R1 statements below are historical. **R1.1 now adds locked loadouts, source-derived weapon visuals, bounded normal-movement input replay, local speculative effects, and a more informative connection screen.** Real-browser visual fidelity and network feel are **not certified**. F3 reveals live diagnostics. Particle traffic increases snapshot size and CPU cost versus R1. The 110ms+ jitter test uses actual seven local sockets with software-injected delay, not real WAN routing. One repeated run exhibited severe ~0.5s snapshot stalls under host contention, although subsequent runs recovered; real-world stability remains unverified. Browser QA navigation was blocked in the build environment; Firefox not tested. Render remains ephemeral, including loss of in-memory rooms on sleep/restart.
+
+See `REPAIR_TEST_REPORT.md` for the measurements and limitations.
+
+---
+
 # Honest release boundaries — Integrated R1
 
 ## Implemented and connected

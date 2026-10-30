@@ -1,3 +1,9 @@
+# R1.1 Repair update
+
+The 25-test R1 result below is historical. The current repair candidate passed **35 tests**, including the loadout server enforcement and input-acknowledgment checks. An injected-latency seven-peer local WebSocket harness also passed. Browser visual certification was **not performed**, since Chromium blocked local navigation. See `REPAIR_TEST_REPORT.md` and `NETWORK_LAG_QA_RESULTS.json`.
+
+---
+
 # Integrated R1 verification
 
 The final packaged source passed `npm test`: **25 tests, 25 passes, zero failures**, approximately 2.96 seconds on Node v24.22.1. Node test counts include historical file-level tests as well as new named tests. See TEST_RESULTS_INTEGRATED.txt for the complete output.

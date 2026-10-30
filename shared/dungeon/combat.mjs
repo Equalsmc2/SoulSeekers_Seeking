@@ -2,11 +2,11 @@
 import * as D from './combat-data.mjs';
 import {solid,moveCircle as geometryMove,lineBlocked} from './physics.mjs';
 const {clamp,vlen,norm,norm0,lerp,smoothStep01,colors,defs,groundMotion,dodgeBalance,classBooks,weaponCatalog,potionPhases,enchants,meleeProfiles,meleeModelTips,meleeContactStarts,BLOCK_HALF_ANGLE,SHORT_REST_TIME,LONG_REST_TIME,knightSquares}=D;
-export function createCombat(arena,character,x,y){
- let ci=character, slot=0, spell=0, simT=0, player;
+export function createCombat(arena,character,x,y,loadout={weapon:0,dodge:0}){
+ let ci=character, slot=loadout?.dodge ?? 0, spell=0, simT=0, player;
  let towers=arena.monsters, allies=[], shots=arena.shots, effects=[], crates=arena.crates, rectangles=arena.rectangles;
  const mines=[];
- let teamAttack=false,weaponSlot=0,weaponStates=weaponCatalog.map(row=>row.map(w=>({ammo:w.mag??-1,reloading:0,special:0}))),weaponFX=[],weaponHold=0,weaponChargeMode=false;
+ let teamAttack=false,weaponSlot=loadout?.weapon ?? 0,weaponStates=weaponCatalog.map(row=>row.map(w=>({ammo:w.mag??-1,reloading:0,special:0}))),weaponFX=[],weaponHold=0,weaponChargeMode=false;
  let meleeFlip=1,meleeCombo=0,weaponSwapCD=0,guard=100,guardParryT=0,hasteT=0;
  let inputBuffer={dodge:0,attack:0,spell:0},camKick={x:0,y:0};
  let book=classBooks[ci].slots,spellResources={max:{...classBooks[ci].max},slots:{...classBooks[ci].max},points:classBooks[ci].sp,empowered:false};
@@ -31,7 +31,10 @@ export function createCombat(arena,character,x,y){
  const moveCircle=(e,dx,dy,opts={})=>geometryMove(arena.board,e,dx,dy,crates,opts);
  const effectiveWeaponRange=(w=weaponNow())=>w.type==='camera'?(scopeActive()?w.range:w.closeRange):hasScope(w)?w.range*(scopeActive()?1:.58):w.range;
  const updateUI=()=>{},updateWeaponUI=()=>{},refreshSpellUI=()=>{};
- const spawnParticles=()=>{},addTrail=()=>{},addPopup=()=>{};
+ const visualQueue=[];
+ const spawnParticles=(x,y,count,color)=>{for(let i=0;i<Math.min(4,count);i++){const a=(i/Math.min(4,count))*Math.PI*2+simT*7;visualQueue.push({kind:'particle',x,y,vx:Math.cos(a)*65,vy:Math.sin(a)*65,c:color,r:3+((i*3)%4),t:.23+.06*(i%3),life:.4});}};
+ const addTrail=(x,y,color,size=16,time=.25)=>{visualQueue.push({kind:'trail',x,y,r:size,c:color,t:time,life:time});};
+ const addPopup=(x,y,text,color)=>{visualQueue.push({kind:'popup',x,y,t:.65,life:.65,c:color,text:String(text).slice(0,36)});};
  let notice='';const showToast=t=>{notice=t;};
  function cancelWeaponHold(){mouse.down=false;weaponHold=0;weaponChargeMode=false;}
  function startRest(){if(restOn||player.mode||player.rec>0||simT-lastDamage<5||arena.monsters.some(m=>m.hp>0&&vlen(m.x-player.x,m.y-player.y)<350))return;restOn=true;restClock=0;cancelWeaponHold();}
@@ -1348,14 +1351,14 @@ export function createCombat(arena,character,x,y){
    if(v.cast&&!mouse.castDown){mouse.castDown=true;if(!mouse.down)magic();}
    if(v.fire&&!mouse.down&&!mouse.castDown&&player.castLock<=0){mouse.down=true;weaponHold=0;weaponChargeMode=weaponNow().type==='camera'&&scopeActive();if(player.mode==='skim'&&weaponNow().type==='potion')throwLockedPotion();else if(!weaponChargeMode)attackOnce();}
  }
- function action(v){if(player.hp<=0)return;if(v.action==='weapon')selectWeapon(1-weaponSlot);else if(v.action==='reload')pressReloadOrSpecial();else if(v.action==='dodgeChoice'&&[0,1].includes(v.index))chooseDodge(v.index);else if(v.action==='spell'&&Number.isInteger(v.index)&&book[v.index])spell=v.index;
+ function action(v){if(player.hp<=0)return;if(v.action==='reload')pressReloadOrSpecial();else if(v.action==='spell'&&Number.isInteger(v.index)&&book[v.index])spell=v.index;
  else if(v.action==='empower'&&ci===0&&spellResources.points>0)spellResources.empowered=!spellResources.empowered;
  else if(v.action==='slot'&&[1,2].includes(v.level))createSlot(v.level);
  else if(v.action==='convert'&&ci===0&&spellResources.slots[1]>0&&spellResources.points<3){spellResources.slots[1]--;spellResources.points++;}}
- return {player,keys,input,action,get effects(){return effects;},get weaponFX(){return weaponFX;},
+ return {player,keys,input,action,get effects(){return effects;},get visuals(){return visualQueue;},get weaponFX(){return weaponFX;},
  sync(){allies=arena.heroes.filter(h=>h!==player);},
  step(dt){simT+=player.hp<=0?dt:0;if(player.hp<=0){player.respawn-=dt;if(player.respawn<=0){player.hp=100;player.x=arena.entry.x;player.y=arena.entry.y;player.inv=1.5;player.mode=null;player.data={};}return;}
- update(dt);for(const f of effects)f.t-=dt;effects=effects.filter(f=>f.t>0);},
+ update(dt);for(const f of visualQueue){f.x+=(f.vx||0)*dt;f.y+=(f.vy||0)*dt;f.t-=dt;}while(visualQueue.length>64)visualQueue.shift();for(let i=visualQueue.length-1;i>=0;i--)if(visualQueue[i].t<=0)visualQueue.splice(i,1);for(const f of effects)f.t-=dt;effects=effects.filter(f=>f.t>0);},
  damage:applyDamageToPlayer,melee:hostileMeleeHit,
  hit(b){if(player.hp<=0)return false;if(absorbEchoProjectile(b))return true;return b.team==='enemy'?hostileBulletCollision(b):friendlyBulletCollision(b);},
  incoming(b){if(player.mode==='shutterArmed'&&detectIncomingShot(player,b))triggerShutter(player,b);},

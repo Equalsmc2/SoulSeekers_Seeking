@@ -16,7 +16,7 @@ const server=http.createServer((req,res)=>{
   let pathname=new URL(req.url,'http://localhost').pathname;if(pathname==='/')pathname='/dungeon.html';
   if(pathname==='/health'){
     res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});
-    return res.end(JSON.stringify({status:'ok',game:'seeking',legacy:'R03.5',dungeon:'Integrated-R1'}));
+    return res.end(JSON.stringify({status:'ok',game:'seeking',legacy:'R03.5',dungeon:'Integrated-R1.1-Repair-Candidate'}));
   }
   let decoded;
   try{decoded=decodeURIComponent(pathname);}catch{res.writeHead(400);return res.end('Bad URL');}
@@ -38,6 +38,6 @@ server.on('upgrade',(req,socket,head)=>{
   if(!['/ws','/dungeon-ws'].includes(path)){socket.destroy();return;}
   wss.handleUpgrade(req,socket,head,ws=>(path==='/dungeon-ws'?dungeon:service).attach(ws));
 });
-server.listen(port,host,()=>console.log(`SoulSeekers R03.5 + Integrated Dungeon R1 game server running at http://localhost:${port} (WebSocket /ws)`));
+server.listen(port,host,()=>console.log(`SoulSeekers R03.5 + Integrated Dungeon R1.1 repair candidate running at http://localhost:${port} (WebSocket /ws)`));
 function shutdown(){dungeon.stop();service.stop();for(const c of [...service.clients,...dungeon.clients])try{c.close(1001,'Server restarting');}catch{}server.close(()=>process.exit(0));setTimeout(()=>process.exit(0),1500).unref();}
 process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);
