@@ -1,0 +1,21 @@
+import {ROOM_LOOKUP,doors,coords,xy,DIRECTIONS} from './rules.mjs';
+export const roomKey=(x,y)=>xy(Math.floor((x+480)/960),Math.floor((y+480)/960));
+export function obstacles(room,cx=0,cy=0){return (ROOM_LOOKUP[room.id]?.ob||[]).map(([x,y,w,h])=>{const p=[[x,y],[x+w,y],[x,y+h],[x+w,y+h]].map(([a,b])=>{for(let i=0;i<room.rot;i++)[a,b]=[-b,a];return [a+cx,b+cy];});const xs=p.map(q=>q[0]),ys=p.map(q=>q[1]);return{x:Math.min(...xs),y:Math.min(...ys),w:Math.max(...xs)-Math.min(...xs),h:Math.max(...ys)-Math.min(...ys)};});}
+const obstacleCache=new Map();
+function localObstacles(room){const key=room.id+':'+room.rot;if(!obstacleCache.has(key))obstacleCache.set(key,obstacles(room));return obstacleCache.get(key);}
+const hit=(x,y,r,b)=>(x-Math.max(b.x,Math.min(x,b.x+b.w)))**2+(y-Math.max(b.y,Math.min(y,b.y+b.h)))**2<r*r;
+export function solid(board,x,y,r=16,crates=[]){if(!Number.isFinite(x)||!Number.isFinite(y))return true;const k=roomKey(x,y),room=board[k];if(!room)return true;const [gx,gy]=coords(k),lx=x-gx*960,ly=y-gy*960,mask=doors(room);
+ for(let d=0;d<4;d++){const [dx,dy]=DIRECTIONS[d],near=d===0?-ly:d===1?lx:d===2?ly:-lx,side=d%2?ly:lx;if(near<=445-r)continue;const other=board[xy(gx+dx,gy+dy)];if(!(mask&(1<<d))||!other||!(doors(other)&(1<<((d+2)%4)))||Math.abs(side)>125-r)return true;}
+ return localObstacles(room).some(b=>hit(lx,ly,r,b))||crates.some(b=>hit(x,y,r,b));}
+export function moveCircle(board,e,dx,dy,crates=[],opts={}){let wall=false;const steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/6));let sx=dx/steps,sy=dy/steps;for(let n=0;n<steps;n++)for(const axis of ['x','y']){const amount=axis==='x'?sx:sy,nx=e.x+(axis==='x'?amount:0),ny=e.y+(axis==='y'?amount:0);if(opts.breakCrate){for(let i=crates.length-1;i>=0;i--)if(hit(nx,ny,e.r||16,crates[i]))crates.splice(i,1);}
+ if(solid(board,nx,ny,e.r||16,crates)){wall=true;if(opts.bank){if(axis==='x'){e.vx*=-.87;sx*=-1;}else{e.vy*=-.87;sy*=-1;}}else{e[axis==='x'?'vx':'vy']=0;if(axis==='x')sx=0;else sy=0;}}else e[axis]+=amount;}return {wall,edge:wall,crateHit:false};}
+export function lineBlocked(board,a,b,r=2,crates=[]){const n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/6));for(let i=0;i<=n;i++)if(solid(board,a.x+(b.x-a.x)*i/n,a.y+(b.y-a.y)*i/n,r,crates))return true;return false;}
+export function allObstacles(board){return Object.entries(board).flatMap(([k,r])=>{const[x,y]=coords(k);return obstacles(r,x*960,y*960);});}
+/** Cached 80-unit navigation lattice, with radius-aware edges through actual doorways. */
+export function createNavigator(board,radius=24){const nodes=new Map();for(const k of Object.keys(board)){const [gx,gy]=coords(k);for(let x=-480;x<=480;x+=80)for(let y=-480;y<=480;y+=80){const p={x:gx*960+x,y:gy*960+y};if(!solid(board,p.x,p.y,radius))nodes.set(xy(p.x,p.y),p);}}
+ const edges=new Map();for(const [k,p] of nodes){const ns=[];for(const [dx,dy] of DIRECTIONS){const nk=xy(p.x+dx*80,p.y+dy*80),q=nodes.get(nk);if(q&&!lineBlocked(board,p,q,radius))ns.push(nk);}edges.set(k,ns);}
+ function nearest(p){const gx=Math.round(p.x/80)*80,gy=Math.round(p.y/80)*80,options=[];for(let x=-2;x<=2;x++)for(let y=-2;y<=2;y++){const k=xy(gx+x*80,gy+y*80),q=nodes.get(k);if(q)options.push({k,q,d:Math.hypot(p.x-q.x,p.y-q.y)});}options.sort((a,b)=>a.d-b.d);for(const o of options)if(!lineBlocked(board,p,o.q,radius))return o.k;return null;}
+ const cache=new Map();let crateSignature='';
+ return (a,b,crates=[])=>{if(!lineBlocked(board,a,b,radius,crates))return [{x:b.x,y:b.y}];const start=nearest(a),end=nearest(b);if(!start||!end)return [];const signature=crates.map(c=>c.x+','+c.y).join(';');if(signature!==crateSignature){cache.clear();crateSignature=signature;}const cacheKey=start+'>'+end;
+ if(cache.has(cacheKey))return [...cache.get(cacheKey),{x:b.x,y:b.y}];
+ const queue=[start],prev=new Map([[start,null]]);for(let i=0;i<queue.length;i++){const k=queue[i];if(k===end)break;for(const n of edges.get(k)||[])if(!prev.has(n)&&(!crates.length||!lineBlocked(board,nodes.get(k),nodes.get(n),radius,crates))){prev.set(n,k);queue.push(n);}}if(!prev.has(end))return [];const route=[];for(let k=end;k&&k!==start;k=prev.get(k))route.push(nodes.get(k));route.reverse();if(cache.size>512)cache.clear();cache.set(cacheKey,route);return [...route,{x:b.x,y:b.y}];};}

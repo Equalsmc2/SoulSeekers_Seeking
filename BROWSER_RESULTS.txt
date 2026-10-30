@@ -1,0 +1,2 @@
+browser hosted 26X7B8
+BROWSER QA: {"pages":7,"renderCadence":{"frames":91,"elapsedMs":1500,"fps":61},"partyMovement":169.81565333333313,"errors":[],"dmPossession":"m1","partyState":{"phase":"ACTIVE","rooms":1}}

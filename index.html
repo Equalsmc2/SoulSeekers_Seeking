@@ -3,6 +3,7 @@
 <meta name="theme-color" content="#0c1016"><title>SOULSEEKERS / SEEKING</title>
 <link rel="stylesheet" href="./style.css?v=R035"><link rel="stylesheet" href="./soulseekers-ui.css?v=R035"><link rel="stylesheet" href="./clean-hud.css?v=R035"></head>
 <body>
+<script>if(!new URLSearchParams(location.search).has("legacy"))location.replace(new URL("./dungeon.html"+location.search,location.href));</script>
 <div id="app">
 <div class="ss-top-rail" aria-label="Soul Seekers game status"><span class="ss-rail-mark">◈</span><strong>SOUL SEEKERS</strong><span class="ss-rail-slash">/</span><span class="ss-rail-sub">ACT III · BOSTON METRO · THE BLACKOUT</span><span class="ss-rail-coordinate">42.3601° N / 71.0589° W</span><span class="ss-rail-live"><i></i> LIVE FIELD SYSTEM</span></div>
 <header class="mast">
@@ -61,7 +62,7 @@
     </div>
     <div class="ss-act-stamp" aria-hidden="true">ACT <strong>III</strong><small>2026</small></div></div>
   <div class="menu-divider"><span><i class="ss-diamond">◈</i> SELECT YOUR SOUL <small>— CHOOSE OPERATIVE</small></span><span>ROSTER / 01—06</span></div><div id="heroChoices" class="hero-choices"></div>
-  <p style="margin:12px 0;padding:12px;border:1px solid #d9b45f;background:#26241b;border-radius:8px;text-align:center"><a href="./dungeon.html" style="font-weight:800;color:#f3d588;text-decoration:none">◆ OPEN THE NEW MULTIPLAYER DUNGEON — M2 LIVE BUILD / COMBAT ◆</a><br><small>Server-owned Room / Tarot / Poker cards, six-player waiting room. The legacy Boston match stays available below.</small></p>
+  <p style="margin:12px 0;padding:12px;border:1px solid #d9b45f;background:#26241b;border-radius:8px;text-align:center"><a href="./dungeon.html" style="font-weight:800;color:#f3d588;text-decoration:none">◆ OPEN THE NEW MULTIPLAYER DUNGEON — 6 PARTY VS 1 DM ◆</a><br><small>Full dungeon match: build, fight, gather seven souls and extract. The legacy Boston match stays available below.</small></p>
   <div class="mode-grid"><button class="mode-choice" id="soloParty"><span>01 — TRAINING</span><strong>PLAY AS PARTY</strong><small>Solo practice with five AI allies. No setup.</small></button>
     <button class="mode-choice" id="soloDM"><span>02 — TRAINING</span><strong>PLAY AS DM</strong><small>Command enemies against six AI Seekers.</small></button></div>
   <div class="menu-divider"><span><i class="ss-diamond">◈</i> ONLINE OPERATIONS <small>— DEDICATED SERVER</small></span><span id="firebaseStatus">SERVER ADDRESS REQUIRED</span></div>

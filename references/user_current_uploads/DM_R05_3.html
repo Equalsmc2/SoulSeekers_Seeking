@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SoulSeekers | DM Dungeon Command R05.1</title>
+<style>
+:root{--bg:#090d10;--sidebar:#13181b;--panel:#1d2528;--line:#36413f;--gold:#d9b45f;--goldhi:#f1d894;--text:#ebe9e3;--muted:#a0aaa8;--red:#dc8881;--teal:#78bbaa}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:13px/1.45 system-ui,'Segoe UI',sans-serif;overflow:hidden}button,input{font:inherit}button{border:1px solid #53605a;background:#222b2d;color:#eee;padding:9px 11px;border-radius:6px;cursor:pointer}button:hover{border-color:var(--gold);background:#37382e}button:disabled{opacity:.35;cursor:not-allowed}.gold{background:var(--gold);border-color:var(--gold);color:#171a17;font-weight:800}.gold:hover{background:var(--goldhi);color:#151717}.danger{color:var(--red)}.muted{color:var(--muted)}.micro{font:700 10px ui-monospace,Consolas,monospace;letter-spacing:1.4px;text-transform:uppercase;color:var(--gold)}.key{font:11px ui-monospace,monospace;background:#2b3231;border:1px solid #6b6654;border-radius:3px;padding:1px 5px;color:#efdaae}.top{height:64px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 18px;background:linear-gradient(90deg,#191c1b,#0c1214);border-bottom:1px solid #695637}.brand{display:flex;gap:11px;align-items:center}.seal{border:1px solid var(--gold);width:38px;height:38px;display:grid;place-items:center;color:var(--gold);font:29px Georgia,serif}.brand h1{font:italic 25px Georgia,serif;margin:0}.tag{border:1px solid #655738;padding:5px 8px;border-radius:3px;color:#dfcda3;font:11px ui-monospace,monospace}.app{height:calc(100dvh - 64px);display:grid;grid-template-columns:294px minmax(0,1fr) 244px}aside{background:var(--sidebar);overflow-y:auto;padding:16px 14px;border-right:1px solid #343e3d}aside.right{border-right:0;border-left:1px solid #343e3d}.section{border-bottom:1px solid var(--line);padding-bottom:15px;margin-bottom:15px}.section h2{font:italic 20px Georgia,serif;margin:4px 0 9px}.hint{color:#aeb8b5;font-size:11px;line-height:1.65}.buttons{display:grid;grid-template-columns:1fr 1fr;gap:7px}.buttons button{padding:8px}.hand{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.roomCard{background:#252e30;border:1px solid #596058;border-radius:7px;padding:7px;text-align:left;cursor:grab;user-select:none;touch-action:none}.roomCard.selected{border-color:var(--gold);box-shadow:0 0 0 1px #d9b45f77;background:#393729}.roomCard canvas{width:100%;aspect-ratio:1;display:block;border:1px solid #586160;border-radius:3px;image-rendering:auto}.roomCard b{display:block;font-size:11px;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.roomCard small{font-size:10px;color:#b0bcb6}.roomCard:active{cursor:grabbing}.canvasWrap{position:relative;overflow:hidden;background:#0d1417}#world{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}.floatbox{position:absolute;top:14px;left:14px;background:#0e1618e6;border:1px solid #63583d;border-radius:7px;padding:10px 12px;max-width:min(360px,calc(100% - 28px));pointer-events:none}.floatbox strong{font:italic 19px Georgia,serif}.floatbox small{color:#b5bdbb;display:block}.mapbar{position:absolute;bottom:13px;left:13px;display:flex;align-items:center;gap:6px;background:#131d1de8;border:1px solid #5e5746;border-radius:7px;padding:6px;flex-wrap:wrap}.mapbar button{padding:6px 9px}.counter{font:700 30px Georgia,serif;color:#f1d68b}.counter small{font:12px system-ui;color:var(--muted)}.pill{background:#2e332b;border:1px solid #625b42;border-radius:5px;padding:6px 9px;color:#f1dcac;font-size:11px}.action{display:flex;gap:6px;flex-wrap:wrap}.action button{flex:1;padding:8px}.action .active{background:#554b2b;border-color:var(--gold);color:#f5e5c4}.list{display:grid;gap:6px}.info{background:#20282a;border:1px solid #414846;padding:10px;border-radius:6px}.info strong{display:block;color:#f0dba5}.score{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:8px 0}.diamond{width:15px;height:15px;border:1px solid #9e7c4e;transform:rotate(45deg);border-radius:3px;background:#28302e}.diamond.on{background:#e1bc69;box-shadow:0 0 7px #b9965999}.log{display:grid;gap:7px;max-height:176px;overflow:auto;font-size:11px;color:#b3bfbb}.log>div{border-left:2px solid #806f4b;padding-left:7px}.footnote{color:#9faeaa;font-size:10px}.toast{position:fixed;z-index:200;left:50%;bottom:20px;transform:translateX(-50%);border:1px solid var(--gold);color:#f7eccf;background:#2c2b20f5;padding:11px 15px;border-radius:7px;opacity:0;pointer-events:none;transition:opacity .15s;max-width:85vw}.toast.show{opacity:1}.ghost{position:fixed;z-index:101;pointer-events:none;width:134px;padding:6px;border:2px solid var(--gold);background:#20282aee;border-radius:8px;box-shadow:0 10px 30px #000c;display:none}.ghost canvas{width:120px;height:120px;display:block}.ghost small{font-size:11px;color:#e1d5b1}.hide{display:none!important}body.walk .app{display:block}body.walk aside{display:none}body.walk .canvasWrap{height:calc(100dvh - 64px)}body.walk .floatbox{max-width:260px}body.walk #walkHUD{display:flex!important}body.walk #editorMapBar{display:none!important}#walkHUD{display:none;position:absolute;right:14px;top:14px;gap:8px;align-items:center;background:#10191ae8;border:1px solid #6d5939;border-radius:7px;padding:9px 13px}.mini{font:700 13px ui-monospace,Consolas,monospace;color:#e9ce87}.compact{width:100%;margin-bottom:7px}input[type=file]{display:none}.deckTabs{display:flex;gap:5px;margin:9px 0}.deckTabs button{padding:8px 4px;flex:1;font:bold 11px ui-monospace,monospace}.deckTabs .active{background:#665128;border-color:#e4bf68;color:#fff4d8}.specialHand{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.augCard{min-height:104px;background:#211f2d;border:1px solid #675883;padding:8px;border-radius:7px;text-align:left;cursor:grab;user-select:none;touch-action:none;display:flex;flex-direction:column;gap:5px}.augCard.poker{background:#f0e8d5;color:#1c2025;border-color:#c1ae8a}.augCard.selected{outline:2px solid var(--gold);outline-offset:1px}.augCard strong{font:700 15px Georgia,serif}.augCard.poker strong{font-size:23px}.augCard small{font-size:10px;line-height:1.25;color:#bdb2d5}.augCard.poker small{color:#51514c}.augCard .rune{font:700 11px ui-monospace,monospace;color:#d7b76b}.augCard .redSuit{color:#a53345}.campStatus{border:1px solid #56513d;background:#22251f;border-radius:6px;padding:6px 8px;font:700 11px ui-monospace,monospace;color:#e9cd88}.sideLabel{display:inline-block;font:bold 10px monospace;letter-spacing:1px;padding:3px 5px;border-radius:3px}.sideLabel.party{background:#17574a;color:#a2f4da}.sideLabel.dm{background:#633a3a;color:#ffd2bf}.cardLegend{color:#a8aea8;font:10px ui-monospace,monospace}@media(max-width:1070px){.app{grid-template-columns:255px minmax(0,1fr) 195px}aside{padding:12px}.hand{gap:5px}}@media(max-width:730px){body{overflow:auto}.top{height:auto;min-height:64px;flex-wrap:wrap;padding:9px}.app{height:auto;display:flex;flex-direction:column}.canvasWrap{height:64dvh;min-height:450px;order:0}aside{order:1;border-right:0;border-top:1px solid var(--line)}.hand{grid-template-columns:repeat(3,1fr)}body.walk .canvasWrap{height:calc(100dvh - 64px)}}
+
+/* R04: playable dungeon master command HUD */
+#dmDock,#partyDock{display:none;position:absolute;z-index:9;left:14px;bottom:15px;flex-direction:column;gap:9px;width:min(390px,calc(100% - 28px));background:#10191df0;border:1px solid #806943;border-radius:10px;padding:12px;box-shadow:0 10px 28px #0009}
+body.dm-live #dmDock{display:flex}body.party-live #partyDock{display:flex}body.walk .floatbox{display:none}body.walk .mapbar{display:none}
+.dmh{display:flex;align-items:center;gap:8px;justify-content:space-between}.dmh strong{font:italic 18px Georgia,serif;color:#efd9a6}.dmh small{color:#adb8b3}
+.unitbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.unitbar button{padding:8px 3px;font-size:11px;min-width:0}.unitbar button.active,.dmCmd button.active{border-color:#d9b45f;background:#4b4128;color:#fae5b0}
+.dmCmd{display:flex;gap:6px;flex-wrap:wrap}.dmCmd button{flex:1;min-width:75px;padding:7px 5px}.dm-status{font:11px ui-monospace,monospace;color:#c5d3cb;line-height:1.55}.dmHelp{color:#b5c2bc;font-size:11px;line-height:1.5}
+#walkHUD{z-index:10}#walkHUD .mini{white-space:nowrap}
+#partyDock .hpTrack{height:10px;background:#423b39;border-radius:5px;overflow:hidden}#partyHP{width:100%;height:100%;background:#85c9ab;transition:width .14s}
+@media(max-width:730px){#dmDock,#partyDock{bottom:10px;padding:8px;width:min(360px,calc(100% - 16px))}.unitbar button{font-size:9px}#walkHUD{top:10px;right:10px}}
+
+/* R05.3 fixed starting hands / selective rerolls / match clock */
+.economy{background:#232927;border:1px solid #6d6348;padding:10px;border-radius:7px;margin:10px 0}
+.economyGrid{display:grid;grid-template-columns:1fr;gap:4px;margin-top:7px}
+.economyGrid span{font:700 11px ui-monospace,monospace;color:#efdbab}
+.rerollPick{position:absolute;top:4px;right:4px;width:27px;height:27px;border:1px solid #7e7c6a;border-radius:5px;background:#1c2222;color:#f0e4c8;padding:1px!important;display:grid;place-items:center;font-size:16px;font-weight:bold;z-index:2}
+.augCard .rerollPick{background:#323541;color:#fff}
+.augCard.poker .rerollPick{background:#343a39;color:#fff}
+.rerollPick.marked{background:#d9b45f!important;border-color:#f5e1a7;color:#23251b!important}
+.roomCard,.augCard{position:relative}.handPager{display:flex;align-items:center;justify-content:space-between;gap:7px;margin:8px 0 0}.handPager button{padding:4px 10px}.handPager .micro{color:#c9be9f}.economyGrid span{line-height:1.35}.handTitle{display:flex;align-items:center;flex-wrap:wrap;gap:6px}.handTitle .pill{margin:0;padding:4px 6px}.roomCard.rerollSelected,.augCard.rerollSelected{outline:2px dashed #edd493;outline-offset:1px}
+#matchClock{color:#f0d89a;border-color:#716344;font-variant-numeric:tabular-nums}
+#matchClock.urgent{color:#ffaea2;border-color:#bc6868}
+#matchClock.complete{color:#a6dbbc;border-color:#6aa987}
+@media(max-width:1070px){.top{flex-wrap:wrap;height:auto;min-height:64px}body.walk .canvasWrap{height:calc(100dvh - 77px)}}
+</style></head><body>
+<header class="top"><div class="brand"><div class="seal">Ø</div><div><div class="micro">SoulSeekers / Dungeon Master / Prototype R05.3</div><h1>Dungeon Architect</h1></div></div><div style="display:flex;gap:9px;align-items:center"><span id="matchClock" class="tag">40:00 / NOT STARTED</span><span id="roundText" class="tag">ROUND 01</span><span id="modeText" class="tag">CONSTRUCTION</span></div></header>
+<div class="app">
+<aside>
+ <section class="section"><div class="micro">01 / Each round starts empty</div><h2>Build the battleground</h2><div class="buttons"><button id="newRound" class="gold">+ New round</button><button id="resetHandView">Show first cards</button><button id="loadSample">Load example</button><button id="undoBtn">↶ Undo</button></div><div class="economy"><div class="micro">Cards dealt once · per round</div><div class="economyGrid"><span id="roomSupply">ROOMS 16 / 16</span><span id="rerollSupply">REDRAWS 8 / 8</span><span id="tarotSupply">TAROT 5 / 5</span><span id="pokerSupply">POKER 6 / 6</span></div><button id="rerollSelected" class="compact gold" style="margin-top:10px">↻ Reroll selected (0 / 3)</button><div class="hint" style="margin-top:5px">The DM receives 16 rooms, 5 Tarot and 6 Poker cards at round start. Played cards leave your hand without automatic replacements. The undealt reserves are available only for paid rerolls (up to 3 selected at once).</div></div><p class="hint">Drag a card onto the blank grid. <b>Right-click</b> to rotate cards or placed rooms. Each room is a full-sized combat space, not a tiny corridor tile.</p></section>
+ <section class="section"><div class="micro">02 / Three decks · Build and augment</div><div class="deckTabs"><button id="roomTab" class="active">ROOM</button><button id="tarotTab">TAROT</button><button id="pokerTab">POKER</button></div><div id="roomPane"><div class="micro handTitle">Your dealt room cards <span class="pill" id="deckNum">16 cards</span></div><div class="handPager"><button id="roomPrev">←</button><span class="micro" id="roomPage">PAGE 1</span><button id="roomNext">→</button></div><div class="hand" id="hand"></div><p class="hint">Cards leave your hand when used. No automatic drawing. Right-click to rotate. The remaining deck is for limited rerolls only.</p></div>
+ <div id="tarotPane" class="hide"><div class="micro">Major Arcana · Room augments</div><div class="action"><span class="pill" id="tarotRemain"></span></div><div id="tarotHand" class="specialHand"></div><p class="hint">Select or drag a Tarot card onto a room to apply an effect. One Tarot effect per room.</p></div>
+ <div id="pokerPane" class="hide"><div class="micro">52-card deck · Enemy camps</div><div class="action"><span class="pill" id="pokerRemain"></span></div><div id="pokerHand" class="specialHand"></div><p class="hint">Suit determines enemy type; rank determines camp tier, reinforcement count, and frequency. Party capture seals spawning; DM recapture restarts it. No camps in the Entrance.</p></div>
+ </section>
+ <section class="section"><div class="micro">03 / Map edit tools</div><div class="action" style="margin-top:9px"><button id="toolRoom" class="active">Rooms</button><button id="toolSoul">Souls</button><button id="removeBtn">Remove</button></div><p class="hint">Drag placed tiles to rearrange. The entrance is your first card. Place <b>7 souls</b> in separate rooms; right-click to rotate any placed room.</p></section>
+ <section class="section"><div class="micro">04 / Play the round</div><button id="testDM" class="compact gold">Play as DM · Command Monsters</button><button id="testParty" class="compact">Test as Party</button><p class="hint">In DM mode, summon, command, and possess enemies to stop the Party. Party test mode uses fog of war and must collect the souls with <span class="key">F</span>, then return to the entrance.</p></section>
+</aside>
+<main class="canvasWrap" id="canvasWrap"><canvas id="world" tabindex="0"></canvas>
+ <div class="floatbox"><div class="micro" id="floatMicro">BLANK CANVAS / ROUND 01</div><strong id="floatTitle">Drag your first room</strong><small id="floatDetail">Draw an Entrance card, then connect the rest.</small></div>
+ <div class="mapbar" id="editorMapBar"><button id="zoomOut">−</button><span class="mini" id="zoomInfo">22%</span><button id="zoomIn">+</button><button id="fitBtn">Fit</button><span class="footnote">Drag room to move · Right-click to rotate · Drag empty space to pan · Wheel to zoom</span></div>
+ <div id="walkHUD"><span class="mini" id="walkCount">SOULS 0 / 7</span><button id="returnBtn">← Editor</button></div>
+ <div id="dmDock">
+   <div class="dmh"><strong>Dungeon Master</strong><small id="threatLabel">THREAT 30 / 30</small></div><div id="campCountsDM" class="campStatus">CAMPS • DM 0 / PARTY 0</div>
+   <div class="unitbar" id="monsterDeck">
+      <button data-unit="grunt" class="active">1 · Grunt<br><small>2 threat</small></button>
+      <button data-unit="ranger">2 · Ranger<br><small>3 threat</small></button>
+      <button data-unit="brute">3 · Brute<br><small>5 threat</small></button>
+      <button data-unit="stalker">4 · Stalker<br><small>4 threat</small></button>
+   </div>
+   <div class="dmCmd"><button id="dmSelect">Select</button><button id="dmHold">Hold</button><button id="dmHunt">Hunt Party</button><button id="dmCapture">Claim nearest camp</button><button id="dmPossess" class="gold">Possess [P]</button><button id="dmDismiss">Dismiss</button></div>
+   <div class="dm-status" id="dmStatus">Click a room to summon. Left-click a monster to select; right-click to order a move.</div>
+   <div class="dmHelp">Unpossessed: WASD pan • 1–4 monster type • click summon or select • right-click Party camp to issue capture order. Possessed: WASD move • click attack • stand on a camp to recapture • P release.</div>
+ </div>
+ <div id="partyDock">
+    <div class="dmh"><strong>Party Test Operative</strong><small id="partyHpText">100 / 100 HP</small></div><div id="campCountsParty" class="campStatus">CAMPS • DM 0 / PARTY 0</div><div class="hpTrack"><div id="partyHP"></div></div>
+    <div class="dmHelp">WASD move • left-click shoot • hold F near a camp to capture • tap F near a soul • seven souls then escape.</div>
+ </div>
+</main>
+<aside class="right"><section class="section"><div class="micro">Dungeon readiness</div><div style="display:flex;align-items:baseline;gap:8px;margin:9px 0"><span class="counter" id="soulsPlaced">0</span><span class="muted">/ 7 souls placed</span></div><div class="score" id="pips"></div><div class="info" id="validation">Place the entrance to begin.</div></section>
+<section class="section"><div class="micro">Selected room</div><div class="info" style="margin-top:8px" id="selectedInfo">Choose or drag a room.</div><div class="action" style="margin-top:8px"><button id="rotateSelected">↻ Rotate</button><button id="deleteSelected">Delete</button></div></section>
+<section class="section"><div class="micro">Tarot &amp; Camp · Selected room</div><div id="roomEffects" class="info" style="margin-top:8px">Select a room to assign Tarot and Poker cards.</div><div class="action" style="margin-top:7px"><button id="clearTarot">Remove Tarot</button><button id="clearCamp">Remove Camp</button></div></section>
+<section class="section"><div class="micro">Save / Restore</div><div class="buttons" style="margin-top:8px"><button id="exportJSON">Export JSON</button><button id="importJSON">Import JSON</button></div><input id="fileInput" type="file" accept=".json,application/json"><p class="hint">Saves placed cards, dealt hands, undealt reserves and redraw credits. Cards never auto-replace on play. Match clock starts upon Play.</p></section>
+<section><div class="micro">Event log</div><div class="log" id="log" style="margin-top:9px"></div></section>
+</aside>
+</div><div class="ghost" id="dragGhost"><canvas id="ghostCanvas" width="120" height="120"></canvas><small id="ghostLabel">ROOM</small></div><div class="toast" id="toast"></div>
+<script>
+'use strict';
+(()=>{
+ const $=id=>document.getElementById(id),CV=$('world'),ctx=CV.getContext('2d'),wrap=$('canvasWrap');
+ // World coordinates are generous by design: a 960x960-unit room fits combat and multiple players.
+ const TILE=960, SIZE=25, DOOR=250, MARGIN=35, PLAYER_RADIUS=20, SPEED=340;
+ const DIR=[[0,-1],[1,0],[0,1],[-1,0]],NAMES=['N','E','S','W'];
+ const TYPES=[
+ {id:'entry',name:'Party Entrance',doors:15,weight:0,pattern:'entry',ob:[]},
+ {id:'straight',name:'Long Passage',doors:5,weight:9,pattern:'stone',ob:[[-245,-220,135,160],[155,70,150,150]]},
+ {id:'bend',name:'Corner Room',doors:3,weight:9,pattern:'stone',ob:[[-260,105,170,160],[145,-240,145,135]]},
+ {id:'junction',name:'Three-way Hall',doors:11,weight:9,pattern:'stone',ob:[[160,125,150,165]]},
+ {id:'cross',name:'Grand Junction',doors:15,weight:5,pattern:'tile',ob:[[-245,-250,120,120],[145,-250,120,120],[-245,145,120,120],[145,145,120,120]]},
+ {id:'storage',name:'Supply Storage',doors:5,weight:9,pattern:'stone',ob:[[-300,-265,170,120],[135,-265,170,120],[-305,145,180,120],[145,155,165,125]]},
+ {id:'pillars',name:'Column Court',doors:15,weight:7,pattern:'tile',ob:[[-215,-210,105,110],[110,-210,105,110],[-215,100,105,110],[110,100,105,110]]},
+ {id:'barricade',name:'Rubble Chamber',doors:5,weight:8,pattern:'stone',ob:[[-300,-55,145,160],[165,-55,120,150]]},
+ {id:'laboratory',name:'Workroom',doors:10,weight:7,pattern:'tile',ob:[[-285,-250,160,165],[115,100,180,170]]},
+ {id:'vault',name:'End Vault',doors:4,weight:7,pattern:'tile',ob:[[-270,-230,170,165],[125,-230,150,165]]},
+ {id:'hall',name:'Great Chamber',doors:15,weight:7,pattern:'tile',ob:[[-300,-285,150,150],[160,155,165,160]]},
+ {id:'crypt',name:'Crypt',doors:3,weight:6,pattern:'stone',ob:[[-305,-270,150,160],[160,130,150,160]]},
+ {id:'arena',name:'Open Arena',doors:15,weight:4,pattern:'stone',ob:[[-300,-285,105,110],[205,180,95,100]]},
+ {id:'fork',name:'Split Gallery',doors:7,weight:8,pattern:'tile',ob:[[-280,130,150,135],[155,-275,155,135]]},
+ ];
+ const LOOK=Object.fromEntries(TYPES.map(t=>[t.id,t]));
+ const key=(x,y)=>`${x},${y}`,parse=s=>s.split(',').map(Number),validCell=(x,y)=>x>=-SIZE&&x<=SIZE&&y>=-SIZE&&y<=SIZE;
+ const mask=room=>{let bits=0,raw=room.baseDoors===undefined?LOOK[room.id].doors:room.baseDoors;for(let d=0;d<4;d++)if(raw&(1<<d))bits|=1<<((d+room.rot)%4);return bits};
+ const hasDoor=(room,d)=>!!(mask(room)&(1<<d));
+ const rotPoint=(x,y,rot)=>{for(let j=0;j<rot;j++){let t=x;x=-y;y=t}return [x,y]};
+ const obstacles=room=>LOOK[room.id].ob.map(([x,y,w,h])=>{const corners=[[x,y],[x+w,y],[x+w,y+h],[x,y+h]].map(v=>rotPoint(...v,room.rot));return [Math.min(...corners.map(p=>p[0])),Math.min(...corners.map(p=>p[1])),Math.max(...corners.map(p=>p[0]))-Math.min(...corners.map(p=>p[0])),Math.max(...corners.map(p=>p[1]))-Math.min(...corners.map(p=>p[1]))]});
+ let rooms={},hand=[],selected=null,pick=0,tool='room',rotation=0,round=1,mode='build',history=[],events=[],cam={x:0,y:0,s:.20},w=1,h=1,dpr=1,drag=null,keys={},player=null,toastTimer=0,damageCount=0;
+ let deckMode='room',tarotDeck=[],tarotHand=[],pokerDeck=[],pokerHand=[],chosenTarot=0,chosenPoker=0,campClock=0;
+ const ROOM_COUNTS={entry:1,straight:7,bend:4,junction:3,cross:3,storage:3,pillars:3,barricade:2,laboratory:2,vault:5,hall:2,crypt:2,arena:2,fork:1};
+ const TOTAL_ROOM_CARDS=Object.values(ROOM_COUNTS).reduce((a,b)=>a+b,0),DEALT_ROOMS=16,DEALT_TAROT=5,DEALT_POKER=6,ROOM_PAGE_SIZE=4,REROLL_BUDGET=8,MAX_REROLL=3,MATCH_LIMIT=40*60;
+ let roomDeck=[],roomDiscard=[],tarotDiscard=[],pokerDiscard=[],rerollsLeft=REROLL_BUDGET;
+ let marked={room:new Set(),tarot:new Set(),poker:new Set()},roomPage=0,matchSeconds=MATCH_LIMIT,matchDeadline=0,matchEnded=false,matchResult='';
+ function clearMarks(){marked={room:new Set(),tarot:new Set(),poker:new Set()}}
+ function buildRoomDeck(){roomDeck=shuffle(Object.entries(ROOM_COUNTS).flatMap(([id,n])=>id==='entry'?[]:Array.from({length:n},()=>({id,rot:Math.floor(Math.random()*4)}))));roomDiscard=[];hand=[{id:'entry',rot:0}];roomPage=0;while(hand.length<DEALT_ROOMS&&roomDeck.length)hand.push(roomDeck.pop());}
+ function updateEconomy(){
+  $('roomSupply').textContent='ROOM '+hand.length+' IN HAND / '+Object.keys(rooms).length+' PLAYED';
+  $('tarotSupply').textContent='TAROT '+tarotHand.length+' IN HAND / '+Object.values(rooms).filter(r=>r.tarot).length+' PLAYED';
+  $('pokerSupply').textContent='POKER '+pokerHand.length+' IN HAND / '+Object.values(rooms).filter(r=>r.camp).length+' PLAYED';
+  $('rerollSupply').textContent='REDRAWS '+rerollsLeft+' / '+REROLL_BUDGET;
+  const n=Object.values(marked).reduce((a,set)=>a+set.size,0);
+  $('rerollSelected').textContent='↻ Reroll selected ('+n+' / '+MAX_REROLL+')';
+  $('rerollSelected').disabled=n===0||n>Math.min(MAX_REROLL,rerollsLeft)||Object.entries(marked).some(([which,set])=>set.size>(which==='room'?roomDeck:which==='tarot'?tarotDeck:pokerDeck).length);
+  const pages=Math.max(1,Math.ceil(hand.length/ROOM_PAGE_SIZE));roomPage=Math.min(roomPage,pages-1);$('roomPrev').disabled=roomPage===0;$('roomNext').disabled=roomPage>=pages-1;
+ }
+ function toggleMark(which,index){const array=which==='room'?hand:which==='tarot'?tarotHand:pokerHand;
+  if(index<0||index>=array.length)return;
+  if(which==='room'&&array[index].id==='entry')return msg('The Entrance cannot be rerolled.');
+  const set=marked[which];if(set.has(index))set.delete(index);else {const count=Object.values(marked).reduce((n,s)=>n+s.size,0);if(count>=Math.min(MAX_REROLL,rerollsLeft))return msg('Up to '+MAX_REROLL+' selected cards per redraw; '+rerollsLeft+' credits left.');set.add(index)}
+  renderHand();renderSpecialHands();updateEconomy();
+ }
+ function rerollSelectedCards(){const list=Object.entries(marked).flatMap(([which,set])=>[...set].map(i=>({which,i}))),n=list.length;
+  if(!n)return msg('Mark the cards you want to reroll first.');if(n>MAX_REROLL||n>rerollsLeft)return msg('Insufficient redraw credits.');
+  for(const which of ['room','tarot','poker']){const count=marked[which].size,stack=which==='room'?roomDeck:which==='tarot'?tarotDeck:pokerDeck;if(count>stack.length)return msg('Not enough '+which+' cards in the remaining deck for this redraw.')}
+  // Rerolls are irrevocable: clear the undo history so it cannot restore spent cards.
+  history=[];
+  for(const {which,i} of list){const pile=which==='room'?hand:which==='tarot'?tarotHand:pokerHand;
+   const discard=which==='room'?roomDiscard:which==='tarot'?tarotDiscard:pokerDiscard;
+   const stack=which==='room'?roomDeck:which==='tarot'?tarotDeck:pokerDeck;
+   discard.push(pile[i]);pile[i]=stack.pop();
+  }
+  rerollsLeft-=n;clearMarks();pick=Math.min(pick,Math.max(0,hand.length-1));
+  renderHand();renderSpecialHands();renderSidebar();event('REDRAW',n+' chosen cards · '+rerollsLeft+' redraw credits left');msg('Replaced '+n+' selected card'+(n===1?'':'s')+'. Discarded cards are gone for this round.');
+  return true;
+ }
+ function clockLabel(){const s=Math.ceil(Math.max(0,matchSeconds));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+ function updateClock(){const el=$('matchClock');el.textContent=mode==='build'?'40:00 · BUILD PHASE':matchEnded?clockLabel()+' · '+matchResult:clockLabel()+' LEFT';el.classList.toggle('urgent',mode!=='build'&&!matchEnded&&matchSeconds<=300);el.classList.toggle('complete',matchEnded)}
+ function finishMatch(result){if(matchEnded)return;matchEnded=true;matchResult=result;mouseHeld=false;keys={};updateClock();event('MATCH OVER',result==='PARTY WIN'?'Seven souls extracted':result==='DM WIN'?'40-minute limit reached':'Test stopped');msg(result==='DM WIN'?'TIME EXPIRED — DM WINS':result==='PARTY WIN'?'SEVEN SOULS EXTRACTED — PARTY WINS':'MATCH FINISHED');}
+
+ let monsters=[],projectiles=[],monsterId=0,selectedMonster=null,possessedId=null,dmTool='grunt',dmThreat=30,partyRespawn=0,partyShot=0,mouseWorld={x:0,y:0},mouseHeld=false;
+ const MONSTER_TYPES={grunt:{name:'Grunt',cost:2,hp:85,speed:175,reach:75,damage:12,cooldown:.88,color:'#dd8d7b'},ranger:{name:'Ranger',cost:3,hp:65,speed:150,reach:435,damage:10,cooldown:1.25,color:'#cfa16a'},brute:{name:'Brute',cost:5,hp:190,speed:105,reach:84,damage:23,cooldown:1.50,color:'#e07b70'},stalker:{name:'Stalker',cost:4,hp:70,speed:255,reach:86,damage:16,cooldown:.60,color:'#bd8ce1'}};
+ function msg(s){clearTimeout(toastTimer);$('toast').textContent=s;$('toast').classList.add('show');toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3000)}
+ function event(title,detail=''){events.unshift({title,detail});events=events.slice(0,20);$('log').innerHTML=events.slice(0,7).map(e=>`<div><strong>${e.title}</strong><div>${e.detail}</div></div>`).join('')}
+ const TAROT=[
+ ['fool','0 · The Fool','Quick footwork; Party gains speed here.','fleet',1.16],
+ ['magician','I · The Magician','Camp units deal more damage.','damage',1.22],
+ ['priestess','II · High Priestess','Capture is quieter and faster for Party.','partyCapture',1.28],
+ ['empress','III · The Empress','Party heals slowly on these floors.','heal',1.6],
+ ['emperor','IV · The Emperor','Monster reinforcements are tougher.','hp',1.34],
+ ['hierophant','V · Hierophant','Party capture becomes harder.','dmCapture',1.26],
+ ['lovers','VI · The Lovers','Active DM camps spawn faster.','spawn',.80],
+ ['chariot','VII · The Chariot','Camp monsters move faster.','speed',1.25],
+ ['strength','VIII · Strength','Camp monsters gain HP.','hp',1.23],
+ ['hermit','IX · The Hermit','Camp spawning slows.','spawn',1.35],
+ ['wheel','X · Wheel of Fortune','Camp spawns more rapidly.','spawn',.68],
+ ['justice','XI · Justice','Monsters hit harder in this chamber.','damage',1.16],
+ ['hanged','XII · The Hanged Man','Party movement slowed in this room.','slow',.77],
+ ['death','XIII · Death','Room drains Party health every second.','hurt',1.8],
+ ['temperance','XIV · Temperance','Room gently heals the Party.','heal',.9],
+ ['devil','XV · The Devil','Strong and fast monsters.','devil',1.15],
+ ['tower','XVI · The Tower','Crackling hazard damages Party.','hurt',2.5],
+ ['star','XVII · The Star','Sanctuary heals Party rapidly.','heal',2.4],
+ ['moon','XVIII · The Moon','Party has trouble claiming camps.','dmCapture',1.45],
+ ['sun','XIX · The Sun','Party can capture camps faster.','partyCapture',1.45],
+ ['judgement','XX · Judgement','Both sides capture more quickly.','bothCapture',1.32],
+ ['world','XXI · The World','Monsters endure more damage.','hp',1.16]
+ ].map(([id,name,desc,effect,power])=>({id,name,desc,effect,power}));
+ const TAROT_BY_ID=Object.fromEntries(TAROT.map(c=>[c.id,c]));
+ const SUITS={S:{glyph:'♠',name:'Spades',type:'stalker'},H:{glyph:'♥',name:'Hearts',type:'grunt'},D:{glyph:'♦',name:'Diamonds',type:'ranger'},C:{glyph:'♣',name:'Clubs',type:'brute'}};
+ const RANKS=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+ const pokerInfo=id=>{let suit=SUITS[id?.[0]],rank=id?.slice(1);if(!suit||!RANKS.includes(rank))return null;let value=RANKS.indexOf(rank)+2,tier=Math.min(4,1+Math.floor((value-2)/4));return{id,rank,suit,monster:suit.type,tier,units:tier,interval:Math.max(5.8,13-tier*1.7),cap:2+tier*2}};
+ const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+ function initSpecialDecks(){tarotDiscard=[];pokerDiscard=[];tarotDeck=shuffle(TAROT.map(c=>c.id));pokerDeck=shuffle(Object.keys(SUITS).flatMap(s=>RANKS.map(r=>s+r)));tarotHand=[];pokerHand=[];chosenTarot=chosenPoker=0;drawSpecial('tarot',DEALT_TAROT);drawSpecial('poker',DEALT_POKER);deckMode='room';setDeckTab('room')}
+ function drawSpecial(which,count=1){const stack=which==='tarot'?tarotDeck:pokerDeck,hand0=which==='tarot'?tarotHand:pokerHand,maximum=which==='tarot'?DEALT_TAROT:DEALT_POKER;for(let i=0;i<count&&stack.length&&hand0.length<maximum;i++)hand0.push(stack.pop());renderSpecialHands();updateEconomy()}
+ function setDeckTab(which){deckMode=which;['room','tarot','poker'].forEach(t=>{const tab=$(t+'Tab'),pane=$(t+'Pane');if(tab)tab.classList.toggle('active',which===t);if(pane)pane.classList.toggle('hide',which!==t)});if(which==='room')tool='room';else tool=which;renderSidebar()}
+ function cardLabel(which,id){if(which==='tarot')return TAROT_BY_ID[id]?.name||id;const info=pokerInfo(id);return info?info.suit.glyph+' '+info.rank+' · '+info.suit.name+' (tier '+info.tier+')':id}
+ function renderSpecialHands(){for(const which of ['tarot','poker']){const hand0=which==='tarot'?tarotHand:pokerHand,box=$(which+'Hand');if(!box)continue;box.innerHTML='';hand0.forEach((id,i)=>{const el=document.createElement('div');el.className='augCard '+(which==='poker'?'poker ':'')+((which==='tarot'?chosenTarot:chosenPoker)===i?'selected':'');el.dataset.cardType=which;el.dataset.cardIndex=i;const inf=pokerInfo(id);let title=which==='tarot'?TAROT_BY_ID[id].name:`${inf.suit.glyph} ${inf.rank}`;let subtitle=which==='tarot'?TAROT_BY_ID[id].desc:`${MONSTER_TYPES[inf.monster].name} · ${inf.units}/wave · every ${inf.interval.toFixed(1)}s`;const strong=document.createElement('strong');strong.textContent=title;const sm=document.createElement('small');sm.textContent=subtitle;const badge=document.createElement('span');badge.className='rune';badge.textContent=which==='tarot'?'✦ MAJOR ARCANA':'CAMP · TIER '+inf.tier;el.append(strong,sm,badge);
+  if(marked[which].has(i))el.classList.add('rerollSelected');
+  const rb=document.createElement('button');rb.type='button';rb.className='rerollPick'+(marked[which].has(i)?' marked':'');rb.textContent=marked[which].has(i)?'✓':'↻';rb.title='Mark this card for a limited reroll';rb.addEventListener('pointerdown',e=>e.stopPropagation());rb.addEventListener('click',e=>{e.stopPropagation();toggleMark(which,i)});el.append(rb);box.append(el);el.addEventListener('pointerdown',e=>{if(e.target.closest('.rerollPick')||e.button!==0||mode!=='build')return;which==='tarot'?(chosenTarot=i):(chosenPoker=i);tool=which;renderSpecialHands();startCardDrag(e,which,i)});el.addEventListener('click',()=>{if(mode==='build'){which==='tarot'?(chosenTarot=i):(chosenPoker=i);tool=which;renderSpecialHands()}})})}
+  if($('tarotRemain'))$('tarotRemain').textContent=tarotHand.length+' available · '+tarotDeck.length+' reroll reserve';if($('pokerRemain'))$('pokerRemain').textContent=pokerHand.length+' available · '+pokerDeck.length+' reroll reserve';updateEconomy()}
+ function startCardDrag(e,which,i){drag={kind:which,i,start:{x:e.clientX,y:e.clientY},client:{x:e.clientX,y:e.clientY},moved:false,hover:null};updateGhost()}
+ function applySpecial(which,k,i){const r=rooms[k];if(!r)return msg('Place a room first.');if(which==='poker'&&r.id==='entry')return msg('A camp cannot occupy the Party Entrance.');const h=which==='tarot'?tarotHand:pokerHand,stack=which==='tarot'?tarotDeck:pokerDeck,id=h[i];if(!id)return false;const old=which==='tarot'?r.tarot:r.camp?.card;if(old===id)return false;snapshot();if(which==='tarot')r.tarot=id;else r.camp={card:id,owner:'dm',progress:0,progressSide:null,timer:2.5};h.splice(i,1);if(old)h.push(old);clearMarks();if(which==='tarot')chosenTarot=Math.max(0,Math.min(chosenTarot,h.length-1));else chosenPoker=Math.max(0,Math.min(chosenPoker,h.length-1));selected=k;renderSpecialHands();renderSidebar();event(which==='tarot'?'TAROT APPLIED':'CAMP ESTABLISHED',cardLabel(which,id)+' → '+LOOK[r.id].name);return true}
+ function removeSpecial(which){const r=rooms[selected];if(!r)return;const id=which==='tarot'?r.tarot:r.camp?.card;if(!id)return;snapshot();(which==='tarot'?tarotHand:pokerHand).push(id);if(which==='tarot')delete r.tarot;else delete r.camp;clearMarks();renderSpecialHands();renderSidebar();event('CARD REMOVED',id)}
+ const tarotOf=k=>TAROT_BY_ID[rooms[k]?.tarot]||null;
+ const campModifier=(k,effect)=>{const t=tarotOf(k);return t&&t.effect===effect?t.power:t&&t.effect==='devil'&&(effect==='hp'||effect==='damage'||effect==='speed')?1.15:1};
+ function campPos(k){const [cx,cy]=parse(k),picks=[[-170,-125],[160,-140],[-190,160],[170,140],[0,-205],[0,210],[-285,0],[280,0]];for(const [dx,dy] of picks){const x=cx*TILE+dx,y=cy*TILE+dy;if(!blockedInside(x,y)&&(!rooms[k]?.soul||Math.hypot(dx,dy)>120))return{x,y}}return{x:cx*TILE,y:cy*TILE}}
+ function weightedRoom(){const pool=TYPES.filter(t=>t.id!=='entry'),sum=pool.reduce((a,t)=>a+t.weight,0);let n=Math.random()*sum;for(const t of pool){n-=t.weight;if(n<=0)return {id:t.id,rot:Math.floor(Math.random()*4)}}return{id:'cross',rot:0}}
+ function showRoomPage(delta){roomPage=Math.max(0,Math.min(Math.max(0,Math.ceil(hand.length/ROOM_PAGE_SIZE)-1),roomPage+delta));renderHand()}
+ function renderHand(){const box=$('hand');box.innerHTML='';roomPage=Math.min(roomPage,Math.max(0,Math.ceil(hand.length/ROOM_PAGE_SIZE)-1));hand.forEach((c,i)=>{if(i<roomPage*ROOM_PAGE_SIZE||i>=(roomPage+1)*ROOM_PAGE_SIZE)return;const el=document.createElement('div');el.className='roomCard'+(pick===i?' selected':'');el.dataset.hand=i;const can=document.createElement('canvas');can.width=184;can.height=184;el.append(can);const b=document.createElement('b');b.textContent=LOOK[c.id].name;const small=document.createElement('small');small.textContent='↻ Right-click · '+NAMES.filter((_,d)=>hasDoor(c,d)).join(' ');el.append(b,small);
+ const rb=document.createElement('button');rb.type='button';rb.className='rerollPick'+(marked.room.has(i)?' marked':'');rb.textContent=marked.room.has(i)?'✓':'↻';rb.title='Mark room for reroll';rb.addEventListener('pointerdown',e=>e.stopPropagation());rb.addEventListener('click',e=>{e.stopPropagation();toggleMark('room',i)});el.append(rb);if(marked.room.has(i))el.classList.add('rerollSelected');box.append(el);drawTile(can.getContext('2d'),c,92,92,182/960, false);el.addEventListener('pointerdown',e=>{if(e.target.closest('.rerollPick')||e.button!==0||mode!=='build')return;pick=i;renderHand();beginHandDrag(e,i)});el.addEventListener('contextmenu',e=>{e.preventDefault();hand[i].rot=(hand[i].rot+1)%4;pick=i;rotation=hand[i].rot;renderHand();});});$('deckNum').textContent=hand.length+' / '+DEALT_ROOMS+' cards remaining · '+roomDeck.length+' in reserve';$('roomPage').textContent='PAGE '+(roomPage+1)+' / '+Math.max(1,Math.ceil(hand.length/ROOM_PAGE_SIZE));updateEconomy()}
+ function snapshot(){history.push(JSON.stringify({rooms,hand,roomDeck,roomDiscard,pick,selected,round,tarotDeck,tarotHand,tarotDiscard,pokerDeck,pokerHand,pokerDiscard,rerollsLeft,chosenTarot,chosenPoker}));history=history.slice(-32)}
+ function undo(){if(!history.length)return msg('Nothing to undo.');const j=JSON.parse(history.pop());rooms=j.rooms;hand=j.hand;roomDeck=j.roomDeck||roomDeck;roomDiscard=j.roomDiscard||roomDiscard;tarotDiscard=j.tarotDiscard||tarotDiscard;pokerDiscard=j.pokerDiscard||pokerDiscard;rerollsLeft=Number.isInteger(j.rerollsLeft)?j.rerollsLeft:rerollsLeft;clearMarks();roomPage=0;pick=j.pick;selected=j.selected;round=j.round;tarotDeck=j.tarotDeck||tarotDeck;tarotHand=j.tarotHand||tarotHand;pokerDeck=j.pokerDeck||pokerDeck;pokerHand=j.pokerHand||pokerHand;chosenTarot=j.chosenTarot||0;chosenPoker=j.chosenPoker||0;mode='build';renderHand();renderSpecialHands();renderSidebar();event('UNDO','Last edit reverted')}
+ function adjacent(x,y){let a=[];for(let d=0;d<4;d++){const nx=x+DIR[d][0],ny=y+DIR[d][1],room=rooms[key(nx,ny)];if(room)a.push({room,d})}return a}
+ function canPlace(x,y,room,skip=null){if(!validCell(x,y)||rooms[key(x,y)]&&key(x,y)!==skip)return {ok:false,reason:'That cell is occupied.'};const list=adjacent(x,y).filter(e=>key(x+DIR[e.d][0],y+DIR[e.d][1])!==skip);if(!Object.keys(rooms).length)return room.id==='entry'?{ok:true}:{ok:false,reason:'Start with the Entrance card.'};if(room.id==='entry'&&skip===null)return {ok:false,reason:'Only one Entrance is allowed.'};if(!list.length){if(skip&&Object.keys(rooms).length===1)return{ok:true};return{ok:false,reason:'Rooms must connect to your dungeon.'}};let connected=false;for(let a of list){const own=hasDoor(room,a.d),other=hasDoor(a.room,(a.d+2)%4);if(own!==other)return {ok:false,reason:'A doorway would face a solid wall.'};if(own&&other)connected=true}return connected?{ok:true}:{ok:false,reason:'Align at least one matching doorway.'}}
+ function placeRoom(x,y,c,i,from=null){const old=from&&rooms[from];const status=canPlace(x,y,c,from);if(!status.ok)return msg(status.reason);snapshot();if(from){delete rooms[from];rooms[key(x,y)]=structuredClone(c);selected=key(x,y);event('ROOM MOVED',LOOK[c.id].name)}else{rooms[key(x,y)]={id:c.id,rot:c.rot,soul:false};selected=key(x,y);hand.splice(i,1);pick=Math.min(pick,Math.max(0,hand.length-1));clearMarks();event('ROOM PLACED',LOOK[c.id].name)}renderHand();renderSidebar();return true}
+ function rotateSelected(k){if(!k||!rooms[k])return false;let [x,y]=parse(k),r=rooms[k],c={...r,rot:(r.rot+1)%4};let status=canPlace(x,y,c,k);if(!status.ok){msg('Rotation blocked: '+status.reason);return false}snapshot();rooms[k].rot=c.rot;selected=k;renderSidebar();event('ROOM ROTATED',LOOK[r.id].name+' · 90°');return true}
+ function eraseSelected(k){if(!k||!rooms[k])return; if(rooms[k].id==='entry'&&Object.keys(rooms).length>1){msg('Remove other rooms before removing the entrance.');return}snapshot();event('ROOM REMOVED',LOOK[rooms[k].id].name);
+ const rm=rooms[k];if(rm.tarot)tarotHand.push(rm.tarot);if(rm.camp)pokerHand.push(rm.camp.card);
+ hand.push({id:rm.id,rot:rm.rot});delete rooms[k];selected=null;clearMarks();renderSpecialHands();renderSidebar();renderHand()}
+ function toggleSoul(k){if(!rooms[k]||rooms[k].id==='entry')return msg('Souls must be in rooms other than the entrance.');const n=Object.values(rooms).filter(r=>r.soul).length;if(!rooms[k].soul&&n>=7)return msg('Already placed seven souls.');snapshot();rooms[k].soul=!rooms[k].soul;selected=k;event(rooms[k].soul?'SOUL PLACED':'SOUL REMOVED',LOOK[rooms[k].id].name);renderSidebar()}
+ function bfs(){let start=Object.keys(rooms).find(k=>rooms[k].id==='entry');if(!start)return new Set;const visit=new Set([start]),queue=[start];while(queue.length){const k=queue.shift(),[x,y]=parse(k),a=rooms[k];for(let d=0;d<4;d++){let n=key(x+DIR[d][0],y+DIR[d][1]),b=rooms[n];if(b&&!visit.has(n)&&hasDoor(a,d)&&hasDoor(b,(d+2)%4)){visit.add(n);queue.push(n)}}}return visit}
+ function validate(){const vals=Object.keys(rooms),total=vals.filter(k=>rooms[k].soul).length,reachable=bfs();const issues=[];if(!vals.length)issues.push('Start with a room card on the blank canvas.');else{if(!vals.some(k=>rooms[k].id==='entry'))issues.push('Missing entrance.');if(vals.some(k=>!reachable.has(k)))issues.push('Some rooms are disconnected.');if(total!==7)issues.push('Place exactly seven souls.');}return{total,reachable,issues,ready:!issues.length}}
+ function renderSidebar(){const v=validate();$('soulsPlaced').textContent=v.total;$('pips').innerHTML=Array.from({length:7},(_,i)=>`<div class="diamond ${i<v.total?'on':''}"></div>`).join('');$('validation').innerHTML=v.ready?'<strong style="color:#8dd8bb">READY TO EXPLORE</strong> Seven souls reachable from the entrance.':`<strong>${v.issues.length?'BUILD IN PROGRESS':'Connected'}</strong><div style="color:#b4beb6;margin-top:5px">${v.issues[0]||'Continue building.'}</div><div style="margin-top:5px;color:#c3ab73">${Object.keys(rooms).length} rooms · ${v.reachable.size} reachable</div>`;const r=selected&&rooms[selected];$('selectedInfo').innerHTML=r?`<strong>${LOOK[r.id].name}</strong><span class="muted">Position ${selected} · Rotation ${r.rot*90}°</span><div style="margin-top:6px">Doors: ${NAMES.filter((_,d)=>hasDoor(r,d)).join(' ')||'None'}</div><div style="color:#d4bf88">${r.soul?'◆ Contains a soul':'No soul placed'}</div>`:'Select a room on the board to inspect it.';$('roomEffects').innerHTML=r?`<div><strong>✦ TAROT</strong><div>${r.tarot?TAROT_BY_ID[r.tarot]?.name:'No Tarot effect'}</div><small>${r.tarot?TAROT_BY_ID[r.tarot]?.desc:'Drag a Tarot card from the deck.'}</small></div><div style="margin-top:10px"><strong>♠ POKER CAMP</strong><div>${r.camp?cardLabel('poker',r.camp.card):'No enemy camp'}</div>${r.camp?`<span class="sideLabel ${r.camp.owner}">${r.camp.owner.toUpperCase()} OWNED</span>`:''}</div>`:'Select a room to inspect its cards.';$('clearTarot').disabled=!r?.tarot;$('clearCamp').disabled=!r?.camp; $('rotateSelected').disabled=!r;$('deleteSelected').disabled=!r;['toolRoom','toolSoul'].forEach(id=>$(id).classList.toggle('active',tool===({toolRoom:'room',toolSoul:'soul'}[id])));$('roundText').textContent='ROUND '+String(round).padStart(2,'0');$('modeText').textContent=mode==='build'?'CONSTRUCTION':mode==='dm'?'DM COMMAND':'PARTY TEST';const title=mode==='build'?(!Object.keys(rooms).length?'Drag your first room':'Drag, connect, and rotate'):mode==='dm'?'Dungeon Master · Command View':'Party Exploration';$('floatTitle').textContent=title;$('floatMicro').textContent=mode==='build'?'ROUND '+round+' / '+Object.keys(rooms).length+' ROOMS':mode==='dm'?'MONSTER COMMAND & POSSESSION':'FOG OF WAR ENABLED';updateClock();updateEconomy();$('floatDetail').textContent=mode==='build'?'Full-size rooms · 960 units each · 7 souls':mode==='dm'?'Summon with click · Select · Right-click move · P possess':'WASD move · click to shoot · F collect';}
+ function newRound(force=false){if(!force&&!confirm('Begin a new round? This clears the current dungeon. Export it first to keep it.'))return;round=force?1:round+1;rooms={};selected=null;history=[];events=[];$('log').innerHTML='';player=null;mode='build';monsters=[];projectiles=[];selectedMonster=null;possessedId=null;dmThreat=30;document.body.classList.remove('walk','dm-live','party-live');cam={x:0,y:0,s:.20};tool='room';rerollsLeft=REROLL_BUDGET;clearMarks();matchSeconds=MATCH_LIMIT;matchDeadline=0;matchEnded=false;matchResult='';buildRoomDeck();initSpecialDecks();renderHand();renderSidebar();updateClock();event('ROUND '+round,'Blank canvas. Draw rooms to build your dungeon.');msg('Blank canvas ready — build your next dungeon.');}
+ function resize(){const rect=CV.getBoundingClientRect();dpr=Math.min(2,window.devicePixelRatio||1);w=rect.width;h=rect.height;CV.width=Math.round(w*dpr);CV.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
+ const toScr=(x,y)=>({x:(x-cam.x)*cam.s+w/2,y:(y-cam.y)*cam.s+h/2});
+ const toWorld=(x,y)=>({x:(x-w/2)/cam.s+cam.x,y:(y-h/2)/cam.s+cam.y});
+ const coord=(x,y)=>{const r=CV.getBoundingClientRect();return{x:x-r.left,y:y-r.top}},cellAt=(x,y)=>{const p=toWorld(x,y);return{x:Math.floor((p.x+TILE/2)/TILE),y:Math.floor((p.y+TILE/2)/TILE)}};
+ function tileObstacles(g,r){const obs=obstacles(r);for(const [x,y,w,h] of obs){g.fillStyle='#56605b';g.strokeStyle='#9a947d';g.lineWidth=9;g.fillRect(x,y,w,h);g.strokeRect(x+5,y+5,w-10,h-10);g.fillStyle='#3d4846';g.fillRect(x+16,y+15,w-32,h-30);g.strokeStyle='#69726d';g.lineWidth=3;g.beginPath();g.moveTo(x+10,y+10);g.lineTo(x+w-10,y+h-10);g.moveTo(x+w-10,y+10);g.lineTo(x+10,y+h-10);g.stroke();}}
+ // A single tile renderer is used for deck thumbnails, board, and exploration: floor/wall/collision always match.
+ function drawTile(g,r,cx,cy,scale=1,showSoul=true,fade=1){g.save();g.translate(cx,cy);g.scale(scale,scale);g.globalAlpha=fade;const t=LOOK[r.id];g.fillStyle=t.pattern==='tile'?'#474e4b':'#414a49';g.fillRect(-TILE/2,-TILE/2,TILE,TILE);g.strokeStyle='#5a6561';g.lineWidth=1.7;for(let v=-TILE/2;v<=TILE/2;v+=80){g.beginPath();g.moveTo(v,-TILE/2);g.lineTo(v,TILE/2);g.moveTo(-TILE/2,v);g.lineTo(TILE/2,v);g.stroke();}if(t.pattern==='tile'){g.strokeStyle='#66716b';g.lineWidth=3;for(let x=-TILE/2;x<TILE/2;x+=160)for(let y=-TILE/2;y<TILE/2;y+=160)g.strokeRect(x+6,y+6,148,148)}g.fillStyle='#303b3a';g.fillRect(-TILE/2+44,-TILE/2+44,TILE-88,TILE-88);g.fillStyle=t.pattern==='tile'?'#49544e':'#464f4c';g.fillRect(-TILE/2+55,-TILE/2+55,TILE-110,TILE-110);
+ for(let d=0;d<4;d++){let open=hasDoor(r,d);g.save();g.rotate(d*Math.PI/2);g.fillStyle='#222c2c';g.fillRect(-TILE/2,-TILE/2,TILE,35);g.fillStyle='#a2956c';g.fillRect(-TILE/2,-TILE/2,TILE,12);if(open){g.fillStyle='#616f66';g.fillRect(-DOOR/2,-TILE/2-2,DOOR,39);g.fillStyle='#e4c47e';g.fillRect(-DOOR/2-12,-TILE/2+9,23,42);g.fillRect(DOOR/2-11,-TILE/2+9,23,42);g.strokeStyle='#e8d58f';g.lineWidth=5;g.beginPath();g.moveTo(-DOOR/2,-TILE/2+43);g.lineTo(DOOR/2,-TILE/2+43);g.stroke();}g.restore();}
+ tileObstacles(g,r);
+ if(r.id==='entry'){g.fillStyle='#a3d6bb';g.font='bold 33px monospace';g.textAlign='center';g.fillText('PARTY ENTRY',0,0);g.strokeStyle='#8bbca7';g.lineWidth=5;g.strokeRect(-115,-90,230,130);}if(showSoul&&r.soul){g.shadowColor='#f8d37e';g.shadowBlur=45;g.fillStyle='#f4d17b';g.beginPath();g.moveTo(0,-52);g.lineTo(44,0);g.lineTo(0,52);g.lineTo(-44,0);g.closePath();g.fill();g.shadowBlur=0;g.fillStyle='#5c4f2d';g.font='bold 26px monospace';g.textAlign='center';g.fillText('◆',0,10)}g.restore();}
+ function drawRoomCards(k,r,center){
+  const scale=cam.s,side=TILE*scale,pad=12;if(side<55)return;
+  if(r.tarot){const card=TAROT_BY_ID[r.tarot],xx=center.x-side/2+pad,yy=center.y-side/2+pad;ctx.fillStyle='#2e243d';ctx.strokeStyle='#c1a0e0';ctx.lineWidth=2;const width=Math.min(side*.47,168);ctx.fillRect(xx,yy,width,26);ctx.strokeRect(xx,yy,width,26);ctx.fillStyle='#e8d7ff';ctx.font='bold 11px Georgia';ctx.textAlign='left';ctx.fillText('✦ '+card.name.slice(0,24),xx+7,yy+17,width-9);}
+  if(r.camp){const c=r.camp,info=pokerInfo(c.card),pos=campPos(k),pt=toScr(pos.x,pos.y),radius=Math.max(13,76*scale),friendly=c.owner==='party';ctx.save();ctx.fillStyle=friendly?'#173f37':'#59322b';ctx.strokeStyle=friendly?'#84ead1':'#f5a88a';ctx.lineWidth=3;ctx.beginPath();ctx.arc(pt.x,pt.y,radius,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`bold ${Math.max(11,17*scale+5)}px Georgia`;ctx.fillStyle=info.suit.glyph==='♥'||info.suit.glyph==='♦'?'#ffb0ac':'#f4e3ce';ctx.fillText(info.suit.glyph+info.rank,pt.x,pt.y-1);
+   ctx.fillStyle=friendly?'#8ef1cd':'#ffc4a8';ctx.font='bold 10px monospace';ctx.fillText(friendly?'SEALED':'DM ACTIVE',pt.x,pt.y+radius+13);if(mode!=='build'&&c.progress>0){ctx.beginPath();ctx.strokeStyle=c.progressSide==='party'?'#91f6d3':'#ffb4a0';ctx.lineWidth=4;ctx.arc(pt.x,pt.y,radius+6,-Math.PI/2,-Math.PI/2+c.progress*Math.PI*2);ctx.stroke()}ctx.restore();}
+ }
+ function campCounts(){const camps=Object.values(rooms).filter(r=>r.camp);const party=camps.filter(r=>r.camp.owner==='party').length,dm=camps.length-party;const status='CAMPS  DM ACTIVE '+dm+'  /  PARTY SEALED '+party;if($('campCountsDM'))$('campCountsDM').textContent=status;if($('campCountsParty'))$('campCountsParty').textContent=status}
+ function createCampMonster(k,owner){const r=rooms[k],info=pokerInfo(r?.camp?.card);if(!info||owner!=='dm'||r?.camp?.owner!=='dm')return false;if(monsters.filter(alive).length>=45)return false;const pos=campPos(k),spots=[[110,95],[-110,-100],[105,-100],[-105,110],[0,120],[130,0],[-135,0],[0,-135]];let xy=null;for(let i=0;i<spots.length;i++){const v=spots[(monsterId+i)%spots.length];const x=pos.x+v[0],y=pos.y+v[1];if(!blockedInside(x,y)){xy={x,y};break}}if(!xy)return false;const t=MONSTER_TYPES[info.monster],hpm=campModifier(k,'hp')*(1+(info.tier-1)*.11),spd=campModifier(k,'speed'),dmg=campModifier(k,'damage')*(1+(info.tier-1)*.08);const m={id:++monsterId,type:info.monster,x:xy.x,y:xy.y,hp:Math.round(t.hp*hpm),maxHp:Math.round(t.hp*hpm),order:'guard',faction:'dm',campKey:k,destination:null,cool:.6,path:[],pathAge:0,stuck:0,face:0,damageMul:dmg,speedMul:spd};monsters.push(m);return true}
+ function updateCamps(dt){if(!player)return;campClock+=dt;const here=roomAtWorld(player.x,player.y).k;const active=possessed();let dirty=false;
+  for(const [k,r] of Object.entries(rooms)){const c=r.camp;if(!c)continue;const info=pokerInfo(c.card),pos=campPos(k);const partyNear=player.hp>0&&Math.hypot(player.x-pos.x,player.y-pos.y)<145;const capturer=mode==='dm'?partyNear:partyNear&&!!keys.KeyF;
+   const dmUnits=monsters.some(m=>alive(m)&&m.faction!=='party'&&Math.hypot(m.x-pos.x,m.y-pos.y)<145);const dmCapturers=monsters.some(m=>alive(m)&&m.faction!=='party'&&((m.order==='capture')||m.id===possessedId)&&Math.hypot(m.x-pos.x,m.y-pos.y)<145);
+   const partyUnits=monsters.some(m=>alive(m)&&m.faction==='party'&&Math.hypot(m.x-pos.x,m.y-pos.y)<145);
+   let attack=null;if(c.owner==='dm'&&capturer&&!dmUnits)attack='party';else if(c.owner==='party'&&dmCapturers&&!partyNear&&!partyUnits)attack='dm';
+   if(attack){if(c.progressSide!==attack){c.progressSide=attack;c.progress=0}const multiplier=attack==='party'?campModifier(k,'partyCapture')/campModifier(k,'dmCapture'):campModifier(k,'dmCapture')/campModifier(k,'partyCapture');c.progress=Math.min(1,c.progress+dt/(attack==='party'?2.8:3.2)*multiplier);if(c.progress>=1){c.owner=attack;c.progress=0;c.progressSide=null;c.timer=attack==='dm'?2.2:null;dirty=true;event('CAMP '+(attack==='party'?'CAPTURED':'RECLAIMED'),cardLabel('poker',c.card)+' · '+attack.toUpperCase());msg(attack==='party'?'Camp sealed! Enemy spawning stopped.':'The DM reclaimed a camp! Hostile spawning resumed.');for(const m of monsters)if(m.order==='capture'&&m.campKey===k){m.order='guard';m.destination=null;m.path=[]}}}
+   else if(c.progress>0)c.progress=Math.max(0,c.progress-dt*.22);
+   // Party capture seals the camp completely. Only active DM camps can produce monsters.
+   // Units that spawned before capture remain hostile; they never change faction.
+   if(c.owner==='dm'){c.timer=(Number.isFinite(c.timer)?c.timer:2.5)-dt;if(c.timer<=0){const current=monsters.filter(m=>alive(m)&&m.campKey===k&&m.faction==='dm').length,limit=Math.min(info.cap,Math.max(0,45-monsters.filter(alive).length));for(let i=0;i<Math.min(info.units,limit-current);i++)createCampMonster(k,'dm');c.timer=info.interval*campModifier(k,'spawn');}}
+  }
+  const t=tarotOf(here);if(t&&player.hp>0){if(t.effect==='heal'){const before=player.hp;player.hp=Math.min(player.maxHp,player.hp+t.power*dt);dirty ||= Math.floor(before)!==Math.floor(player.hp)}if(t.effect==='hurt'){player.hazardTick=(player.hazardTick||0)+dt;if(player.hazardTick>.65){player.hazardTick=0;player.hp=Math.max(0,player.hp-t.power);if(player.hp===0&&partyRespawn<=0){partyRespawn=3;event('PARTY DOWN','Room hazard defeated the operative')}dirty=true}}}
+  if(dirty||campClock>1){campCounts();updateSoulHUD();if(mode==='dm')updateDMDock();if(campClock>1)campClock=0}
+ }
+ function drawGrid(){const xmin=Math.floor((cam.x-w/(2*cam.s)-TILE)/TILE),xmax=Math.ceil((cam.x+w/(2*cam.s)+TILE)/TILE),ymin=Math.floor((cam.y-h/(2*cam.s)-TILE)/TILE),ymax=Math.ceil((cam.y+h/(2*cam.s)+TILE)/TILE);ctx.strokeStyle='#263336';ctx.lineWidth=1;for(let x=xmin;x<=xmax;x++){let s=toScr((x-.5)*TILE,0).x;ctx.beginPath();ctx.moveTo(s,0);ctx.lineTo(s,h);ctx.stroke()}for(let y=ymin;y<=ymax;y++){let s=toScr(0,(y-.5)*TILE).y;ctx.beginPath();ctx.moveTo(0,s);ctx.lineTo(w,s);ctx.stroke()}}
+ function roomVisible(k){return mode!=='party'||(player&&player.seen.has(k))}
+ function draw(){ctx.fillStyle='#0d1417';ctx.fillRect(0,0,w,h);if(mode==='build')drawGrid();const max=Math.max(w,h)/cam.s+TILE;for(const [k,r] of Object.entries(rooms)){const [x,y]=parse(k),center=toScr(x*TILE,y*TILE);if(Math.abs(center.x-w/2)>max*cam.s||Math.abs(center.y-h/2)>max*cam.s)continue;const see=roomVisible(k),visited=player&&player.seen.has(k),edge=mode==='party'&&!see&&player&&DIR.some(([dx,dy])=>player.seen.has(key(x+dx,y+dy)));if(!see&&!edge)continue;if(!see){ctx.fillStyle='#162324';ctx.fillRect(center.x-TILE*cam.s/2,center.y-TILE*cam.s/2,TILE*cam.s,TILE*cam.s);continue}drawTile(ctx,r,center.x,center.y,cam.s,!(mode==='party'&&player&&player.collected.has(k)),1);drawRoomCards(k,r,center);if(mode==='build'){ctx.lineWidth=k===selected?4:1.5;ctx.strokeStyle=k===selected?'#f5d487':'#adb7a366';ctx.strokeRect(center.x-TILE*cam.s/2+2,center.y-TILE*cam.s/2+2,TILE*cam.s-4,TILE*cam.s-4);if(cam.s>.10){ctx.fillStyle='#161b1bed';ctx.fillRect(center.x-TILE*cam.s/2+8,center.y-TILE*cam.s/2+8,Math.min(180,TILE*cam.s-20),22);ctx.fillStyle='#edd49a';ctx.font='11px system-ui';ctx.fillText(LOOK[r.id].name,center.x-TILE*cam.s/2+16,center.y-TILE*cam.s/2+23)}}}
+ if(mode==='build'){const hovered=drag&&drag.hover,room=drag&&(drag.kind==='hand'?hand[drag.i]:drag.kind==='board'?drag.room:null);if(hovered&&room){const pt=toScr(hovered.x*TILE,hovered.y*TILE),s=cam.s*TILE;ctx.globalAlpha=.52;drawTile(ctx,room,pt.x,pt.y,cam.s,true);ctx.globalAlpha=1;ctx.strokeStyle=canPlace(hovered.x,hovered.y,room,drag.kind==='board'?drag.from:null).ok?'#8ad8a8':'#eb746e';ctx.lineWidth=4;ctx.strokeRect(pt.x-s/2,pt.y-s/2,s,s)}}
+ else if(player){renderCombatActors();}$('zoomInfo').textContent=Math.round(cam.s*100)+'%';}
+ function beginHandDrag(e,i){const client={x:e.clientX,y:e.clientY};drag={kind:'hand',i,start:client,client,moved:false,room:structuredClone(hand[i]),hover:null};updateGhost();}
+ function updateGhost(){const ghost=$('dragGhost');if(!drag||!drag.moved){ghost.style.display='none';return}ghost.style.display='block';ghost.style.left=(drag.client.x+13)+'px';ghost.style.top=(drag.client.y+12)+'px';let c=ghost.querySelector('canvas'),g=c.getContext('2d');g.clearRect(0,0,120,120);let room=drag.kind==='board'?drag.room:drag.kind==='hand'?hand[drag.i]:null;if(room)drawTile(g,room,60,60,.12,true);else{g.fillStyle=drag.kind==='tarot'?'#34283d':'#f0e8d5';g.fillRect(0,0,120,120);g.fillStyle=drag.kind==='tarot'?'#e8cf9f':'#292525';g.font='bold 15px Georgia';g.textAlign='center';g.fillText(drag.kind==='tarot'?'TAROT':'POKER',60,65)}$('ghostLabel').textContent=room?LOOK[room.id].name:(drag.kind==='tarot'||drag.kind==='poker'?cardLabel(drag.kind,(drag.kind==='tarot'?tarotHand:pokerHand)[drag.i]):'MOVE ROOM')}
+ function hideGhost(){drag=null;$('dragGhost').style.display='none';}
+ function setTool(t){tool=t;renderSidebar()}
+ function cellPoint(e){let p=coord(e.clientX,e.clientY);return cellAt(p.x,p.y)}
+ function actClick(x,y){let k=key(x,y),r=rooms[k];if(tool==='soul'){toggleSoul(k);return}if((tool==='tarot'||tool==='poker')&&r){applySpecial(tool,k,tool==='tarot'?chosenTarot:chosenPoker);return}if(r){selected=k;renderSidebar();return}if(!hand.length)return msg('Draw room cards first.');const c=hand[pick];if(!c)return;placeRoom(x,y,c,pick);}
+ function fit(){if(!Object.keys(rooms).length){cam.x=cam.y=0;cam.s=.20;return}const all=Object.keys(rooms).map(parse),minx=Math.min(...all.map(a=>a[0])),maxx=Math.max(...all.map(a=>a[0])),miny=Math.min(...all.map(a=>a[1])),maxy=Math.max(...all.map(a=>a[1]));cam.x=(minx+maxx)*TILE/2;cam.y=(miny+maxy)*TILE/2;cam.s=Math.max(.07,Math.min(.36,Math.min(w/((maxx-minx+1.6)*TILE),h/((maxy-miny+1.7)*TILE))))}
+ function exportJSON(){let j={format:'soulseekers-dungeon-builder-r05',version:7,round,roomSize:TILE,rooms,roomDeck,hand,roomDiscard,rerollsLeft,tarotDeck,tarotHand,tarotDiscard,pokerDeck,pokerHand,pokerDiscard};const blob=new Blob([JSON.stringify(j,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`SOULSEEKERS_ROUND_${String(round).padStart(2,'0')}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);msg('Blueprint exported.')}
+ function importJSON(file){
+  if(!file||file.size>2e6)return msg('Choose a JSON blueprint under 2MB.');
+  file.text().then(text=>{try{
+   const j=JSON.parse(text),v7=j.version===7,v6=j.version===6;
+   if(!['soulseekers-dungeon-builder-r03','soulseekers-dungeon-builder-r05'].includes(j.format)||!j.rooms||typeof j.rooms!=='object'||Object.keys(j.rooms).length>400)throw Error('Invalid file format.');
+   const next={};
+   for(const [k,r] of Object.entries(j.rooms)){
+    const [x,y]=parse(k);
+    if(!validCell(x,y)||!LOOK[r.id]||!Number.isInteger(r.rot)||r.rot<0||r.rot>3||typeof r.soul!=='boolean')throw Error('Invalid room data.');
+    if(r.baseDoors!==undefined&&(!Number.isInteger(r.baseDoors)||r.baseDoors<0||r.baseDoors>15))throw Error('Invalid doorway data.');
+    next[k]={id:r.id,rot:r.rot,soul:r.soul,
+      ...(r.baseDoors!==undefined?{baseDoors:r.baseDoors}:{}),
+      ...(r.tarot&&TAROT_BY_ID[r.tarot]?{tarot:r.tarot}:{}),
+      ...(r.camp&&pokerInfo(r.camp.card)&&r.id!=='entry'?{camp:{card:r.camp.card,owner:'dm',timer:2.5,progress:0,progressSide:null}}:{})};
+   }
+   if(Object.values(next).filter(r=>r.id==='entry').length!==1||Object.values(next).filter(r=>r.soul).length>7)throw Error('Incorrect entrance or souls.');
+   const counts=Object.fromEntries(Object.keys(ROOM_COUNTS).map(id=>[id,0]));
+   const seeCard=c=>{if(!c||!LOOK[c.id]||!Number.isInteger(c.rot)||c.rot<0||c.rot>3)return false;counts[c.id]++;return counts[c.id]<=ROOM_COUNTS[c.id]};
+   if(!Object.values(next).every(seeCard))throw Error('This dungeon needs more room cards than allowed in one round.');
+   let nextDeck=[],nextHand=[],nextRoomDiscard=[],remaining=REROLL_BUDGET;
+   if(v6||v7){
+    if(![j.roomDeck,j.hand,j.roomDiscard].every(Array.isArray)||!Number.isInteger(j.rerollsLeft)||j.rerollsLeft<0||j.rerollsLeft>REROLL_BUDGET)throw Error('Invalid saved card economy.');
+    if(j.hand.length>(v7?DEALT_ROOMS:5)||j.roomDeck.length>TOTAL_ROOM_CARDS||j.roomDiscard.length>REROLL_BUDGET)throw Error('Invalid room hand or discard.');
+    if(![...j.roomDeck,...j.hand,...j.roomDiscard].every(seeCard)||Object.entries(counts).some(([id,n])=>n!==ROOM_COUNTS[id]))throw Error('Saved room cards were duplicated or lost.');
+    if(j.roomDiscard.length>REROLL_BUDGET-j.rerollsLeft)throw Error('Redraw budget does not match the discarded cards.');
+    nextDeck=structuredClone(j.roomDeck);nextHand=structuredClone(j.hand);nextRoomDiscard=structuredClone(j.roomDiscard);remaining=j.rerollsLeft;
+    if(v7&&Object.keys(next).length+nextHand.length>DEALT_ROOMS)throw Error('Too many room cards were dealt this round.');
+    if(v6&&Object.keys(next).length>DEALT_ROOMS)throw Error('Older round has more than '+DEALT_ROOMS+' placed rooms, beyond the new round allowance.');
+    if(v6){const maxHand=DEALT_ROOMS-Object.keys(next).length;while(nextHand.length>maxHand)nextDeck.push(nextHand.pop());while(nextHand.length<maxHand&&nextDeck.length)nextHand.push(nextDeck.pop())}
+   }else{
+    // Legacy blueprints didn't store a finite room supply. Assign a one-time dealt hand.
+    if(Object.keys(next).length>DEALT_ROOMS)throw Error('This old blueprint has more than '+DEALT_ROOMS+' rooms.');
+    const pool=Object.entries(ROOM_COUNTS).flatMap(([id,n])=>Array.from({length:n-counts[id]},()=>({id,rot:Math.floor(Math.random()*4)})));
+    nextDeck=shuffle(pool);while(nextHand.length<Math.max(0,DEALT_ROOMS-Object.keys(next).length)&&nextDeck.length)nextHand.push(nextDeck.pop());
+   }
+   const usedT=new Set(Object.values(next).map(r=>r.tarot).filter(Boolean)),usedP=new Set(Object.values(next).map(r=>r.camp?.card).filter(Boolean));
+   const allT=new Set(TAROT.map(c=>c.id)),allP=new Set(Object.keys(SUITS).flatMap(s=>RANKS.map(r=>s+r)));
+   const validSet=(a,b,c,used,all)=>[a,b,c].every(Array.isArray)&&[...a,...b,...c,...used].length===all.size&&[...a,...b,...c,...used].every(id=>all.has(id))&&new Set([...a,...b,...c,...used]).size===all.size;
+   let tdeck=[],thand=[],tdiscard=[],pdeck=[],phand=[],pdiscard=[];
+   if(v6||v7){
+    if(!validSet(j.tarotDeck,j.tarotHand,j.tarotDiscard,usedT,allT)||!validSet(j.pokerDeck,j.pokerHand,j.pokerDiscard,usedP,allP)||j.tarotHand.length>(v7?DEALT_TAROT:4)||j.pokerHand.length>(v7?DEALT_POKER:5))throw Error('Tarot or poker card economy is invalid.');
+    if((j.tarotDiscard.length+j.pokerDiscard.length+j.roomDiscard.length)>REROLL_BUDGET-remaining)throw Error('Redraw credits cannot cover the discarded cards.');
+    [tdeck,thand,tdiscard,pdeck,phand,pdiscard]=[j.tarotDeck,j.tarotHand,j.tarotDiscard,j.pokerDeck,j.pokerHand,j.pokerDiscard].map(x=>[...x]);
+    if(v7&&(usedT.size+thand.length>DEALT_TAROT||usedP.size+phand.length>DEALT_POKER))throw Error('Too many special cards were dealt this round.');
+    if(v6){if(usedT.size>DEALT_TAROT||usedP.size>DEALT_POKER)throw Error('Old blueprint exceeds new Tarot or camp allotment.');while(thand.length>DEALT_TAROT-usedT.size)tdeck.push(thand.pop());while(phand.length>DEALT_POKER-usedP.size)pdeck.push(phand.pop());while(thand.length<DEALT_TAROT-usedT.size&&tdeck.length)thand.push(tdeck.pop());while(phand.length<DEALT_POKER-usedP.size&&pdeck.length)phand.push(pdeck.pop())}
+   }else{
+    tdeck=shuffle([...allT].filter(x=>!usedT.has(x)));pdeck=shuffle([...allP].filter(x=>!usedP.has(x)));
+    while(thand.length<Math.max(0,DEALT_TAROT-usedT.size)&&tdeck.length)thand.push(tdeck.pop());while(phand.length<Math.max(0,DEALT_POKER-usedP.size)&&pdeck.length)phand.push(pdeck.pop());
+   }
+   rooms=next;round=Math.max(1,Math.floor(Number(j.round)||1));roomDeck=nextDeck;hand=nextHand;roomDiscard=nextRoomDiscard;rerollsLeft=remaining;
+   tarotDeck=tdeck;tarotHand=thand;tarotDiscard=tdiscard;pokerDeck=pdeck;pokerHand=phand;pokerDiscard=pdiscard;
+   chosenTarot=chosenPoker=pick=roomPage=0;clearMarks();history=[];mode='build';matchDeadline=0;matchSeconds=MATCH_LIMIT;matchEnded=false;matchResult='';
+   selected=Object.keys(rooms)[0]||null;setDeckTab('room');renderHand();renderSpecialHands();renderSidebar();fit();
+   event('BLUEPRINT LOADED',Object.keys(rooms).length+' rooms · '+rerollsLeft+' redraw credits left');msg('Round restored with its remaining cards and redraw credits.');
+  }catch(e){msg('Import failed: '+e.message)}});
+ }
+
+ function loadSample(){snapshot();rooms={};const data=[
+ [0,0,'entry',0,15],[1,0,'cross',0,15],[2,0,'straight',1,10],[3,0,'junction',3,7],[4,0,'vault',1,8],
+ [1,-1,'straight',0,5],[1,-2,'crypt',2,4],[1,1,'straight',0,5],[1,2,'vault',0,1],
+ [3,-1,'straight',0,5],[3,-2,'vault',2,4],[3,1,'straight',0,5],[3,2,'vault',0,1],
+ [2,-1,'cross',0,15],[2,-2,'vault',2,4],
+ ]; // Set consistent orientation and exact door masks for a clean validation example.
+ const fixed=[
+ [0,0,'entry',0,2],[1,0,'cross',0,15],[2,0,'straight',1,10],[3,0,'cross',0,15],[4,0,'vault',1,8],
+ [1,-1,'straight',0,5],[1,-2,'vault',2,4],[1,1,'straight',0,5],[1,2,'vault',0,1],
+ [3,-1,'straight',0,5],[3,-2,'vault',2,4],[3,1,'straight',0,5],[3,2,'vault',0,1],
+ ];
+ for(const [x,y,id,rot,doors] of fixed){rooms[key(x,y)]={id,rot,soul:false,baseDoors:((doors>>rot)|(doors<<(4-rot)))&15};}
+ for(const k of ['1,-2','1,2','3,-2','3,2','1,-1','3,-1','4,0'])rooms[k].soul=true;
+ // Fix all sample adjacency masks deterministically from intended graph: connected edges only.
+ for(const k of Object.keys(rooms)){const [x,y]=parse(k);let mask0=0;for(let d=0;d<4;d++)if(rooms[key(x+DIR[d][0],y+DIR[d][1])])mask0|=1<<d;rooms[k].baseDoors=((mask0>>rooms[k].rot)|(mask0<<(4-rooms[k].rot)))&15;}
+ rooms['1,0'].tarot='chariot';rooms['3,0'].tarot='emperor';rooms['1,-1'].tarot='star';rooms['1,0'].camp={card:'H7',owner:'dm',progress:0,timer:2.5};rooms['3,0'].camp={card:'S9',owner:'dm',progress:0,timer:2.5};rooms['3,1'].camp={card:'CQ',owner:'dm',progress:0,timer:2.5};initSpecialDecks();buildRoomDeck();
+ const pool=Object.entries(ROOM_COUNTS).flatMap(([id,n])=>Array.from({length:n},()=>({id,rot:Math.floor(Math.random()*4)})));
+ for(const r of Object.values(rooms)){const i=pool.findIndex(c=>c.id===r.id);if(i<0)throw Error('Sample exceeds deck for '+r.id);pool.splice(i,1)}
+ roomDeck=shuffle(pool);hand=[];roomPage=0;while(hand.length<Math.max(0,DEALT_ROOMS-Object.keys(rooms).length)&&roomDeck.length)hand.push(roomDeck.pop());roomDiscard=[];rerollsLeft=REROLL_BUDGET;clearMarks();
+ const usedCards=new Set(['chariot','emperor','star']);const usedPoker=new Set(['H7','S9','CQ']);tarotDeck=[...tarotDeck,...tarotHand].filter(id=>!usedCards.has(id));tarotHand=[];pokerDeck=[...pokerDeck,...pokerHand].filter(id=>!usedPoker.has(id));pokerHand=[];while(tarotHand.length<DEALT_TAROT-usedCards.size)tarotHand.push(tarotDeck.pop());while(pokerHand.length<DEALT_POKER-usedPoker.size)pokerHand.push(pokerDeck.pop());renderSpecialHands();selected='0,0';pick=0;renderHand();renderSidebar();fit();event('SAMPLE LOADED','13 huge connected rooms · 7 souls');msg('Example ready. Play as DM or test as Party.');}
+ function roomAtWorld(x,y){const rx=Math.floor((x+TILE/2)/TILE),ry=Math.floor((y+TILE/2)/TILE);return{rx,ry,k:key(rx,ry),r:rooms[key(rx,ry)]}}
+ function blockedInside(x,y){const cell=roomAtWorld(x,y);if(!cell.r)return true;const lx=x-cell.rx*TILE,ly=y-cell.ry*TILE,r=cell.r;const margin=TILE/2-MARGIN-PLAYER_RADIUS;
+ if(Math.abs(lx)>margin){const d=lx>0?1:3;if(!hasDoor(r,d)||Math.abs(ly)>DOOR/2-PLAYER_RADIUS)return true}if(Math.abs(ly)>margin){const d=ly>0?2:0;if(!hasDoor(r,d)||Math.abs(lx)>DOOR/2-PLAYER_RADIUS)return true}
+ for(const [bx,by,bw,bh] of obstacles(r)){let cx=Math.max(bx,Math.min(lx,bx+bw)),cy=Math.max(by,Math.min(ly,by+bh));if(Math.hypot(lx-cx,ly-cy)<PLAYER_RADIUS)return true}return false}
+ function canMove(ox,oy,nx,ny){const a=roomAtWorld(ox,oy),b=roomAtWorld(nx,ny);if(!b.r)return false;if(a.k!==b.k){const dx=b.rx-a.rx,dy=b.ry-a.ry,d=dx===1&&dy===0?1:dx===-1&&dy===0?3:dy===1&&dx===0?2:dy===-1&&dx===0?0:-1;if(d<0||!a.r||!hasDoor(a.r,d)||!hasDoor(b.r,(d+2)%4))return false;const local=d%2?oy-a.ry*TILE:ox-a.rx*TILE;if(Math.abs(local)>DOOR/2-PLAYER_RADIUS)return false;}return !blockedInside(nx,ny)}
+ // R04 dungeon master battle simulation. Entirely local: no Firebase or multiplayer required.
+ const alive=m=>m&&m.hp>0;
+ const chosen=()=>monsters.find(m=>m.id===selectedMonster&&alive(m));
+ const possessed=()=>monsters.find(m=>m.id===possessedId&&alive(m));
+ function updateDMDock(){
+  $('threatLabel').textContent='THREAT '+dmThreat+' / 30 · '+monsters.filter(alive).length+' MONSTERS';
+  const unit=chosen(),poss=possessed();
+  campCounts();const name=unit?MONSTER_TYPES[unit.type].name+' #'+unit.id+' · '+Math.ceil(unit.hp)+'/'+MONSTER_TYPES[unit.type].hp+' HP · '+unit.order.toUpperCase():'No monster selected';
+  $('dmStatus').textContent=(poss?'POSSESSING '+MONSTER_TYPES[poss.type].name+' #'+poss.id+' · WASD + CLICK ATTACK':'COMMAND VIEW · '+name)+(mode==='dm'?'':'');
+  $('dmPossess').textContent=poss?'Release [P]':'Possess [P]';
+  document.querySelectorAll('#monsterDeck [data-unit]').forEach(b=>b.classList.toggle('active',dmTool===b.dataset.unit));
+  $('dmSelect').classList.toggle('active',dmTool==='select');
+  $('partyHpText').textContent=player?Math.max(0,Math.ceil(player.hp||0))+' / 100 HP':'—';
+  $('partyHP').style.width=player?Math.max(0,Math.min(100,player.hp||0))+'%':'0%';
+ }
+ function setDMTool(t){if(mode!=='dm')return;dmTool=t;updateDMDock()}
+ function nearMonster(x,y,dist=58){let best=null,d=dist;for(const m of monsters)if(alive(m)){const v=Math.hypot(m.x-x,m.y-y);if(v<d){d=v;best=m}}return best}
+ function summon(type,x,y){if(mode!=='dm'||possessed())return false;
+  const t=MONSTER_TYPES[type];if(!t)return false;
+  if(dmThreat<t.cost){msg('Not enough threat. Dismiss a unit to recover its cost.');return false}
+  if(monsters.filter(m=>alive(m)&&!m.campKey).length>=22||monsters.filter(alive).length>=45){msg('Battlefield at monster capacity.');return false}
+  if(blockedInside(x,y)||!canMove(x,y,x,y)){msg('Place monsters on clear dungeon floor.');return false}
+  const entry=Object.keys(rooms).find(k=>rooms[k].id==='entry');if(entry&&Math.hypot(x-parse(entry)[0]*TILE,y-parse(entry)[1]*TILE)<185){msg('Cannot spawn directly on the entrance.');return false}
+  const m={id:++monsterId,type,x,y,hp:t.hp,maxHp:t.hp,order:'hunt',destination:null,cool:0,path:[],pathAge:0,stuck:0,previousX:x,previousY:y,face:0};monsters.push(m);dmThreat-=t.cost;selectedMonster=m.id;updateDMDock();event('SUMMONED',t.name+' #'+m.id);return true;
+ }
+ function dismissMonster(){const m=chosen();if(!m)return msg('Select a monster first.');dmThreat=Math.min(30,dmThreat+MONSTER_TYPES[m.type].cost);monsters=monsters.filter(u=>u!==m);if(possessedId===m.id)possessedId=null;selectedMonster=null;updateDMDock();event('DISMISSED',m.type)}
+ function possessSelected(){const m=chosen();if(possessed()){possessedId=null;msg('Released direct monster control.')}else if(m){possessedId=m.id;dmTool='select';cam.x=m.x;cam.y=m.y;msg('Possessing '+MONSTER_TYPES[m.type].name+' #'+m.id)}else return msg('Select a monster to possess.');updateDMDock()}
+ function commandMonster(order,destination=null){const m=chosen();if(!m)return msg('Select a monster first.');if(possessedId===m.id)possessedId=null;m.order=order;m.destination=destination;m.campKey=order==='capture'?roomAtWorld(destination.x,destination.y).k:m.campKey;m.path=[];m.pathAge=0;updateDMDock();event('MONSTER ORDER',MONSTER_TYPES[m.type].name+' → '+order.toUpperCase())}
+ function waypointRoute(fromX,fromY,toX,toY){
+  const a=roomAtWorld(fromX,fromY),b=roomAtWorld(toX,toY);if(!a.r||!b.r)return [];
+  if(a.k===b.k)return[{x:toX,y:toY}];
+  const q=[a.k],vis=new Set([a.k]),parents=new Map();let found=false;
+  for(let n=0;n<q.length&&n<250;n++){const k=q[n];if(k===b.k){found=true;break}const [x,y]=parse(k),r=rooms[k];for(let d=0;d<4;d++){const kk=key(x+DIR[d][0],y+DIR[d][1]),rr=rooms[kk];if(!vis.has(kk)&&rr&&hasDoor(r,d)&&hasDoor(rr,(d+2)%4)){parents.set(kk,k);vis.add(kk);q.push(kk)}}}
+  if(!found)return [];
+  const seq=[b.k];let cur=b.k;while(cur!==a.k){cur=parents.get(cur);seq.push(cur)}seq.reverse();
+  const points=[];for(let i=0;i<seq.length-1;i++){const [x,y]=parse(seq[i]),[nx,ny]=parse(seq[i+1]);const mx=(x+nx)*TILE/2,my=(y+ny)*TILE/2;
+    const ux=nx-x,uy=ny-y,rx=fromX-x*TILE,ry=fromY-y*TILE;const forward=rx*ux+ry*uy,offset=Math.abs(rx*uy-ry*ux);
+    if(i>0||forward< -50||offset>DOOR/2-PLAYER_RADIUS-16)points.push({x:x*TILE,y:y*TILE});
+    points.push({x:mx,y:my});points.push({x:nx*TILE,y:ny*TILE})}
+  points.push({x:toX,y:toY});return points;
+ }
+ function moveObject(u,tx,ty,dist){const len=Math.hypot(tx-u.x,ty-u.y);if(len<.3)return true;
+  const dx=(tx-u.x)/len,dy=(ty-u.y)/len,step=Math.min(dist,len);u.face=Math.atan2(dy,dx);
+  if(canMove(u.x,u.y,u.x+dx*step,u.y+dy*step)){u.x+=dx*step;u.y+=dy*step;return true}
+  let did=false;if(Math.abs(dx)>.005&&canMove(u.x,u.y,u.x+dx*step,u.y)){u.x+=dx*step;did=true}if(Math.abs(dy)>.005&&canMove(u.x,u.y,u.x,u.y+dy*step)){u.y+=dy*step;did=true}
+  if(!did){ // orbit a cover obstacle instead of repeatedly pushing into it
+   for(const a of [Math.PI/4,-Math.PI/4,Math.PI/2,-Math.PI/2,Math.PI*3/4,-Math.PI*3/4]){const ang=Math.atan2(dy,dx)+a,nx=u.x+Math.cos(ang)*step,ny=u.y+Math.sin(ang)*step;if(canMove(u.x,u.y,nx,ny)){u.x=nx;u.y=ny;did=true;break}}
+  }return did;
+ }
+ function projectileWall(x1,y1,x2,y2){const steps=Math.max(1,Math.ceil(Math.hypot(x2-x1,y2-y1)/35));for(let i=1;i<=steps;i++){const t=i/steps,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;if(!canMove(x1,y1,x,y))return true}return false}
+ function newShot(x,y,tx,ty,owner,damage,speed=580,range=580){const d=Math.hypot(tx-x,ty-y)||1;projectiles.push({x,y,vx:(tx-x)/d*speed,vy:(ty-y)/d*speed,owner,damage,range,travel:0,life:range/speed})}
+ function monsterAttack(m,manual=false){const t=MONSTER_TYPES[m.type];if(m.cool>0)return false;const enemies=monsters.filter(u=>alive(u)&&u.faction!==m.faction),nearest=enemies.sort((a,b)=>Math.hypot(a.x-m.x,a.y-m.y)-Math.hypot(b.x-m.x,b.y-m.y))[0];const target=m.faction==='party'?nearest:(player?.hp>0?player:nearest);
+  if(manual){const dist=Math.hypot(mouseWorld.x-m.x,mouseWorld.y-m.y),a=Math.atan2(mouseWorld.y-m.y,mouseWorld.x-m.x);m.face=a;if(t.reach>160)newShot(m.x,m.y,mouseWorld.x,mouseWorld.y,m.faction==='party'?'party':'dm',t.damage*(m.damageMul||1),650,t.reach);
+    else if(target&&Math.hypot(target.x-m.x,target.y-m.y)<t.reach+22 &&Math.abs(Math.atan2(Math.sin(Math.atan2(target.y-m.y,target.x-m.x)-a),Math.cos(Math.atan2(target.y-m.y,target.x-m.x)-a)))<.95)damageParty(t.damage*(m.damageMul||1));
+  }else if(target&&target.hp>0){const d=Math.hypot(target.x-m.x,target.y-m.y);if(d>t.reach+30)return false;m.face=Math.atan2(target.y-m.y,target.x-m.x);if(t.reach>160){if(!projectileWall(m.x,m.y,target.x,target.y))newShot(m.x,m.y,target.x,target.y,m.faction==='party'?'party':'dm',t.damage*(m.damageMul||1),600,t.reach)}else if(d<t.reach+22){if(m.faction==='party'||target!==player)damageMonster(target,t.damage*(m.damageMul||1));else damageParty(t.damage*(m.damageMul||1))}}
+  m.cool=t.cooldown;return true;
+ }
+ function damageParty(n){if(!player||player.hp<=0||player.iFrames>0)return;player.hp=Math.max(0,player.hp-n);player.iFrames=.35;updateDMDock();updateSoulHUD();if(player.hp===0){partyRespawn=3;event('PARTY DOWN','Operative respawns at entrance in 3 seconds');msg('Party operative down!')}}
+ function damageMonster(m,n){if(!alive(m))return;m.hp=Math.max(0,m.hp-n);if(!alive(m)){event('MONSTER DEFEATED',MONSTER_TYPES[m.type].name+' #'+m.id);if(possessedId===m.id)possessedId=null;if(selectedMonster===m.id)selectedMonster=null;updateDMDock()}}
+ function partyFire(){if(!player||player.hp<=0||partyShot>0)return;partyShot=.22;const d=Math.hypot(mouseWorld.x-player.x,mouseWorld.y-player.y);if(d<1)return;newShot(player.x,player.y,mouseWorld.x,mouseWorld.y,'party',28,900,660)}
+ function updateProjectiles(dt){for(let i=projectiles.length-1;i>=0;i--){const b=projectiles[i],ox=b.x,oy=b.y;let nx=ox+b.vx*dt,ny=oy+b.vy*dt;const steps=Math.max(1,Math.ceil(Math.hypot(nx-ox,ny-oy)/18));let collided=false;for(let j=1;j<=steps;j++){const x=ox+(nx-ox)*j/steps,y=oy+(ny-oy)*j/steps;if(!canMove(b.x,b.y,x,y)){collided=true;break}if(b.owner==='party'){for(const m of monsters){if(alive(m)&&m.faction!=='party'&&Math.hypot(m.x-x,m.y-y)<34){damageMonster(m,b.damage);collided=true;break}}}else {for(const m of monsters)if(alive(m)&&m.faction==='party'&&Math.hypot(m.x-x,m.y-y)<34){damageMonster(m,b.damage);collided=true;break}if(!collided&&player&&player.hp>0&&Math.hypot(player.x-x,player.y-y)<28){damageParty(b.damage);collided=true}}
+   if(collided)break;b.x=x;b.y=y}
+  b.travel+=Math.hypot(b.vx,b.vy)*dt;b.life-=dt;if(collided||b.life<=0||b.travel>=b.range)projectiles.splice(i,1)} }
+ function updateMonsters(dt){for(const m of monsters){if(!alive(m))continue;const t=MONSTER_TYPES[m.type];m.cool=Math.max(0,m.cool-dt);if(possessedId===m.id)continue;
+  let target=null;if((m.order==='move'||m.order==='capture')&&m.destination)target=m.destination;
+  else if(m.order==='hunt'&&m.faction==='party')target=monsters.filter(u=>alive(u)&&u.faction!=='party').sort((a,b)=>Math.hypot(a.x-m.x,a.y-m.y)-Math.hypot(b.x-m.x,b.y-m.y))[0];
+  else if(m.order==='hunt'&&player&&player.hp>0)target=player;
+  else if(m.order==='guard'){const enemy=m.faction==='party'?monsters.find(u=>alive(u)&&u.faction!=='party'&&Math.hypot(u.x-m.x,u.y-m.y)<MONSTER_TYPES[m.type].reach):player;if(enemy&&Math.hypot(enemy.x-m.x,enemy.y-m.y)<MONSTER_TYPES[m.type].reach+30)monsterAttack(m);continue}
+  if(!target)continue;
+  const dist=Math.hypot(target.x-m.x,target.y-m.y);
+  if(m.order==='hunt'&&dist<t.reach*.80){monsterAttack(m);continue}
+  m.pathAge-=dt;if(m.pathAge<=0){m.path=waypointRoute(m.x,m.y,target.x,target.y);m.pathAge=m.order==='move'?2:.8}
+  let pt=m.path[0]||target;
+  while(m.path.length&&Math.hypot(m.x-pt.x,m.y-pt.y)<65){m.path.shift();pt=m.path[0]||target}
+  if(m.order==='hunt'&&dist<270&&roomAtWorld(m.x,m.y).k===roomAtWorld(target.x,target.y).k)pt=target;
+  const moved=moveObject(m,pt.x,pt.y,t.speed*(m.speedMul||1)*dt);
+  if(!moved){m.stuck+=dt;if(m.stuck>.4){m.pathAge=0;m.stuck=0}}else m.stuck=0;
+  if((m.order==='move'||m.order==='capture')&&dist<65){if(m.order==='move'){m.order='hold';m.destination=null;updateDMDock()}else{m.order='capture';m.destination={x:target.x,y:target.y}}}
+  if(m.order==='hunt'&&Math.hypot(target.x-m.x,target.y-m.y)<t.reach+20)monsterAttack(m)
+ }}
+ function updatePartyBot(dt){if(!player||player.hp<=0)return;let goal=null;
+  const all=Object.entries(rooms).filter(([k,r])=>r.soul&&!player.collected.has(k));
+  if(all.length){const here=roomAtWorld(player.x,player.y),valid=all.filter(([k])=>bfs().has(k));valid.sort((a,b)=>Math.hypot(parse(a[0])[0]-here.rx,parse(a[0])[1]-here.ry)-Math.hypot(parse(b[0])[0]-here.rx,parse(b[0])[1]-here.ry));if(valid.length){const [x,y]=parse(valid[0][0]);goal={x:x*TILE,y:y*TILE}}}
+  else {const [x,y]=parse(player.entrance);goal={x:x*TILE,y:y*TILE}}
+  const localCamp=rooms[roomAtWorld(player.x,player.y).k]?.camp;if(localCamp&&localCamp.owner==='dm'){const p=campPos(roomAtWorld(player.x,player.y).k);goal={x:p.x,y:p.y}}
+  // Combat robot auto-targets closest monster and shoots, but can still be overtaken.
+  let nearest=null,nd=520;for(const m of monsters)if(alive(m)){const d=Math.hypot(m.x-player.x,m.y-player.y);if(d<nd){nd=d;nearest=m}}
+  if(nearest&&partyShot<=0&&!projectileWall(player.x,player.y,nearest.x,nearest.y)){partyShot=.58;newShot(player.x,player.y,nearest.x,nearest.y,'party',16,750,560)}
+  if(goal){player.pathAge-=dt;if(player.pathAge<=0){player.path=waypointRoute(player.x,player.y,goal.x,goal.y);player.pathAge=1.1}let pt=player.path[0]||goal;while(player.path.length&&Math.hypot(player.x-pt.x,player.y-pt.y)<70){player.path.shift();pt=player.path[0]||goal}moveObject(player,pt.x,pt.y,175*dt)}
+  const k=roomAtWorld(player.x,player.y).k;if(rooms[k])player.seen.add(k);
+  if(rooms[k]?.soul&&!player.collected.has(k)){const [x,y]=parse(k);if(Math.hypot(player.x-x*TILE,player.y-y*TILE)<105){player.collected.add(k);event('BOT COLLECTED SOUL',player.collected.size+'/7');updateSoulHUD()}}
+  if(player.collected.size===7&&k===player.entrance&&!player.won){player.won=true;finishMatch('PARTY WIN')}
+ }
+ function updateSoulHUD(){if(player){const k=roomAtWorld(player.x,player.y).k,c=rooms[k]?.camp,cap=c?(' · '+pokerInfo(c.card).suit.glyph+pokerInfo(c.card).rank+' '+(c.owner==='party'?'SEALED':'DM ACTIVE')+' camp '+(c.progress?Math.round(c.progress*100)+'%':'')) :'';$('walkCount').textContent=(mode==='dm'?'PARTY BOT':'SOULS')+' '+player.collected.size+' / 7'+(mode==='dm'?' · '+Math.ceil(player.hp)+' HP':'')+cap}}
+ function explore(m){const entrance=Object.keys(rooms).find(k=>rooms[k].id==='entry');if(!entrance)return msg('Place the Entrance card before exploring.');const v=validate();if(!v.ready)msg('Dungeon incomplete: you may still test the combat.');mode=m;matchSeconds=MATCH_LIMIT;matchDeadline=Date.now()+MATCH_LIMIT*1000;matchEnded=false;matchResult='';updateClock();const [x,y]=parse(entrance);
+  player={x:x*TILE,y:y*TILE,hp:100,maxHp:100,iFrames:0,seen:new Set([entrance]),collected:new Set(),entrance,won:false,path:[],pathAge:0};
+  possessedId=null;selectedMonster=null;projectiles=[];partyRespawn=0;partyShot=0;
+  if(m==='dm'){monsters=[];monsterId=0;dmThreat=30;dmTool='grunt';}else {for(const unit of monsters)if(alive(unit)){unit.order='hunt';unit.path=[];unit.pathAge=0;unit.cool=0}}for(const r of Object.values(rooms))if(r.camp){r.camp.owner='dm';r.camp.progress=0;r.camp.progressSide=null;r.camp.timer=1.0}campCounts();
+  document.body.classList.add('walk');document.body.classList.toggle('dm-live',m==='dm');document.body.classList.toggle('party-live',m==='party');resize();cam.x=player.x;cam.y=player.y;cam.s=Math.min(.94,Math.max(.65,Math.min(w/1450,h/1450)));updateSoulHUD();updateDMDock();renderSidebar();event(m==='dm'?'DM PLAY':'PARTY TEST',m==='dm'?'Monster command activated':'Controlling Party operative');
+ }
+ function returnEditor(){mode='build';player=null;possessedId=null;document.body.classList.remove('walk','dm-live','party-live');resize();fit();renderSidebar()}
+ function collect(){if(mode!=='party'||!player||player.hp<=0)return;const a=roomAtWorld(player.x,player.y),r=a.r;if(!r||!r.soul||player.collected.has(a.k))return;const cx=a.rx*TILE,cy=a.ry*TILE;if(Math.hypot(player.x-cx,player.y-cy)>105)return msg('Move to the soul at the middle of the room.');player.collected.add(a.k);updateSoulHUD();event('SOUL COLLECTED',player.collected.size+' of seven');msg(player.collected.size===7?'All seven! Return to Entrance.':`Collected ${player.collected.size} / 7 souls.`)}
+ function update(dt){if(mode==='build'||!player||matchEnded)return;matchSeconds=Math.max(0,(matchDeadline-Date.now())/1000);updateClock();if(matchSeconds<=0){finishMatch('DM WIN');return;}
+  if(player.iFrames>0)player.iFrames-=dt;partyShot=Math.max(0,partyShot-dt);
+  if(partyRespawn>0){partyRespawn-=dt;if(partyRespawn<=0){const [x,y]=parse(player.entrance);player.x=x*TILE;player.y=y*TILE;player.hp=100;player.iFrames=1.5;player.pathAge=0;updateDMDock();updateSoulHUD();event('PARTY RESPAWN','Re-entered dungeon')}}
+  const px=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),py=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0),v=Math.hypot(px,py)||1;
+  if(mode==='party'){
+   if(player.hp>0&&(px||py)){const room=roomAtWorld(player.x,player.y).k;const s=dt*SPEED*campModifier(room,'fleet')*campModifier(room,'slow');if(canMove(player.x,player.y,player.x+px/v*s,player.y))player.x+=px/v*s;if(canMove(player.x,player.y,player.x,player.y+py/v*s))player.y+=py/v*s;const k=roomAtWorld(player.x,player.y).k;if(rooms[k]&&!player.seen.has(k)){player.seen.add(k);event('ROOM DISCOVERED',LOOK[rooms[k].id].name)}}
+   const k=roomAtWorld(player.x,player.y).k;if(player.collected.size===7&&k===player.entrance&&!player.won){player.won=true;finishMatch('PARTY WIN')}
+   if(mouseHeld&&player.hp>0)partyFire();cam.x+=(player.x-cam.x)*Math.min(1,dt*8);cam.y+=(player.y-cam.y)*Math.min(1,dt*8);
+  }else{
+   const m=possessed();if(m){if(px||py)moveObject(m,m.x+px/v*MONSTER_TYPES[m.type].speed*dt,m.y+py/v*MONSTER_TYPES[m.type].speed*dt,MONSTER_TYPES[m.type].speed*dt);
+    if(mouseHeld)monsterAttack(m,true);cam.x+=(m.x-cam.x)*Math.min(1,dt*9);cam.y+=(m.y-cam.y)*Math.min(1,dt*9);
+   }else if(px||py){cam.x+=px/v*dt*950;cam.y+=py/v*dt*950}
+   updatePartyBot(dt);
+  }
+  updateMonsters(dt);updateProjectiles(dt);updateCamps(dt);
+ }
+ function renderCombatActors(){
+  for(const b of projectiles){const p=toScr(b.x,b.y);ctx.fillStyle=b.owner==='dm'?'#f6b78b':'#b6f4d5';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=10;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(3,7*cam.s),0,Math.PI*2);ctx.fill();ctx.shadowBlur=0}
+  for(const m of monsters)if(alive(m)&&(mode!=='party'||player.seen.has(roomAtWorld(m.x,m.y).k))){const p=toScr(m.x,m.y),t=MONSTER_TYPES[m.type];ctx.fillStyle=m.faction==='party'?'#69cdb2':t.color;ctx.strokeStyle=m.id===possessedId?'#f5da8c':m.id===selectedMonster?'#ffffff':'#241a1a';ctx.lineWidth=m.id===possessedId?5:3;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(8,33*cam.s),0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.strokeStyle='#fff3c9';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+Math.cos(m.face)*Math.max(13,38*cam.s),p.y+Math.sin(m.face)*Math.max(13,38*cam.s));ctx.stroke();
+    ctx.fillStyle='#172026';ctx.fillRect(p.x-24,p.y-24,48,5);ctx.fillStyle='#9be0ac';ctx.fillRect(p.x-24,p.y-24,48*m.hp/(m.maxHp||t.hp),5);
+    if(cam.s>.38){ctx.fillStyle='#fff3df';ctx.font='bold 11px monospace';ctx.textAlign='center';ctx.fillText(t.name+' #'+m.id,p.x,p.y-31)}
+    if(mode==='dm'&&m.order==='move'&&m.destination&&m.id===selectedMonster){const d=toScr(m.destination.x,m.destination.y);ctx.strokeStyle='#e4c777';ctx.setLineDash([6,6]);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(d.x,d.y);ctx.stroke();ctx.setLineDash([])}
+  }
+  if(player&&player.hp>0){const p=toScr(player.x,player.y);ctx.fillStyle=mode==='dm'?'#5fd8bd':'#9be5cd';ctx.strokeStyle=player.iFrames>0?'#ffe5a1':'#ffffff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(8,PLAYER_RADIUS*cam.s+5),0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#ffffff';ctx.textAlign='left';ctx.font='bold 12px monospace';ctx.fillText(mode==='dm'?'PARTY BOT':'PARTY',p.x+19,p.y-11)}
+  if(mode==='dm'&&!possessed()){const p=toScr(mouseWorld.x,mouseWorld.y);if(dmTool!=='select'){ctx.strokeStyle='#d9b45f';ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,16,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(p.x-21,p.y);ctx.lineTo(p.x+21,p.y);ctx.moveTo(p.x,p.y-21);ctx.lineTo(p.x,p.y+21);ctx.stroke()}}
+ }
+ function tick(now){const dt=Math.min(.045,(now-(tick.previous||now))/1000);tick.previous=now;resizeIfNeeded();update(dt);draw();requestAnimationFrame(tick)}
+ function resizeIfNeeded(){const r=CV.getBoundingClientRect();if(Math.round(r.width*dpr)!==CV.width||Math.round(r.height*dpr)!==CV.height)resize()}
+ // Drag/drop supports cards from the hand, placed rooms, blank-canvas panning and mouse rotation.
+ CV.addEventListener('mousemove',e=>{const p=coord(e.clientX,e.clientY);mouseWorld=toWorld(p.x,p.y)});
+ CV.addEventListener('pointerdown',e=>{
+  if(mode==='build')return;
+  const p=coord(e.clientX,e.clientY);mouseWorld=toWorld(p.x,p.y);
+  if(e.button===0){if(mode==='party'){mouseHeld=true;partyFire()}else if(possessed())mouseHeld=true;else{const m=nearMonster(mouseWorld.x,mouseWorld.y,62);if(m){selectedMonster=m.id;dmTool='select';updateDMDock()}else if(dmTool!=='select')summon(dmTool,mouseWorld.x,mouseWorld.y)}}
+  if(e.button===2&&mode==='dm'&&!possessed()){e.preventDefault();if(chosen()&&!blockedInside(mouseWorld.x,mouseWorld.y)){const k=roomAtWorld(mouseWorld.x,mouseWorld.y).k,c=rooms[k]?.camp;const p=c&&campPos(k);if(c&&c.owner==='party'&&p&&Math.hypot(p.x-mouseWorld.x,p.y-mouseWorld.y)<220)commandMonster('capture',{x:p.x,y:p.y});else commandMonster('move',{x:mouseWorld.x,y:mouseWorld.y})}}
+ });
+ window.addEventListener('pointerup',e=>{if(e.button===0)mouseHeld=false});
+ CV.addEventListener('contextmenu',e=>{if(mode!=='build')e.preventDefault()});
+ document.querySelectorAll('#monsterDeck [data-unit]').forEach(b=>b.onclick=()=>setDMTool(b.dataset.unit));
+ $('dmSelect').onclick=()=>setDMTool('select');$('dmHold').onclick=()=>commandMonster('hold');$('dmHunt').onclick=()=>commandMonster('hunt');$('dmCapture').onclick=()=>{const m=chosen();if(!m)return msg('Select a monster first.');const options=Object.entries(rooms).filter(([k,r])=>r.camp?.owner==='party');if(!options.length)return msg('No Party-owned camps to reclaim.');options.sort((a,b)=>{const aa=campPos(a[0]),bb=campPos(b[0]);return Math.hypot(m.x-aa.x,m.y-aa.y)-Math.hypot(m.x-bb.x,m.y-bb.y)});const v=campPos(options[0][0]);commandMonster('capture',{x:v.x,y:v.y})};$('dmPossess').onclick=possessSelected;$('dmDismiss').onclick=dismissMonster;
+ CV.addEventListener('pointerdown',e=>{if(mode!=='build'||e.button!==0)return;let p=coord(e.clientX,e.clientY),cell=cellAt(p.x,p.y),k=key(cell.x,cell.y),room=rooms[k];if(tool==='room'&&room){selected=k;renderSidebar();drag={kind:'board',from:k,room:structuredClone(room),start:{x:e.clientX,y:e.clientY},client:{x:e.clientX,y:e.clientY},moved:false,hover:cell};}else{drag={kind:'pan',start:{x:e.clientX,y:e.clientY},client:{x:e.clientX,y:e.clientY},moved:false,cx:cam.x,cy:cam.y};}CV.setPointerCapture(e.pointerId)});
+ window.addEventListener('pointermove',e=>{if(!drag)return;drag.client={x:e.clientX,y:e.clientY};if(Math.hypot(e.clientX-drag.start.x,e.clientY-drag.start.y)>7)drag.moved=true;const rect=CV.getBoundingClientRect();if(e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom){drag.hover=cellAt(e.clientX-rect.left,e.clientY-rect.top)}else drag.hover=null;if(drag.kind==='pan'&&drag.moved){cam.x=drag.cx-(e.clientX-drag.start.x)/cam.s;cam.y=drag.cy-(e.clientY-drag.start.y)/cam.s;}updateGhost()});
+ window.addEventListener('pointerup',e=>{if(!drag)return;const d=drag;const rect=CV.getBoundingClientRect(),inside=e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom;const c=inside?cellAt(e.clientX-rect.left,e.clientY-rect.top):null;if(mode==='build'&&inside&&e.button===0){if(d.kind==='hand'&&c){placeRoom(c.x,c.y,hand[d.i],d.i);}else if((d.kind==='tarot'||d.kind==='poker')&&c){applySpecial(d.kind,key(c.x,c.y),d.i);}else if(d.kind==='board'&&c){if(d.moved&&(c.x+','+c.y)!==d.from)placeRoom(c.x,c.y,d.room,null,d.from);else{selected=d.from;renderSidebar();}}else if(d.kind==='pan'&&!d.moved&&c)actClick(c.x,c.y)}hideGhost();});
+ document.addEventListener('contextmenu',e=>{const el=e.target.closest('.roomCard');if(el)return;if(mode!=='build'||(e.target!==CV&&e.target!==$('dragGhost')))return;e.preventDefault();if(drag&&(drag.kind==='hand'||drag.kind==='board')){if(drag.kind==='hand')hand[drag.i].rot=(hand[drag.i].rot+1)%4;else drag.room.rot=(drag.room.rot+1)%4;renderHand();updateGhost();return;}const p=coord(e.clientX,e.clientY),c=cellAt(p.x,p.y),k=key(c.x,c.y);if(rooms[k])rotateSelected(k);else if(hand[pick]){hand[pick].rot=(hand[pick].rot+1)%4;renderHand()}});
+ CV.addEventListener('wheel',e=>{if(mode==='party')return;e.preventDefault();const p=coord(e.clientX,e.clientY),world=toWorld(p.x,p.y),newS=Math.max(mode==='dm'?.18:.08,Math.min(mode==='dm'?1.2:.80,cam.s*(e.deltaY<0?1.12:.89)));cam.s=newS;cam.x=world.x-(p.x-w/2)/newS;cam.y=world.y-(p.y-h/2)/newS},{passive:false});
+ window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(e.target?.tagName))return;keys[e.code]=true;if(['Space','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();if(e.repeat)return;if(e.code==='Escape'&&mode!=='build')returnEditor();if(e.code==='KeyF')collect();if(mode==='dm'&&!e.repeat){if(e.code==='KeyP')possessSelected();if(['Digit1','Digit2','Digit3','Digit4'].includes(e.code))setDMTool(['grunt','ranger','brute','stalker'][Number(e.code.slice(-1))-1]);if(e.code==='KeyZ')setDMTool('select');if(e.code==='KeyH')commandMonster('hold');if(e.code==='KeyG')commandMonster('hunt');if(e.code==='Delete')dismissMonster();}if(e.code==='KeyR'&&mode==='build'){if(drag&&drag.kind==='hand'){hand[drag.i].rot=(hand[drag.i].rot+1)%4;renderHand()}else if(drag&&drag.kind==='board'){drag.room.rot=(drag.room.rot+1)%4}else if(selected&&rooms[selected])rotateSelected(selected);else if(hand[pick]){hand[pick].rot=(hand[pick].rot+1)%4;renderHand()}}if(e.code==='KeyZ'&&e.ctrlKey&&mode==='build'){e.preventDefault();undo()}});window.addEventListener('keyup',e=>keys[e.code]=false);window.addEventListener('blur',()=>{keys={};mouseHeld=false;hideGhost()});
+ $('roomTab').onclick=()=>setDeckTab('room');$('tarotTab').onclick=()=>setDeckTab('tarot');$('pokerTab').onclick=()=>setDeckTab('poker');$('roomPrev').onclick=()=>showRoomPage(-1);$('roomNext').onclick=()=>showRoomPage(1);$('resetHandView').onclick=()=>{roomPage=0;setDeckTab('room');renderHand()};$('clearTarot').onclick=()=>removeSpecial('tarot');$('clearCamp').onclick=()=>removeSpecial('poker');$('newRound').onclick=()=>newRound();$('rerollSelected').onclick=rerollSelectedCards;$('loadSample').onclick=loadSample;$('undoBtn').onclick=undo;$('toolRoom').onclick=()=>setTool('room');$('toolSoul').onclick=()=>setTool('soul');$('removeBtn').onclick=()=>eraseSelected(selected);$('rotateSelected').onclick=()=>rotateSelected(selected);$('deleteSelected').onclick=()=>eraseSelected(selected);$('testDM').onclick=()=>explore('dm');$('testParty').onclick=()=>explore('party');$('returnBtn').onclick=returnEditor;$('zoomIn').onclick=()=>cam.s=Math.min(.80,cam.s*1.2);$('zoomOut').onclick=()=>cam.s=Math.max(.08,cam.s/1.2);$('fitBtn').onclick=fit;$('exportJSON').onclick=exportJSON;$('importJSON').onclick=()=>$('fileInput').click();$('fileInput').onchange=e=>{importJSON(e.target.files[0]);e.target.value=''};
+ newRound(true);resize();requestAnimationFrame(tick);
+ window.__dungeon={testStep:update,get projectiles(){return projectiles},get dmTool(){return dmTool},selectMonster:(id)=>{selectedMonster=id;updateDMDock()},get monsters(){return monsters},get camps(){return Object.entries(rooms).filter(([k,r])=>r.camp).map(([k,r])=>({key:k,...r.camp}))},get campClock(){return campClock},createCampMonster,updateCamps, campCounts, get monsters(){return monsters},get possessed(){return possessedId},get threat(){return dmThreat},summon,commandMonster,possessSelected,setDMTool,damageMonster,damageParty,get rooms(){return rooms},get tarotHand(){return tarotHand},get pokerHand(){return pokerHand},get tarotDeck(){return tarotDeck},get pokerDeck(){return pokerDeck},applySpecial,setDeckTab, campPos, pokerInfo, get hand(){return hand},get mode(){return mode},get player(){return player},validate,bfs,placeRoom,rotateSelected,loadSample,explore,returnEditor,collect,canMove,canPlace,walkTo:(x,y)=>{if(player){player.x=x;player.y=y}},newRound,showRoomPage,rerollSelectedCards,toggleMark,get roomDeck(){return roomDeck},get roomDiscard(){return roomDiscard},get rerollsLeft(){return rerollsLeft},get matchSeconds(){return matchSeconds},get matchEnded(){return matchEnded},get matchResult(){return matchResult},setMatchSecondsForTest:(s)=>{matchDeadline=Date.now()+s*1000;matchSeconds=s;updateClock()},mask,obstacles,get tileSize(){return TILE}};
+})();
+</script></body></html>

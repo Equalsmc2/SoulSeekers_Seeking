@@ -1,37 +1,80 @@
-# SoulSeekers: Seeking R03.4.2 — Gold UI / Clean Boston Map
+# SoulSeekers: Seeking — Integrated R1
 
-Complete playable browser game, separate WebSocket game server, and GitHub Desktop sync BAT.
+**A connected, locally tested six-Party versus one-human-DM browser game.** This is a playable release candidate, not a claim of production/WAN certification. The same `/dungeon-ws` server owns the dungeon, six characters, combat, monsters, camps, Tarot, souls and victory. No iframes, Firebase battle loop, or separate lab worlds.
 
-## This release fixes
-- The accidentally inherited Kenney city tiles are **not** loaded or drawn. The game now uses the original cached vector/procedural Boston renderer from the expanded-jungle build.
-- SoulSeekers branding is **gold first**, based on the V40.10 website palette: antique gold `#d9b45f`, bright gold `#f4d98b`, deep gold `#97752f`, charcoal, and ivory. Red is reserved for health and danger.
-- The six heroes, HUD, inventory, shop, DM interface, offline training, game server, and game rules are preserved.
-- The old tile screenshot assets and source renderer are absent from this ZIP. `MAP_OVERVIEW.png` shows the returned native renderer style.
-- HTML/CSS/module cache keys are bumped to R0342 to avoid old art being retained by the browser after deployment.
+## Start playing on Windows
 
-## Installation
-1. Extract the ZIP to a new folder.
-2. Run `SYNC_TO_GITHUB.bat` (Windows). It copies this release into the existing `SoulSeekers_Seeking` GitHub Desktop repository, without deleting `.git`.
-3. Choose `1` for GitHub Desktop, then **Commit to main** and **Push origin**.
-4. Wait for Render and/or GitHub Pages to deploy, then hard-refresh both game windows.
-5. Verify `PROTOTYPE R03.4.2 · GOLD UI / CLEAN MAP` in the header.
+1. Extract the entire ZIP to a normal folder. Do not run inside the ZIP.
+2. Install Node.js LTS (22 or newer recommended; runtime supports 20+).
+3. Double-click **START_PLAYING.bat**. It installs the WebSocket dependency on first launch.
+4. Keep that console open. Open **http://localhost:8787/dungeon.html**. If the browser opens before the server is ready, refresh once.
+5. One person chooses **CREATE SESSION**. Everyone else enters the room code and picks a different character. Use separate browser tabs/contexts for local testing; refresh in the same tab resumes its reserved seat.
 
-The BAT removes only known obsolete Kenney tile-renderer files at `src/city-art.js` and `assets/kenney/`; unrelated files and Git history are not touched.
+Terminal startup (Windows, macOS, Linux):
 
-## Testing
-Run `npm test` for the 12 project test suites. Solo training runs without a live server. For online play, deploy the included Node service (see `R02_SERVER_SETUP.md`). Offline preview: launch `START_LOCAL.bat` and choose Party or DM training.
+```sh
+npm ci
+npm test
+npm start
+```
 
-### Map and controls
-Three curving roads converge, branch, and converge again. The upper jungle is the Hollow Common, and the lower jungle is the Underworks; both retain internal paths, shops, chests, cover and connections. The six forts, boss AI, and DM commands use the same coordinates as the prior build.
+On macOS/Linux you can also run `sh START_PLAYING.sh`. The application opens at `/` or `/dungeon.html`. The old Boston lane mode remains at `/index.html?legacy=1` as a historical mode; it is not the integrated game.
 
-**Party:** WASD move, mouse aim/fire, Q spell, E Echo, Space dash, F chest, B shop, I inventory. **DM:** Select and place enemies, possess on click, right-click to command, and press Esc to release.
+## Build → ready → play
 
-## Scope
-No game networking or combat rules were intentionally changed. Local automated tests passed; live Render networking and a full visual/browser test still need validation on your device.
+- The DM starts on a blank board. Place the Entrance first. Select a Room card, then click a green valid location. Right-click an empty destination to rotate the selected card; right-click an existing room to rotate that room. Wheel zooms; Space-drag pans; F fits the map.
+- Use the Rooms, Tarot and Camps tabs. A played card leaves your hand without replacement. Opening hands are **16 / 5 / 6**, from finite **40 / 22 / 52** decks. You have **8** redraw credits, maximum **3** cards per batch.
+- Place **seven souls in different reachable non-Entrance rooms** with the Souls tool. Apply Tarot and Poker camps to rooms as desired. The server validates every edit.
+- Click **LOCK DUNGEON**. Every joined Party member clicks **READY TO PLAY**. The DM then clicks **START 40-MINUTE MATCH**.
+- Six players are supported simultaneously, one unique hero each. Smaller parties are allowed for testing. All reserved seats must be connected and ready before start. Choose unclaimed seats before the match starts; only reserved players can reconnect once active.
+- The Party must collect seven souls, return to the Entrance, and hold/tap **F** near its center before the server timer expires. Collecting the seventh soul alone does not win. The DM wins on timeout. The DM can start a new blank round after the result.
 
-Change details: `CHANGELOG_R03_4_2.md`, `CHANGELOG_R03_4_1.md`.
+## Share it with friends
 
-## R03.5: a quieter field interface
-The game viewport is now full width. Inventory (`I`), shop (`B`), combat feed (`L`), and performance details (`F3`) open only when needed. `Esc` dismisses optional panels. The smaller DM controls still allow enemy placement and possession. See `R03_5_CONTROLS.md`.
+**Same Wi-Fi/LAN:** run one server and let friends open `http://YOUR-PC-LAN-IP:8787/dungeon.html`. Allow Node through your private-network firewall if Windows asks. The server URL defaults to the page's origin. Copy the room invitation after hosting; it includes the server address and code. `localhost` only works on the server computer, so generate the invitation from the LAN URL for LAN friends.
 
-Version R03.5 is visible next to **Field Operations** on the upper-left menu bar. Deploy normally using `SYNC_TO_GITHUB.bat`; this UI update requires no Firebase or Render settings changes.
+**Over the internet:** upload/review the source in your GitHub Desktop repository and run the Node server on Render or another persistent WebSocket host. See **INSTALL_AND_SHARE.md** for the exact workflow. The ZIP is complete source; it is not a public hosted game URL. No GitHub push, deployment, or Firebase change was performed for this release.
+
+## Party controls
+
+| Input | Action |
+|---|---|
+| WASD | Move your character |
+| Mouse / Left button | Aim / weapon; hold where the weapon supports it |
+| Right button | Cast selected spell |
+| Q | Swap weapon A/B |
+| E | Weapon stance: scope, parry/guard, scout, or cycle potion |
+| Shift | Precision movement |
+| R | Reload or weapon special; crossbow changes augment |
+| Z / X | Select dodge A / B |
+| Space | Dodge; hold/repress as that dodge requires |
+| 1–0 or wheel | Select spell |
+| Ctrl | Hold rest; release at the short/long threshold |
+| F | Collect soul, hold to seal camp, extract at Entrance |
+| H | Controls/help |
+
+Asya also has visible Sorcery Point controls. Weapon/dodge descriptions and resource counts are in the HUD. F1–F6 switching, fake damage, arena reset and unilateral friendly-fire toggles are absent from the live match. Tab retains keyboard focus navigation.
+
+## DM controls
+
+1–4 selects Grunt/Ranger/Brute/Stalker. Click on clear floor to summon. Select tool + click selects a monster. Right-click orders it to move, or to capture a sealed camp. Hunt/Hold/Reclaim buttons issue server orders. **P** possesses/releases the selected monster; possessed WASD + left mouse controls movement/attack. Other monsters continue AI. Unpossessed WASD pans, wheel zooms, F fits.
+
+Threat starts at 30; costs are 2/3/5/4. Up to 22 manual summons and 45 total monsters. Dismissing a manual summon refunds its cost; dismissing a camp-generated monster does not mint free threat. Camps spawn hostile waves at source Poker intervals/caps. Party sealing stops every future spawn; existing enemies stay hostile. A commanded or possessed DM monster can recapture an uncontested sealed camp.
+
+## Explicit integration rules
+
+- Friendly fire is **off**, server-owned. Cooperative healing and Castling with allies still work.
+- Death returns the hero to Entrance after **3 seconds**, with a brief ward. It does not create an alternate DM win condition or erase collected souls.
+- Short/long rests retain **1.6s / 4.3s** timing. They require five seconds without damage and no living monster within 350 units; movement, damage or an approaching enemy interrupts. Each hero gets **two long rests per match**, and two short rests replenished by a long rest. This cap is an explicit competitive adjustment to the lab's unlimited long-rest reset.
+- Knight's Move may cross walls but its landing must be valid floor. Ordinary bullets are never Castling targets. Camera, potions, C4, melee and projectiles respect dungeon obstruction. Crossbow changes augments with R even while reloading.
+- Shared Party exploration reveals rooms after entry. Party packets omit undiscovered rooms, their Tarot/camps/souls, hidden monsters, and all deck identities. The DM sees the whole map.
+- The server runs at 30Hz with two 60Hz combat substeps; snapshots target 20Hz. Local normal movement is predicted using extracted V22.4 movement math; remote actors use a buffered server-clock timeline. Combat/resource outcomes remain server-owned.
+- Disconnected input goes idle after 300ms. Refresh/reconnect uses the existing seat token. If all clients leave an active match, its process remains alive for the match; an inactive lobby/ended room expires after two minutes. A server restart loses sessions.
+
+## Evidence and remaining limits
+
+Read **TEST_REPORT.md**, **TEST_RESULTS_INTEGRATED.txt**, **KNOWN_LIMITATIONS.md**, and **CHANGELOG_INTEGRATED.md**. Automated real WebSockets complete build → ready → combat → possession → reconnect → camp seal/reclaim → seven souls → extraction. Seven headless browser contexts exercised actual controls. Performance measurements are local synthetic tests, not a guarantee about every internet connection or device.
+
+The source data includes **six heroes, twelve weapons, twelve distinct dodge state machines, 43 spell entries, three potions, four crossbow augments, four monster types, and 22 Tarot definitions**. Spell behavior follows the source action-game approximations, not tabletop D&D RAW.
+
+Older M1/R03 files and reference documents are retained for provenance and regression tests; their milestone status and obsolete E/Shift mappings are historical. This README describes the integrated build.

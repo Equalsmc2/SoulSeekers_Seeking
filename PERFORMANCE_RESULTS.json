@@ -1,0 +1,11 @@
+{
+  "scenario": "16-room dungeon, 6 heroes, 45 initial hunting monsters, six firing/moving heroes, full explored map, 30 simulated seconds; 7 filtered snapshots on 2 of 3 ticks",
+  "setupMs": 72.92,
+  "meanTickAndSnapshotMs": 1.25,
+  "p95Ms": 2.12,
+  "p99Ms": 2.92,
+  "maxMs": 7.48,
+  "meanPartySnapshotBytes": 10602,
+  "tickBudgetMs": 33.33,
+  "node": "v24.22.1"
+}

@@ -1,14 +1,14 @@
 {
   "name": "soulseekers-seeking",
-  "version": "3.7.0-m2-playable",
+  "version": "4.0.0-rc.1",
   "private": true,
   "type": "module",
-  "description": "Seeking R03.5 legacy website and dedicated WebSocket server with integrated M2 playable alpha: shared dungeon, souls, multiplayer Party combat and DM monsters; source references retained",
+  "description": "SoulSeekers Seeking: integrated authoritative six-Party versus human-DM dungeon game",
   "scripts": {
     "start": "node server/index.mjs",
     "test": "node --test tests/*.test.mjs",
-    "test:m1": "node --test tests/dungeon-m1.test.mjs tests/dungeon-wire.test.mjs",
-    "test:play": "node --test tests/dungeon-play.test.mjs"
+    "test:m1": "node --test tests/dungeon-*.test.mjs",
+    "benchmark": "node tools/benchmark.mjs"
   },
   "engines": {
     "node": ">=20"

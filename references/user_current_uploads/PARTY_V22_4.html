@@ -1,0 +1,2733 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SoulSeekers — Tactical Weapon + Dodge Lab V22.4</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0d1015;
+  --panel: #12171eea;
+  --gold: #d9b45f;
+  --muted: #b0ada5;
+  --ivory: #f4efe1;
+  --danger: #e06c75;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ivory);
+  font: 13px system-ui, -apple-system, Segoe UI, sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+canvas { display: block; width: 100vw; height: 100vh; cursor: crosshair; }
+#top {
+  position: fixed; z-index: 3; top: 12px; left: 12px; right: 12px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 12px; pointer-events: none;
+}
+.panel {
+  background: var(--panel); border: 1px solid #7d69472b;
+  box-shadow: 0 9px 28px #0008; backdrop-filter: blur(10px);
+  border-radius: 8px; pointer-events: auto;
+}
+.brand { padding: 12px 14px; min-width: 320px; max-width: min(620px, 73vw); }
+.eyebrow {
+  font-size: 10px; letter-spacing: 2px; color: var(--gold); font-weight: 800;
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+}
+.ff-badge {
+  background: #442026; border: 1px solid var(--danger); color: #ffb8bf;
+  padding: 2px 6px; border-radius: 4px; font-size: 9px; letter-spacing: 1px; cursor: pointer;
+}
+.ff-badge.off { background: #1e262c; border-color: #575247; color: var(--muted); }
+.title { font-size: 21px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.1; margin: 4px 0 2px; }
+.sub { font-size: 11px; color: var(--muted); line-height: 1.4; }
+.chars { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 11px; }
+.cbtn, .select, .slot {
+  border: 1px solid #575247; background: #1e252c; color: #cfc8bb;
+  cursor: pointer; font: inherit; border-radius: 5px;
+}
+.cbtn { padding: 6px 8px; font-size: 11px; font-weight: 650; white-space: nowrap; }
+.cbtn.on { border-color: var(--gold); background: #3a321e; color: #fff4d7; }
+.cbtn:hover, .select:hover, .slot:hover { border-color: #bd9f59; }
+#status { width: 265px; padding: 12px 13px; flex-shrink: 0; }
+.statusrow { display: flex; justify-content: space-between; font-size: 11px; margin-top: 6px; gap: 10px; }
+.metric { font-weight: 850; color: var(--ivory); }
+.bar { height: 6px; background: #3b3430; border-radius: 10px; overflow: hidden; margin-top: 6px; }
+.fill { height: 100%; background: #d1ab56; width: 100%; transition: width 0.08s linear; }
+.bar.red .fill { background: #de727c; }
+.bar.blue .fill { background: #77b3ce; }
+#bottom {
+  position: fixed; z-index: 3; bottom: 12px; left: 50%;
+  transform: translateX(-50%); width: min(900px, calc(100vw - 24px)); pointer-events: none;
+}
+#weaponPanel { display: flex; gap: 6px; align-items: stretch; padding: 8px 10px; margin-top: 6px; pointer-events: auto; }
+.weaponChoice {
+  background: #222a2f; border: 1px solid #696153; color: #eee4ce;
+  border-radius: 5px; cursor: pointer; flex: 1; text-align: left; padding: 8px 10px; min-width: 0;
+}
+.weaponChoice.active { border-color: #e7c675; background: #3a3424; color: #fff1be; }
+.weaponChoice strong { display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.weaponChoice small { display: block; color: #c7b89d; font-size: 10px; line-height: 1.5; }
+#weaponStatus { flex: 0 0 185px; border-left: 1px solid #4b4943; padding: 5px 8px; color: #ded4bd; font-size: 11px; line-height: 1.4; }
+#weaponStatus strong { color: #ffe3a2; display: block; font-size: 14px; white-space: nowrap; }
+#weaponDesc { font-size: 10px; color: #c7b89d; margin-top: 3px; }
+.dodgePanel { margin-top: 6px; padding: 10px 13px; display: flex; gap: 12px; align-items: center; justify-content: space-between; pointer-events: auto; }
+.dodges { display: flex; gap: 6px; flex: 1; }
+.select { flex: 1; padding: 8px 10px; text-align: left; min-width: 0; }
+.select strong { font-size: 12px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.select small { display: block; color: #aaa; letter-spacing: 0.3px; font-size: 10px; margin-top: 2px; }
+.select.active { border-color: var(--gold); background: linear-gradient(100deg, #3a3224, #27282a); color: #f7e1ab; }
+.desc { font-size: 11px; color: var(--muted); min-width: 160px; max-width: 215px; line-height: 1.3; }
+.spellPanel { margin-top: 6px; padding: 7px; display: flex; gap: 5px; justify-content: center; pointer-events: auto; }
+.slot {
+  width: 9.3%; height: 54px; max-width: 82px; display: flex; flex-direction: column;
+  justify-content: center; align-items: center; font-size: 10px; gap: 1px; line-height: 1.15; overflow: hidden;
+}
+.slot b { color: var(--gold); font-size: 11px; }
+.slot.on { border-color: var(--gold); color: #fff4d7; background: #3a3224; }
+.slot .spellLv { font-size: 9px; color: #aab5c0; display: block; white-space: nowrap; margin-top: 2px; }
+.slot.unavailable { opacity: 0.3; }
+.slot.noammo { border-color: #85565b; }
+#magicResources {
+  margin-top: 6px; padding: 7px 12px; display: flex; align-items: center;
+  justify-content: space-between; gap: 10px; min-height: 33px; pointer-events: auto; font-size: 11px;
+}
+#magicResources .resources { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+.magicPip { border-radius: 3px; width: 14px; height: 14px; border: 1px solid #927e4c; background: #dfba6d; display: inline-block; }
+.magicPip.bonus { background: #88b8ca; border-color: #bce9f3; }
+.magicPip.empty { background: #2d3035; border-color: #5b5b55; }
+#magicResources button { border: 1px solid #8b7757; background: #262b2d; border-radius: 4px; padding: 4px 6px; color: #e7d6a8; cursor: pointer; font-size: 10px; }
+#magicResources button:disabled { opacity: 0.35; cursor: default; }
+#magicResources .resourceLbl { font-size: 10px; color: #c9c2ae; white-space: nowrap; margin-right: 4px; }
+#restMeter {
+  position: fixed; z-index: 9; top: 40%; left: 50%; transform: translate(-50%, -50%);
+  width: min(390px, 90vw); background: #161b20f2; border: 1px solid #d9b45f;
+  padding: 20px 22px; border-radius: 10px; box-shadow: 0 20px 60px #0009;
+  text-align: center; pointer-events: none; display: none;
+}
+#restMeter.active { display: block; }
+#restLabel { font-size: 18px; font-weight: 900; color: #f6dda3; letter-spacing: 1px; }
+.restTrack { height: 16px; background: #333840; border-radius: 8px; position: relative; overflow: hidden; margin: 16px 0 10px; border: 1px solid #605947; }
+#restFill { height: 100%; background: linear-gradient(90deg, #c29c52, #f8d98d); width: 0%; }
+.shortMark { position: absolute; left: 37%; top: 0; bottom: 0; border-left: 2px dashed white; }
+#restHint { font-size: 11px; color: #cbc5b7; }
+body.resting canvas { cursor: wait; }
+kbd { font: 700 11px system-ui; color: #f2da9b; background: #3a3730; padding: 2px 4px; border-radius: 3px; }
+#toast {
+  position: fixed; top: 45%; left: 50%; transform: translate(-50%, -50%);
+  background: #141a20ed; border: 1px solid #c4a563; border-radius: 6px;
+  padding: 12px 20px; color: #ffefbb; opacity: 0; transition: opacity 0.18s;
+  pointer-events: none; z-index: 5; font-weight: 700;
+}
+#reticle {
+  pointer-events: none; position: fixed; z-index: 1; width: 24px; height: 24px;
+  transform: translate(-50%, -50%); display: none; border: 1px solid #e9ce8477;
+  border-radius: 50%; transition: width 0.05s linear, height 0.05s linear;
+}
+#reticle::after {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 2px; height: 2px;
+  transform: translate(-50%, -50%); border-radius: 50%; background: #fff4c7;
+}
+#weaponGuide {
+  position: fixed; top: 225px; right: 13px; max-width: 265px; padding: 9px 11px;
+  background: #14191ed9; border-left: 2px solid #d9b45f; color: #ded2b9;
+  font-size: 11px; line-height: 1.5; pointer-events: none; z-index: 2;
+}
+#weaponHelp {
+  position: fixed; top: 162px; left: 13px; background: #14191ee6; border: 1px solid #675947;
+  color: #e1d8c5; padding: 9px 12px; line-height: 1.7; border-radius: 6px;
+  font-size: 11px; pointer-events: none; z-index: 2; max-width: 365px;
+}
+#helpToggle {
+  position: fixed; z-index: 4; bottom: 12px; right: 12px; background: #252b2eee;
+  color: #e5cea0; border: 1px solid #ad915e60; border-radius: 5px; padding: 5px 10px;
+  font: 700 11px system-ui; cursor: pointer; opacity: 0.85;
+}
+#helpToggle:hover { opacity: 1; }
+body.help-hidden #weaponHelp, body.help-hidden #weaponGuide { display: none; }
+@media(max-width:940px) {
+  #top { top: 6px; left: 6px; right: 6px; }
+  .brand { min-width: 0; padding: 9px; max-width: 70vw; }
+  .title { font-size: 16px; }
+  .cbtn { font-size: 10px; padding: 5px; }
+  .chars { margin-top: 7px; }
+  #status { width: 180px; padding: 8px; }
+  #weaponHelp, #weaponGuide, .desc { display: none; }
+  .dodgePanel, .spellPanel { padding: 6px; }
+  .select, .weaponChoice { padding: 6px; }
+  .slot { height: 46px; font-size: 9px; }
+  #weaponStatus { flex-basis: 110px; }
+  .weaponChoice strong { font-size: 10px; }
+}
+@media(max-width:580px) {
+  #status { display: none; }
+  .brand { max-width: 100%; width: 100%; }
+  .title { font-size: 15px; }
+  #top { right: 6px; }
+  .spellPanel { gap: 2px; }
+  .slot, .select strong { font-size: 9px; }
+}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="top">
+  <section class="panel brand">
+    <div class="eyebrow">
+      <span>SOULSEEKERS / TACTICAL LAB / V22.4</span>
+      <button id="ffBadge" class="ff-badge" type="button" title="Toggle Team Attack (T)">T · TEAM ATTACK: ON</button>
+    </div>
+    <div class="title" id="personTitle">ASYA <span style="color:var(--gold)">/</span> SORCERER</div>
+    <div class="sub" id="personSub">Knight's Move phases through walls, fluid dodge flows &amp; tactical interactions.</div>
+    <div class="chars" id="chars"></div>
+  </section>
+
+  <section class="panel" id="status">
+    <div class="eyebrow">TEST RANGE / BOSTON</div>
+    <div class="statusrow"><span>HEALTH</span><span class="metric" id="healthText">100 / 100</span></div>
+    <div class="bar red"><div class="fill" id="hpFill"></div></div>
+    <div class="statusrow"><span>TRAVEL SPEED</span><span class="metric" id="speedText">0 u/s</span></div>
+    <div class="statusrow"><span>DODGE COOLDOWN</span><span class="metric" id="cooldownText">READY</span></div>
+    <div class="bar"><div class="fill" id="cdFill"></div></div>
+    <div class="statusrow"><span>CAST / SHORT RESTS</span><span class="metric" id="spellText">READY (2 SR)</span></div>
+    <div class="bar blue"><div class="fill" id="spellFill"></div></div>
+    <div class="statusrow"><span>HOSTILES / ALLY HP</span><span class="metric" id="turretText">3 / 100%</span></div>
+  </section>
+</div>
+
+<div id="bottom">
+  <div class="panel" id="weaponPanel">
+    <button class="weaponChoice active" id="weaponA"><strong>A · Weapon</strong><small></small></button>
+    <button class="weaponChoice" id="weaponB"><strong>B · Weapon</strong><small></small></button>
+    <div id="weaponStatus">WEAPON<strong id="weaponAmmoText">READY</strong><div id="weaponDesc"></div></div>
+  </div>
+  <div class="panel dodgePanel">
+    <div class="dodges">
+      <button class="select active" id="dodgeA"><strong>Z · Dodge A</strong><small></small></button>
+      <button class="select" id="dodgeB"><strong>X · Dodge B</strong><small></small></button>
+    </div>
+    <div class="desc" id="dodgeDesc">Space to activate selected dodge.</div>
+  </div>
+  <div class="panel spellPanel" id="spells"></div>
+  <div class="panel" id="magicResources"></div>
+</div>
+
+<div id="restMeter" aria-live="polite">
+  <div id="restLabel">REST</div>
+  <div class="restTrack"><div id="restFill"></div><div class="shortMark"></div></div>
+  <div id="restHint">Hold Ctrl · release for a Short Rest, or continue to Long Rest</div>
+</div>
+
+<button id="helpToggle" type="button" title="Toggle help (H)">H · HELP</button>
+<div id="weaponHelp">
+  <span style="color:#e9c67a;font-weight:800;letter-spacing:1px">TACTICAL &amp; MAGIC LAB · V22.4 CONTROLS</span><br>
+  <kbd>WASD</kbd> grounded stride · <kbd>SHIFT</kbd> precision pace<br>
+  <kbd>E</kbd> tap/hold: Parry (0.18s) / Block / Scope · (Chemist): cycle Potion<br>
+  <kbd>F1–F6</kbd> character · <kbd>Q</kbd> switch weapon A/B · <kbd>T</kbd> toggle Team Attack<br>
+  <kbd>LMB</kbd> attack / lob potion · <kbd>R</kbd> reload / C4 toss / weapon special<br>
+  <kbd>Z / X</kbd> select dodge · <kbd>SPACE</kbd> execute dodge<br>
+  <kbd>1–0</kbd> / <kbd>SCROLL</kbd> select spell · <kbd>RMB</kbd> cast spell · <kbd>ALT</kbd> spell range ring<br>
+  <kbd>CTRL</kbd> hold: rest (max 2 Short Rests per Long Rest; damage cancels)<br>
+  <kbd>M</kbd> simulate enemy melee hit · <kbd>BACKSPACE</kbd> reset arena
+</div>
+<div id="reticle"></div>
+<div id="weaponGuide" aria-live="polite"></div>
+<div id="toast"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+  const canvas = $('game'), ctx = canvas.getContext('2d');
+  const ui = {
+    personTitle: $('personTitle'), personSub: $('personSub'), chars: $('chars'),
+    healthText: $('healthText'), hpFill: $('hpFill'), speedText: $('speedText'),
+    cooldownText: $('cooldownText'), cdFill: $('cdFill'), spellText: $('spellText'),
+    spellFill: $('spellFill'), turretText: $('turretText'),
+    weaponA: $('weaponA'), weaponB: $('weaponB'), weaponAmmoText: $('weaponAmmoText'),
+    weaponDesc: $('weaponDesc'), weaponGuide: $('weaponGuide'),
+    dodgeA: $('dodgeA'), dodgeB: $('dodgeB'), dodgeDesc: $('dodgeDesc'),
+    spells: $('spells'), magicResources: $('magicResources'),
+    restMeter: $('restMeter'), restFill: $('restFill'), restLabel: $('restLabel'), restHint: $('restHint'),
+    reticle: $('reticle'), toast: $('toast'), ffBadge: $('ffBadge'), helpToggle: $('helpToggle')
+  };
+
+  let W = 0, H = 0, DPR = 1;
+  function resize() {
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    W = innerWidth; H = innerHeight;
+    canvas.width = Math.round(W * DPR);
+    canvas.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  addEventListener('resize', resize);
+  resize();
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const vlen = (x, y) => Math.hypot(x, y);
+  const norm = (x, y) => { const m = vlen(x, y) || 1; return { x: x / m, y: y / m }; };
+  const norm0 = (x, y) => { const d = vlen(x, y); return d ? { x: x / d, y: y / d } : { x: 0, y: 0 }; };
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smoothStep01 = x => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+
+  const colors = ['#b391e4', '#78d6e5', '#9da9ad', '#e09a75', '#e9c875', '#77c7a2'];
+  const defs = [
+    { name: 'ASYA', role: 'Sorcerer / Close-Range Specialist', speed: 216, accel: 980, friction: 2.55, fireMult: 0.80,
+      dodge: [['SIGNAL LOSS', 'Hold Space: steer a remote ghost, release to reappear.'], ['REWIND ECHO', 'Hold Space to retrace your last 1s of movement. Leaves a projectile-absorbing echo.']] },
+    { name: 'ALEXANDRA', role: 'Rogue / Arcane Chess', speed: 238, accel: 2650, friction: 18, fireMult: 0.92,
+      dodge: [['KNIGHT\'S MOVE', 'Aim at one of eight visible L-shaped landing squares; phases through walls!'], ['CASTLING', 'Swap with the nearest spell, enemy, or ally within 300u and stagger them for 0.6s.']] },
+    { name: 'VETERAN', role: 'Warlock / Undead Vet', speed: 181, accel: 760, friction: 11, fireMult: 0.68,
+      dodge: [['FOXHOLE DIVE', 'Dive toward cover (28u proximity check). Hitting a wall refunds 60% cooldown.'], ['DEADWEIGHT', 'Dive into a crawl. Bullets pass through during dive/crawl, but melee hits still connect.']] },
+    { name: 'DEBTOR', role: 'Warlock / Cult Tank', speed: 164, accel: 510, friction: 8.5, fireMult: 0.58,
+      dodge: [['FORECLOSURE', 'Heavy charge (rams enemies for 32 DMG), scrapes shallow walls, smashes crates.'], ['COUNTERWEIGHT', 'Brace to absorb a shot, then surge in your WASD direction with a 3s +30% DMG/SPD buff.']] },
+    { name: 'JEANETTE', role: 'Cleric / Wedding Photographer', speed: 242, accel: 1380, friction: 12.5, fireMult: 0.88,
+      dodge: [['DOUBLE EXPOSURE', 'Two rapid physical jukes with smooth stride glide between steps.'], ['SHUTTER REFLEX', 'Space arms a defensive window. Incoming fire triggers a perpendicular sidestep + Focus mark.']] },
+    { name: 'CHEMIST', role: 'Artificer / Long-Range Support', speed: 204, accel: 830, friction: 6, fireMult: 0.75,
+      dodge: [['REACTION THRUST', 'First rocket burst; press Space again to fire a directional second stage or reverse-brake.'], ['CATALYST SKIM', 'Committed chemical drift; lob potions mid-slide and wall banks preserve speed.']] }
+  ];
+
+  const groundMotion = [
+    { launch: 980,  reverse: 1220, turn: 820,  brake: 540,  pivotBoost: 1.00, recDrag: 2.55, pace: 0.52, backMult: 0.88, strafeMult: 0.94, style: 'FLOATY HOVER / LOW DRAG' },
+    { launch: 2650, reverse: 3400, turn: 2800, brake: 3600, pivotBoost: 1.45, recDrag: 14.5, pace: 0.48, backMult: 0.84, strafeMult: 0.95, style: 'RAZOR-SNAPPY FOOTWORK' },
+    { launch: 760,  reverse: 1120, turn: 740,  brake: 1280, pivotBoost: 1.25, recDrag: 10.5, pace: 0.50, backMult: 0.78, strafeMult: 0.88, style: 'BRACED / PLANTED BOOTS' },
+    { launch: 510,  reverse: 820,  turn: 520,  brake: 920,  pivotBoost: 1.22, recDrag: 9.2,  pace: 0.50, backMult: 0.74, strafeMult: 0.84, style: 'HEAVY PLANTED TREAD' },
+    { launch: 1380, reverse: 1750, turn: 1420, brake: 1850, pivotBoost: 1.18, recDrag: 11.0, pace: 0.52, backMult: 0.85, strafeMult: 0.94, style: 'BALANCED MID-PACK STRIDE' },
+    { launch: 830,  reverse: 740,  turn: 690,  brake: 860,  pivotBoost: 1.00, recDrag: 5.5,  pace: 0.53, backMult: 0.80, strafeMult: 0.90, style: 'SLICK CHEMICAL DRIFT' }
+  ];
+
+  const dodgeBalance = [
+    { cd: 4.4, range: '~245u',        risk: 'EXPOSED ANCHOR',            label: 'Signal Loss' },
+    { cd: 4.9, range: '1s HISTORY',   risk: 'RETURN PATH',               label: 'Rewind Echo' },
+    { cd: 3.9, range: '161u (WALLS)', risk: 'PHASES THROUGH WALLS',      label: "Knight's Move" },
+    { cd: 5.3, range: '300u',         risk: 'TARGET STAGGER',            label: 'Castling' },
+    { cd: 3.8, range: '~165u (COVER)',risk: '28u COVER PROXIMITY',       label: 'Foxhole Dive' },
+    { cd: 4.2, range: 'DIVE + CRAWL', risk: 'BULLET-PHASE / MELEE VULN', label: 'Deadweight' },
+    { cd: 5.1, range: 'RAMS ENEMIES', risk: 'SHALLOW WALL SCRAPE',       label: 'Foreclosure' },
+    { cd: 4.3, range: 'WASD SURGE',   risk: '+30% DMG/SPD ON ABSORB',    label: 'Counterweight' },
+    { cd: 2.4, range: '2 SHORT JUKES',risk: 'FLUID GLIDE WINDOW',        label: 'Double Exposure' },
+    { cd: 4.8, range: 'SHORT EVADE',  risk: 'MUST ARM EARLY',            label: 'Shutter Reflex' },
+    { cd: 3.8, range: 'TWO BURNS',    risk: 'DIRECTION COMMIT',          label: 'Reaction Thrust' },
+    { cd: 4.2, range: 'MID-SLIDE LOB',risk: 'WIDE TURNS',                label: 'Catalyst Skim' }
+  ];
+
+  const mk = (name, level, range, fx, desc) => ({ name, level, range, fx, desc });
+  const classBooks = [
+    { cls: 'SORCERER · ABERRANT MIND', max: { 1: 4, 2: 2 }, sp: 3, slots: [
+      mk('Mind Sliver', 0, 440, 'sliver', 'Psionic dart'), mk('Fire Bolt', 0, 640, 'bolt', 'Arcane fire'),
+      mk('Shocking Grasp', 0, 120, 'shock', 'Touch lightning'), mk('Mage Hand', 0, 420, 'hand', 'Spectral decoy'),
+      mk('Dissonant Whispers', 1, 490, 'whispers', 'Psychic distress'), mk('Shield', 1, 0, 'ward', 'Short defensive ward'),
+      mk('Magic Missile', 1, 620, 'missile', 'Reliable arcane force'), mk('Thunderwave', 1, 0, 'thunder', 'Point-blank blast'),
+      mk('Misty Step', 2, 280, 'misty', 'Short targeted blink'), mk('Hold Person', 2, 470, 'hold', 'Halt one target')
+    ]},
+    { cls: 'ROGUE · ARCANE TRICKSTER', max: { 1: 2, 2: 0 }, sp: 0, slots: [
+      mk('Mage Hand', 0, 420, 'hand', 'Make a decoy'), mk('Mind Sliver', 0, 440, 'sliver', 'Psychic dart'),
+      mk('Minor Illusion', 0, 420, 'illusion', 'Distracting apparition'), mk('Disguise Self', 1, 0, 'disguise', 'Temporarily go unnoticed'),
+      mk('Silent Image', 1, 410, 'illusion', 'Create visual decoy'), mk('Sleep', 1, 390, 'sleep', 'Slows the nearest target')
+    ]},
+    { cls: 'WARLOCK · UNDEAD', max: { 1: 0, 2: 2 }, pact: true, sp: 0, slots: [
+      mk('Eldritch Blast', 0, 720, 'bolt', 'Focused eldritch beam'), mk('Chill Touch', 0, 500, 'chill', 'Necrotic slowing dart'),
+      mk('Hex', 1, 470, 'hex', 'Curse a target'), mk('Armor of Agathys', 1, 0, 'ward', 'Cold protective shell'),
+      mk('Misty Step', 2, 280, 'misty', 'Reposition instantly'), mk('Hold Person', 2, 470, 'hold', 'Restrain target')
+    ]},
+    { cls: 'WARLOCK · CULT DEBTOR', max: { 1: 0, 2: 2 }, pact: true, sp: 0, slots: [
+      mk('Eldritch Blast', 0, 720, 'bolt', 'Eldritch ray'), mk('Toll the Dead', 0, 450, 'toll', 'Necrotic curse'),
+      mk('Hex', 1, 470, 'hex', 'Weakening curse'), mk('Armor of Agathys', 1, 0, 'ward', 'Pact barrier'),
+      mk('Shatter', 2, 530, 'shatter', 'Concussive ring'), mk('Darkness', 2, 400, 'darkness', 'Area of obscuring shadow')
+    ]},
+    { cls: 'CLERIC', max: { 1: 4, 2: 2 }, sp: 0, slots: [
+      mk('Sacred Flame', 0, 540, 'flame', 'Radiant strike'), mk('Guidance', 0, 0, 'guidance', 'Brief support buff'),
+      mk('Thaumaturgy', 0, 380, 'hand', 'Distract a target'), mk('Cure Wounds', 1, 0, 'heal', 'Restore health'),
+      mk('Guiding Bolt', 1, 640, 'bolt', 'Radiant projectile'), mk('Bless', 1, 0, 'bless', 'Inspiring support'),
+      mk('Shield of Faith', 1, 0, 'ward', 'Protective ward'), mk('Spiritual Weapon', 2, 520, 'spiritual', 'Summon a striking spirit'),
+      mk('Aid', 2, 0, 'aid', 'Heal yourself and an ally')
+    ]},
+    { cls: 'ARTIFICER · CHEMIST', max: { 1: 3, 2: 0 }, sp: 0, slots: [
+      mk('Fire Bolt', 0, 640, 'bolt', 'Fire dart'), mk('Mending', 0, 0, 'mending', 'Fix cover / heal slightly'),
+      mk('Cure Wounds', 1, 0, 'heal', 'Restore health'), mk('Faerie Fire', 1, 490, 'faerie', 'Mark targets'),
+      mk('Grease', 1, 470, 'grease', 'Slippery control zone'), mk('Catapult', 1, 650, 'catapult', 'Launch a heavy projectile')
+    ]}
+  ];
+
+  const weaponCatalog = [
+    [
+      { name: 'BombDrone_u_Pilot', type: 'drone', range: 495, cool: 0.35, mag: 2, reload: 2.8, desc: 'Fast 340u/s guided bomb drone (75 DMG). Detonates on enemy contact or second click. Hold E to scout.' },
+      { name: 'Crowbar + C4', type: 'crowbar', range: 76, cool: 0.43, desc: 'Committed sweeps with stagger. Tap E to Parry (0.18s) or hold to block. R tosses C4 up to 140u / detonates.' }
+    ],
+    [
+      { name: 'Kitchen Knife', type: 'knife', range: 58, cool: 0.30, desc: '22 DMG cuts + 35 DMG 3rd-hit deep lunge. R activates SNEAK (+22 DMG). Tap E to Parry / hold to block.' },
+      { name: 'Scoped Revolver', type: 'revolver', range: 950, cool: 0.65, mag: 6, reload: 1.85, desc: '44 DMG heavy rounds. Moving hip-fire adds spread; hold E (Scope) or Shift for pinpoint accuracy.' }
+    ],
+    [
+      { name: 'Combat Shovel', type: 'shovel', range: 82, cool: 0.62, desc: '33 DMG sweep; 2nd hit is a wide finisher. Tap E to Parry / hold to block; R digs cover mound.' },
+      { name: 'M4 Carbine', type: 'carbine', range: 690, cool: 0.13, mag: 30, reload: 2.1, desc: 'Automatic carbine with progressive recoil bloom. Burst fire or hold E (scope) for tight accuracy.' }
+    ],
+    [
+      { name: 'Steel Mace', type: 'mace', range: 95, cool: 0.70, desc: '48 DMG heavy smash with turret stagger. Tap E to Parry / hold to block; R triggers 50 DMG ground slam.' },
+      { name: 'Fire Extinguisher', type: 'extinguisher', range: 230, cool: 0.13, mag: 24, reload: 2.5, desc: '6 DMG suppressing foam that chills targets. Tap/hold E to Parry/block. R: PRESSURE BURST.' }
+    ],
+    [
+      { name: 'M1911 Pistol', type: 'pistol', range: 495, cool: 0.26, mag: 7, reload: 1.35, desc: 'Accurate run-and-gun sidearm (24 DMG). Deals +30% bonus DMG against Camera-Dazzled targets!' },
+      { name: 'Flash Camera', type: 'camera', range: 760, closeRange: 154, cool: 1.0, mag: 5, reload: 2.0, desc: 'Applies DAZZLED (+30% Pistol DMG). Tap LMB = close flash; Hold E + LMB = 760u telephoto flash.' }
+    ],
+    [
+      { name: 'Timing Potion', type: 'potion', range: 540, cool: 0.55, mag: 5, reload: 1.9, desc: 'Tap E to cycle Mend, Haste, or Corrosive. Lob potions mid-slide during Catalyst Skim!' },
+      { name: 'Enchanted Crossbow', type: 'crossbow', range: 980, cool: 0.35, mag: 1, reload: 1.15, desc: 'High-impact bolts (68 DMG Piercing / 45 DMG Ricochet). Press R anytime to cycle augments.' }
+    ]
+  ];
+
+  const potionPhases = [
+    { name: 'MEND (+34 HP)', color: '#7bdca4', kind: 'heal' },
+    { name: 'HASTE (+22% SPD)', color: '#f9d77c', kind: 'haste' },
+    { name: 'CORROSIVE (55 DMG)', color: '#ef7b7b', kind: 'damage' }
+  ];
+  const enchants = [
+    { name: 'PIERCING', color: '#f4e7b9' }, { name: 'SCATTER', color: '#ffc78b' },
+    { name: 'SNARE', color: '#89dfe0' }, { name: 'RICOCHET', color: '#d7aaff' }
+  ];
+
+  const meleeProfiles = {
+    knife:   { motion: 'slash',  duration: 0.24, active: [0.20, 0.80], arc: 0.78, damage: 22, reach: 0.92, thickness: 14, lunge: 170 },
+    shovel:  { motion: 'slash',  duration: 0.46, active: [0.24, 0.82], arc: 1.15, damage: 33, reach: 0.91, thickness: 19, lunge: 235 },
+    crowbar: { motion: 'slash',  duration: 0.36, active: [0.22, 0.81], arc: 1.05, damage: 28, reach: 0.93, thickness: 15, lunge: 210 },
+    spear:   { motion: 'thrust', duration: 0.40, active: [0.20, 0.75], arc: 0.19, damage: 34, reach: 1.00, thickness: 14, lunge: 240 },
+    mace:    { motion: 'smash',  duration: 0.56, active: [0.31, 0.83], arc: 1.05, damage: 48, reach: 0.89, thickness: 23, lunge: 295 },
+    hook:    { motion: 'whip',   duration: 0.56, active: [0.27, 0.83], arc: 1.58, damage: 29, reach: 0.98, thickness: 21, lunge: 190 }
+  };
+  const meleeModelTips = { knife: 49, shovel: 93, crowbar: 88, spear: 122, mace: 78, hook: 140 };
+  const meleeContactStarts = { knife: 0.38, shovel: 0.62, crowbar: 0.34, spear: 0.64, mace: 0.53, hook: 0.32 };
+  const BLOCK_HALF_ANGLE = 55 * Math.PI / 180;
+  const SHORT_REST_TIME = 1.6, LONG_REST_TIME = 4.3;
+  const knightSquares = [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]];
+
+  const world = { w: 1650, h: 1120 };
+  const rectangles = [
+    { x: 322, y: 275, w: 220, h: 175 }, { x: 1100, y: 270, w: 240, h: 175 },
+    { x: 318, y: 700, w: 235, h: 145 }, { x: 1105, y: 690, w: 245, h: 155 },
+    { x: 700, y: 125, w: 180, h: 125 }, { x: 720, y: 885, w: 180, h: 120 },
+    { x: 50,  y: 450, w: 160, h: 180 }, { x: 1440, y: 450, w: 160, h: 170 }
+  ];
+  const initialCrates = [
+    { x: 600, y: 410, w: 58, h: 58 }, { x: 980, y: 640, w: 60, h: 60 },
+    { x: 607, y: 735, w: 55, h: 55 }, { x: 982, y: 340, w: 65, h: 65 },
+    { x: 850, y: 430, w: 48, h: 48 }
+  ];
+
+  const mapCache = document.createElement('canvas');
+  mapCache.width = world.w; mapCache.height = world.h;
+  (() => {
+    const mctx = mapCache.getContext('2d');
+    mctx.fillStyle = '#151c22'; mctx.fillRect(0, 0, world.w, world.h);
+    mctx.strokeStyle = '#27343a'; mctx.lineWidth = 1; mctx.beginPath();
+    for (let x = 0; x < world.w; x += 48) { mctx.moveTo(x, 0); mctx.lineTo(x, world.h); }
+    for (let y = 0; y < world.h; y += 48) { mctx.moveTo(0, y); mctx.lineTo(world.w, y); }
+    mctx.stroke();
+
+    mctx.strokeStyle = '#333a3e'; mctx.lineWidth = 95; mctx.beginPath();
+    mctx.moveTo(0, 570); mctx.lineTo(world.w, 570);
+    mctx.moveTo(800, 0); mctx.lineTo(800, world.h);
+    mctx.stroke();
+
+    mctx.strokeStyle = '#6d6960'; mctx.lineWidth = 2; mctx.setLineDash([25, 25]); mctx.beginPath();
+    mctx.moveTo(0, 570); mctx.lineTo(world.w, 570);
+    mctx.moveTo(800, 0); mctx.lineTo(800, world.h);
+    mctx.stroke(); mctx.setLineDash([]);
+
+    for (const r of rectangles) {
+      mctx.fillStyle = '#222931'; mctx.strokeStyle = '#66655f'; mctx.lineWidth = 3;
+      mctx.beginPath(); mctx.roundRect(r.x, r.y, r.w, r.h, 8); mctx.fill(); mctx.stroke();
+      mctx.strokeStyle = '#353d45'; mctx.lineWidth = 1; mctx.strokeRect(r.x + 12, r.y + 12, r.w - 24, r.h - 24);
+    }
+  })();
+
+  let crates = [], teamAttack = true;
+  let towers = [], allies = [], shots = [], effects = [], trail = [], mines = [], particles = [], popups = [];
+  let player = null, ci = 0, slot = 0, spell = 0, simT = 0, cam = { x: 0, y: 0 }, viewZoom = 1;
+  let camKick = { x: 0, y: 0 }, inputBuffer = { dodge: 0, attack: 0, spell: 0 };
+  let book = [], spellResources = null, restClock = 0, restOn = false, shortRestsLeft = 2;
+  let weaponSlot = 0, weaponStates = [], weaponFX = [], weaponHold = 0, weaponChargeMode = false;
+  let meleeFlip = 1, meleeCombo = 0, weaponSwapCD = 0, guard = 100, guardParryT = 0, hasteT = 0;
+  let toastTime = 0, uiSyncTimer = 0;
+  const mouse = { x: W / 2, y: H / 2, down: false, castDown: false };
+  const keys = new Set();
+
+  function addPopup(x, y, text, color = '#ffe59e') {
+    if (popups.length > 24) popups.shift();
+    popups.push({ x, y: y - 16, text, color, t: 0.65, life: 0.65 });
+  }
+
+  function showToast(t) {
+    ui.toast.textContent = t;
+    toastTime = 1.5;
+    ui.toast.style.opacity = 1;
+  }
+
+  function toggleTeamAttack(force) {
+    teamAttack = typeof force === 'boolean' ? force : !teamAttack;
+    ui.ffBadge.textContent = 'T · TEAM ATTACK: ' + (teamAttack ? 'ON' : 'OFF');
+    ui.ffBadge.classList.toggle('off', !teamAttack);
+    showToast('TEAM ATTACK (FRIENDLY FIRE) · ' + (teamAttack ? 'ENABLED' : 'DISABLED'));
+  }
+  ui.ffBadge.onclick = () => toggleTeamAttack();
+
+  const cursorWorld = () => ({ x: mouse.x / viewZoom + cam.x, y: mouse.y / viewZoom + cam.y });
+  const moveInput = () => norm0((keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0), (keys.has('KeyS') ? 1 : 0) - (keys.has('KeyW') ? 1 : 0));
+  const rawAim = () => { const q = cursorWorld(); return Math.atan2(q.y - player.y, q.x - player.x); };
+  function aim() {
+    for (let i = 0; i < weaponFX.length; i++) if (weaponFX[i].kind === 'melee') return weaponFX[i].a;
+    return rawAim();
+  }
+  function axis() {
+    const v = moveInput();
+    if (!v.x && !v.y) { const a = rawAim(); return { x: Math.cos(a), y: Math.sin(a) }; }
+    return v;
+  }
+
+  function hitRect(cx, cy, r, b) {
+    const dx = cx - clamp(cx, b.x, b.x + b.w), dy = cy - clamp(cy, b.y, b.y + b.h);
+    return dx * dx + dy * dy < r * r;
+  }
+  function solidAt(x, y, r = 16) {
+    if (x < r || x > world.w - r || y < r || y > world.h - r) return true;
+    for (let i = 0; i < rectangles.length; i++) if (hitRect(x, y, r, rectangles[i])) return true;
+    for (let i = 0; i < crates.length; i++) if (hitRect(x, y, r, crates[i])) return true;
+    return false;
+  }
+
+  function segmentHitsRect(x0, y0, x1, y1, b, pad = 2) {
+    let enter = 0, exit = 1;
+    const dx = x1 - x0, dy = y1 - y0;
+    const checks = [[x0, dx, b.x - pad, b.x + b.w + pad], [y0, dy, b.y - pad, b.y + b.h + pad]];
+    for (let i = 0; i < 2; i++) {
+      const [orig, diff, min, max] = checks[i];
+      if (Math.abs(diff) < 1e-9) { if (orig < min || orig > max) return false; continue; }
+      let a = (min - orig) / diff, z = (max - orig) / diff;
+      if (a > z) { const tmp = a; a = z; z = tmp; }
+      if (a > enter) enter = a;
+      if (z < exit) exit = z;
+      if (enter > exit) return false;
+    }
+    return exit >= 0 && enter <= 1;
+  }
+
+  function spellSightBlocked(from, to) {
+    for (let i = 0; i < rectangles.length; i++) if (segmentHitsRect(from.x, from.y, to.x, to.y, rectangles[i])) return true;
+    for (let i = 0; i < crates.length; i++) if (segmentHitsRect(from.x, from.y, to.x, to.y, crates[i])) return true;
+    return false;
+  }
+  const spellRequiresSight = s => s.range > 0 && !['bolt', 'missile', 'catapult', 'flame'].includes(s.fx);
+  function spellTargetPoint(s, from = player, cursor = cursorWorld()) {
+    const dx = cursor.x - from.x, dy = cursor.y - from.y, dist = Math.hypot(dx, dy), range = s.range || 0;
+    if (!range) return { x: from.x, y: from.y, clamped: false };
+    const travel = Math.min(dist, range);
+    const dir = dist > 1e-8 ? { x: dx / dist, y: dy / dist } : { x: 1, y: 0 };
+    return { x: from.x + dir.x * travel, y: from.y + dir.y * travel, clamped: dist > range + 0.01 };
+  }
+
+  const precisionWalk = () => (keys.has('ShiftLeft') || keys.has('ShiftRight')) && !player.mode && player.rec <= 0;
+  const stanceActive = () => keys.has('KeyE') && !player.mode && player.rec <= 0;
+  const newWeaponStates = () => weaponCatalog.map(row => row.map(w => ({ ammo: w.mag ?? -1, reloading: 0, special: 0 })));
+  const weaponNow = () => weaponCatalog[ci][weaponSlot];
+  const weaponState = () => weaponStates[ci][weaponSlot];
+  const isMelee = (w = weaponNow()) => ['knife', 'shovel', 'mace', 'crowbar'].includes(w.type);
+  const isGuardWeapon = (w = weaponNow()) => isMelee(w) || w.type === 'extinguisher';
+  const hasScope = (w = weaponNow()) => ['revolver', 'pistol', 'crossbow', 'drone', 'camera', 'carbine'].includes(w.type);
+  const scopeActive = () => stanceActive() && hasScope();
+  const guardActive = () => stanceActive() && isGuardWeapon();
+
+  function applyGroundMovement(p, character, input, dt, maximum, precision) {
+    const config = groundMotion[character];
+    const speed = vlen(p.vx, p.vy);
+    let surfaceMult = 1;
+    for (let i = 0; i < effects.length; i++) {
+      const e = effects[i];
+      if (e.kind === 'frost' && e.t > 0 && vlen(p.x - e.x, p.y - e.y) < e.r) { surfaceMult = 0.42; break; }
+    }
+    if (!input.x && !input.y) {
+      const remaining = Math.max(0, speed - config.brake * surfaceMult * dt);
+      if (speed > 0.0001) { p.vx *= remaining / speed; p.vy *= remaining / speed; }
+      else { p.vx = 0; p.vy = 0; }
+      return;
+    }
+    const facing = aim();
+    const align = input.x * Math.cos(facing) + input.y * Math.sin(facing);
+    const stanceScale = align >= 0.25 ? 1 : (align <= -0.35 ? config.backMult : config.strafeMult);
+    const goal = maximum * stanceScale * (precision ? config.pace : 1);
+    const dx = input.x * goal - p.vx, dy = input.y * goal - p.vy, delta = vlen(dx, dy);
+    if (delta < 0.0001) return;
+
+    const dot = speed > 0.001 ? (p.vx * input.x + p.vy * input.y) / speed : 1;
+    let force = dot < -0.25 ? config.reverse * (config.pivotBoost || 1) : dot < 0.72 ? config.turn : config.launch;
+    if (speed > goal + 0.5 && dot > 0.72) force = config.brake;
+    if (precision && speed > goal) force = Math.max(force, config.brake);
+
+    const k = Math.min(1, (force * surfaceMult * dt) / delta);
+    p.vx += dx * k; p.vy += dy * k;
+  }
+
+  function applyHoverMovement(p, input, dt, maximum, precision, firingFactor = 1) {
+    const config = groundMotion[0];
+    const speed = vlen(p.vx, p.vy);
+    const damping = Math.exp(-(precision ? 4.2 : 2.55) * dt);
+    p.vx *= damping; p.vy *= damping;
+    if (!input.x && !input.y) {
+      if (vlen(p.vx, p.vy) < 1.2) { p.vx = 0; p.vy = 0; }
+      return;
+    }
+    const dot = speed > 0.001 ? (p.vx * input.x + p.vy * input.y) / speed : 1;
+    const thrust = dot < -0.25 ? config.reverse : dot < 0.72 ? config.turn : config.launch;
+    const power = thrust * (precision ? 0.56 : 1) * firingFactor;
+    p.vx += input.x * power * dt; p.vy += input.y * power * dt;
+    const cap = maximum * (precision ? config.pace : 1);
+    const now = vlen(p.vx, p.vy);
+    if (now > cap) {
+      const prior = vlen(p.vx - input.x * power * dt, p.vy - input.y * power * dt);
+      const next = prior <= cap + 1 ? cap : Math.max(cap, now - (precision ? 600 : 360) * dt);
+      p.vx *= next / now; p.vy *= next / now;
+    }
+  }
+
+  function moveCircle(ent, dx, dy, { bank = false, breakCrate = false } = {}) {
+    let wall = false, edge = false, crateHit = false;
+    const steps = Math.max(1, Math.ceil(vlen(dx, dy) / 10));
+    let sx = dx / steps, sy = dy / steps;
+    const scrapeDrag = Math.pow(0.92, 1 / steps);
+
+    for (let k = 0; k < steps; k++) {
+      for (const a of ['x', 'y']) {
+        const amount = a === 'x' ? sx : sy;
+        if (!amount) continue;
+        const nx = ent.x + (a === 'x' ? amount : 0), ny = ent.y + (a === 'y' ? amount : 0);
+        const edgeThis = nx < ent.r || nx > world.w - ent.r || ny < ent.r || ny > world.h - ent.r;
+        let obs = null;
+        for (let i = 0; i < rectangles.length; i++) if (hitRect(nx, ny, ent.r, rectangles[i])) { obs = rectangles[i]; break; }
+        let cr = null;
+        for (let i = 0; i < crates.length; i++) if (hitRect(nx, ny, ent.r, crates[i])) { cr = crates[i]; break; }
+        if (cr && breakCrate) {
+          crates.splice(crates.indexOf(cr), 1);
+          spawnParticles(nx, ny, 20, '#e1b86f');
+          cr = null;
+          showToast('BARRICADE BREACHED');
+        }
+        const blocker = obs || cr;
+        if (edgeThis || blocker) {
+          if (!bank && blocker && !edgeThis) {
+            const margin = 12;
+            if (a === 'x' && Math.abs(sy) < 0.15) {
+              const distTop = ent.y - blocker.y, distBot = (blocker.y + blocker.h) - ent.y;
+              if (distTop < margin && !solidAt(nx, ent.y - 2.2, ent.r)) { ent.y -= 2.2; ent.x = nx; continue; }
+              if (distBot < margin && !solidAt(nx, ent.y + 2.2, ent.r)) { ent.y += 2.2; ent.x = nx; continue; }
+            } else if (a === 'y' && Math.abs(sx) < 0.15) {
+              const distLeft = ent.x - blocker.x, distRight = (blocker.x + blocker.w) - ent.x;
+              if (distLeft < margin && !solidAt(ent.x - 2.2, ny, ent.r)) { ent.x -= 2.2; ent.y = ny; continue; }
+              if (distRight < margin && !solidAt(ent.x + 2.2, ny, ent.r)) { ent.x += 2.2; ent.y = ny; continue; }
+            }
+          }
+          wall = true; edge = edge || edgeThis; crateHit = crateHit || !!cr;
+          if (bank) {
+            if (a === 'x') { ent.vx *= -0.87; sx *= -1; } else { ent.vy *= -0.87; sy *= -1; }
+            spawnParticles(ent.x, ent.y, 6, colors[ci]);
+          } else if (a === 'x') {
+            ent.vx = 0; sx = 0;
+            if (ent.vy) { ent.vy *= scrapeDrag; sy *= scrapeDrag; }
+          } else {
+            ent.vy = 0; sy = 0;
+            if (ent.vx) { ent.vx *= scrapeDrag; sy *= scrapeDrag; }
+          }
+        } else {
+          ent[a] += amount;
+        }
+      }
+    }
+    return { wall, edge, crateHit };
+  }
+
+  function spawnParticles(x, y, n, color) {
+    if (particles.length > 220) particles.splice(0, particles.length - 160);
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, s = 60 + Math.random() * 200;
+      particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0.12 + Math.random() * 0.3, color });
+    }
+  }
+
+  function addTrail(x, y, color, size = 17, t = 0.36) {
+    if (trail.length > 180) trail.splice(0, trail.length - 130);
+    trail.push({ x, y, color, r: size, t, life: t });
+  }
+
+  function visibleRange(angle) {
+    const ux = Math.cos(angle), uy = Math.sin(angle);
+    const left = cam.x + 24 / viewZoom, right = cam.x + W / viewZoom - 24 / viewZoom;
+    const top = cam.y + 24 / viewZoom, bottom = cam.y + H / viewZoom - 24 / viewZoom;
+    const tx = ux > 0.001 ? (right - player.x) / ux : ux < -0.001 ? (left - player.x) / ux : Infinity;
+    const ty = uy > 0.001 ? (bottom - player.y) / uy : uy < -0.001 ? (top - player.y) / uy : Infinity;
+    return Math.max(0, Math.min(tx, ty));
+  }
+  function effectiveWeaponRange(w = weaponNow(), angle = aim()) {
+    if (!hasScope(w)) return w.range;
+    if (w.type === 'camera') return (scopeActive() || weaponChargeMode) ? w.range : w.closeRange;
+    const cap = scopeActive() ? w.range : w.range * 0.58;
+    return Math.min(cap, visibleRange(angle));
+  }
+  const scopeLookDir = () => norm0(mouse.x - W / 2, mouse.y - H / 2);
+
+  function initSpellResources() {
+    const cfg = classBooks[ci];
+    book = cfg.slots; spell = 0; shortRestsLeft = 2;
+    spellResources = { max: { ...cfg.max }, slots: { ...cfg.max }, points: cfg.sp || 0, empowered: false };
+    refreshSpellUI();
+  }
+  const spellAvailable = s => s.level === 0 || (classBooks[ci].pact ? spellResources.slots[2] > 0 : ((spellResources.slots[s.level] || 0) > 0));
+  const resourcePips = (total, used) => Array.from({ length: Math.max(total, used) }, (_, i) =>
+    '<span class="magicPip ' + (i >= used ? 'empty' : (i >= total ? 'bonus' : '')) + '"></span>'
+  ).join('');
+
+  function refreshSpellUI() {
+    const bar = ui.spells;
+    bar.innerHTML = '';
+    for (let i = 0; i < 10; i++) {
+      const m = book[i], b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'slot' + (!m ? ' unavailable' : '') + (m && !spellAvailable(m) ? ' noammo' : '') + (spell === i ? ' on' : '');
+      const n = document.createElement('b');
+      n.textContent = i === 9 ? '0' : i + 1;
+      b.appendChild(n);
+      if (m) {
+        const label = document.createElement('span'); label.textContent = m.name; b.appendChild(label);
+        const l = document.createElement('span'); l.className = 'spellLv';
+        l.textContent = (m.level ? 'LV' + m.level : 'CANTRIP') + ' · ' + (m.range ? m.range + 'u' : 'SELF');
+        b.appendChild(l);
+        b.title = m.desc;
+        b.onclick = () => { spell = i; refreshSpellUI(); };
+      } else {
+        b.textContent = (i === 9 ? '0' : i + 1) + ' · —';
+        b.disabled = true;
+      }
+      bar.appendChild(b);
+    }
+    updateResourceUI();
+  }
+  function updateResourceUI() {
+    if (!spellResources) return;
+    let str = '<span class="resourceLbl">LV 3 · ' + classBooks[ci].cls + '</span><div class="resources">';
+    for (const l of [1, 2]) {
+      const n = spellResources.max[l] || 0;
+      if (n) str += '<span class="resourceLbl">' + (classBooks[ci].pact ? 'PACT LV2' : 'LV' + l) + '</span>' + resourcePips(n, spellResources.slots[l]);
+    }
+    if (ci === 0) str += '<span class="resourceLbl">SP</span>' + resourcePips(3, spellResources.points);
+    str += '<span class="resourceLbl"> · SHORT RESTS: ' + shortRestsLeft + '/2</span></div>';
+    if (ci === 0) {
+      str += '<div class="resources">' +
+        '<button id="empowerBtn" ' + (spellResources.points < 1 ? 'disabled' : '') + '>EMPOWER ' + (spellResources.empowered ? '✓' : '· 1 SP') + '</button>' +
+        '<button id="createOneBtn" ' + (spellResources.points < 2 ? 'disabled' : '') + '>+LV1 · 2 SP</button>' +
+        '<button id="createTwoBtn" ' + (spellResources.points < 3 ? 'disabled' : '') + '>+LV2 · 3 SP</button>' +
+        '<button id="convertBtn" ' + (spellResources.slots[1] < 1 ? 'disabled' : '') + '>LV1 → 1 SP</button></div>';
+    }
+    ui.magicResources.innerHTML = str;
+    if (ci === 0) {
+      $('empowerBtn').onclick = () => { if (spellResources.points < 1) return; spellResources.empowered = !spellResources.empowered; updateResourceUI(); };
+      $('createOneBtn').onclick = () => createSlot(1);
+      $('createTwoBtn').onclick = () => createSlot(2);
+      $('convertBtn').onclick = () => {
+        if (spellResources.slots[1] === 0 || spellResources.points >= 3) return;
+        spellResources.slots[1]--; spellResources.points = Math.min(3, spellResources.points + 1); refreshSpellUI();
+      };
+    }
+  }
+  function createSlot(l) {
+    const cost = l === 1 ? 2 : 3;
+    if (ci !== 0 || spellResources.points < cost) return;
+    spellResources.points -= cost; spellResources.slots[l]++;
+    showToast('SORCERY POINTS → LEVEL ' + l + ' SLOT');
+    refreshSpellUI();
+  }
+  function startRest() {
+    if (restOn || !player || player.mode || player.rec > 0) return;
+    restOn = true; restClock = 0; cancelWeaponHold();
+    document.body.classList.add('resting'); ui.restMeter.classList.add('active');
+  }
+  function cancelRestOnDamage() {
+    if (!restOn) return;
+    restOn = false; restClock = 0;
+    document.body.classList.remove('resting'); ui.restMeter.classList.remove('active');
+    showToast('REST INTERRUPTED BY DAMAGE!');
+  }
+  function finishRest() {
+    if (!restOn) return;
+    restOn = false;
+    document.body.classList.remove('resting'); ui.restMeter.classList.remove('active');
+    if (restClock >= LONG_REST_TIME) {
+      spellResources.slots = { ...spellResources.max };
+      spellResources.points = classBooks[ci].sp || 0;
+      spellResources.empowered = false;
+      shortRestsLeft = 2; player.hp = 100;
+      showToast('LONG REST · ALL SLOTS, HP & SHORT RESTS RESTORED');
+    } else if (restClock >= SHORT_REST_TIME) {
+      if (shortRestsLeft <= 0) showToast('NO SHORT RESTS LEFT · HOLD FOR FULL LONG REST');
+      else {
+        shortRestsLeft--;
+        if (classBooks[ci].pact) spellResources.slots[2] = spellResources.max[2];
+        else if (spellResources.max[1] > 0 && spellResources.slots[1] < spellResources.max[1]) spellResources.slots[1]++;
+        player.hp = Math.min(100, player.hp + 22);
+        showToast('SHORT REST (' + shortRestsLeft + ' LEFT) · +22 HP & SLOT RECOVERED');
+      }
+    } else showToast('REST INTERRUPTED · HOLD LONGER');
+    restClock = 0; refreshSpellUI();
+  }
+  function tickRest(dt) {
+    if (!restOn) return;
+    restClock = Math.min(LONG_REST_TIME, restClock + dt);
+    ui.restFill.style.width = Math.round((restClock / LONG_REST_TIME) * 100) + '%';
+    const srAvail = shortRestsLeft > 0;
+    ui.restLabel.textContent = restClock >= LONG_REST_TIME ? 'LONG REST READY' :
+      restClock >= SHORT_REST_TIME ? (srAvail ? 'SHORT REST READY (' + shortRestsLeft + ' LEFT)' : 'SHORT RESTS EXHAUSTED · KEEP HOLDING') :
+      'RESTING · ' + (Math.ceil((SHORT_REST_TIME - restClock) * 10) / 10).toFixed(1) + 's TO SHORT REST';
+    player.vx = 0; player.vy = 0;
+  }
+
+  function resetWorld() {
+    mouse.castDown = false;
+    if (restOn) { restOn = false; restClock = 0; document.body.classList.remove('resting'); ui.restMeter.classList.remove('active'); }
+    cancelWeaponHold();
+    weaponSwapCD = 0; hasteT = 0; guard = 100; guardParryT = 0;
+    weaponFX = []; meleeCombo = 0; weaponStates = newWeaponStates();
+    shots = []; effects = []; trail = []; mines = []; particles = []; popups = [];
+    camKick = { x: 0, y: 0 }; inputBuffer = { dodge: 0, attack: 0, spell: 0 };
+    crates = initialCrates.map(c => ({ ...c }));
+    towers = [
+      { x: 805,  y: 280, r: 20, hp: 100, maxHp: 100, fire: 1.1, flash: 0, dazzled: 0, dazzleT: 0, staggerT: 0 },
+      { x: 440,  y: 590, r: 20, hp: 100, maxHp: 100, fire: 1.6, flash: 0, dazzled: 0, dazzleT: 0, staggerT: 0 },
+      { x: 1230, y: 570, r: 20, hp: 100, maxHp: 100, fire: 2.1, flash: 0, dazzled: 0, dazzleT: 0, staggerT: 0 }
+    ];
+    allies = [{ x: 965, y: 558, r: 17, hp: 100, maxHp: 100, respawn: 0, damageFlash: 0, dazzled: 0, dazzleT: 0, name: 'ALLY PLAYER' }];
+    player = {
+      x: 810, y: 575, vx: 0, vy: 0, r: 16, hp: 100, inv: 0, damageFlash: 0,
+      fireCD: 0, spellCD: 0, weaponLock: 0, castLock: 0, dodgeCD: 0, dodgeTotal: 0.1,
+      firePosture: 0, rec: 0, mode: null, modeT: 0, modeDur: 0, prev: [],
+      focus: null, anchor: null, foxReset: false, secondReady: false,
+      activeSlot: slot, dir: { x: 1, y: 0 }, data: {}, enchant: 0,
+      drone: null, c4: null, sneakT: 0, counterBuffT: 0, bloom: 0, potionIdx: 0
+    };
+    simT = 0;
+    initSpellResources(); updateUI(); updateWeaponUI();
+  }
+
+  function chooseCharacter(i) {
+    cancelWeaponHold(); ci = i; slot = 0; weaponSlot = 0; resetWorld();
+    showToast(defs[ci].name + ' · ' + defs[ci].role);
+  }
+  function chooseDodge(i) {
+    if (player.mode || player.rec > 0) { showToast('FINISH YOUR CURRENT DODGE FIRST'); return; }
+    slot = i; player.activeSlot = i; updateUI();
+    showToast('LOADOUT ' + (slot ? 'B' : 'A') + ' · ' + defs[ci].dodge[slot][0]);
+  }
+  function selectWeapon(i) {
+    if (player.mode || player.rec > 0 || weaponSwapCD > 0) return;
+    if (player.sneakT > 0) endSneak('WEAPON SWITCH');
+    weaponSlot = i; cancelWeaponHold(); weaponSwapCD = 0.14; updateWeaponUI();
+    showToast('WEAPON ' + (i ? 'B' : 'A') + ' · ' + weaponNow().name.toUpperCase());
+  }
+
+  function updateUI() {
+    const d = defs[ci];
+    ui.personTitle.innerHTML = d.name + ' <span style="color:var(--gold)">/</span> ' + d.role.split(' / ')[0].toUpperCase();
+    ui.personSub.textContent = d.role + ' · ' + groundMotion[ci].style + ' · Team Attack ' + (teamAttack ? 'ON' : 'OFF');
+    ui.chars.querySelectorAll('.cbtn').forEach((el, i) => el.classList.toggle('on', i === ci));
+    for (let n = 0; n < 2; n++) {
+      const b = n ? ui.dodgeB : ui.dodgeA;
+      b.classList.toggle('active', slot === n);
+      b.querySelector('strong').textContent = (n ? 'X · ' : 'Z · ') + d.dodge[n][0];
+      b.querySelector('small').textContent = d.dodge[n][1];
+    }
+    const b = dodgeBalance[ci * 2 + slot];
+    ui.dodgeDesc.textContent = b.cd.toFixed(1) + 's CD · ' + b.range + ' · ' + b.risk;
+    refreshSpellUI();
+  }
+
+  function updateWeaponUI() {
+    const w = weaponNow(), s = weaponState();
+    for (let i = 0; i < 2; i++) {
+      const b = i ? ui.weaponB : ui.weaponA, item = weaponCatalog[ci][i];
+      b.classList.toggle('active', weaponSlot === i);
+      b.querySelector('strong').textContent = (i ? 'B' : 'A') + ' · ' + item.name;
+      b.querySelector('small').textContent = item.type.toUpperCase() + ' · ' + (item.type === 'camera' ? (item.closeRange + 'u / ' + item.range + 'u E-SCOPE') : item.range + 'u');
+    }
+    ui.weaponAmmoText.textContent = s.reloading > 0 ? 'RELOADING ' + s.reloading.toFixed(1) + 's' : s.ammo < 0 ? 'READY' : s.ammo + ' / ' + w.mag;
+    let sec = s.special > 0 ? ' · R CD ' + s.special.toFixed(1) + 's' : '';
+    if (w.type === 'crowbar' && player.c4) sec += ' · C4 ' + (player.c4.armed > 0 ? 'ARMING' : 'READY');
+    if (w.type === 'knife' && player.sneakT > 0) sec += ' · SNEAK ' + player.sneakT.toFixed(1) + 's';
+    if (player.counterBuffT > 0) sec += ' · SURGE ' + player.counterBuffT.toFixed(1) + 's';
+
+    const eTxt = isGuardWeapon(w) ? 'E PARRY/BLOCK · GUARD ' + Math.round(guard) :
+      w.type === 'potion' ? 'E REAGENT: ' + potionPhases[player.potionIdx].name.split(' ')[0] :
+      w.type === 'camera' ? (scopeActive() ? 'E VIEWFINDER ACTIVE (760u)' : 'HOLD E FOR 760u FOCUS FLASH') :
+      hasScope(w) ? 'E LOOK AHEAD · REACH ' + Math.round(effectiveWeaponRange(w)) + 'u' : 'SHIFT WALK';
+    const rTxt = w.type === 'crossbow' ? 'CYCLE AUGMENT' :
+      w.type === 'crowbar' ? 'TOSS / DETONATE C4' :
+      w.type === 'knife' ? 'SNEAK' :
+      w.type === 'extinguisher' ? 'PRESSURE BURST' :
+      isMelee(w) ? 'SPECIAL' : 'RELOAD';
+    ui.weaponDesc.textContent = eTxt + ' · R ' + rTxt + (w.type === 'crossbow' ? ' · ' + enchants[player.enchant || 0].name : '') + sec;
+    ui.weaponGuide.textContent = w.desc;
+  }
+
+  function buildUI() {
+    ['ASYA', 'ALEXANDRA', 'VET', 'TANK', 'JEANETTE', 'CHEMIST'].forEach((name, i) => {
+      const b = document.createElement('button');
+      b.className = 'cbtn'; b.textContent = name;
+      b.onclick = () => chooseCharacter(i);
+      ui.chars.appendChild(b);
+    });
+    ui.dodgeA.onclick = () => chooseDodge(0);
+    ui.dodgeB.onclick = () => chooseDodge(1);
+    ui.weaponA.onclick = () => selectWeapon(0);
+    ui.weaponB.onclick = () => selectWeapon(1);
+  }
+
+  function startMode(kind, duration, totalCD, dir) {
+    const tunedCD = dodgeBalance[ci * 2 + slot].cd;
+    player.mode = kind; player.modeT = duration; player.modeDur = duration;
+    player.dodgeCD = tunedCD; player.dodgeTotal = tunedCD; player.rec = 0;
+    player.dir = { ...dir }; player.data = {}; player.foxReset = false; player.secondReady = false;
+  }
+
+  function knightLanding() {
+    const { x: mx, y: my } = cursorWorld();
+    let score = Infinity, best = null;
+    for (const [nx, ny] of knightSquares) {
+      const x = player.x + nx * 72, y = player.y + ny * 72;
+      const dist = vlen(mx - x, my - y);
+      if (dist < score) { score = dist; best = { x, y, nx, ny, corner: { x: player.x + nx * 72, y: player.y } }; }
+    }
+    return best;
+  }
+
+  function castleTarget() {
+    let best = null, bestDist = 300;
+    const check = (type, ref) => {
+      const d = vlen(ref.x - player.x, ref.y - player.y);
+      if (d <= bestDist && !solidAt(ref.x, ref.y, player.r)) { bestDist = d; best = { type, ref, x: ref.x, y: ref.y }; }
+    };
+    for (let i = 0; i < shots.length; i++) if (shots[i].castleSpell) check('SPELL', shots[i]);
+    for (let i = 0; i < effects.length; i++) if (effects[i].t > 0 && ['decoy', 'frost', 'gravity'].includes(effects[i].kind)) check('SPELL', effects[i]);
+    for (let i = 0; i < mines.length; i++) check('SPELL', mines[i]);
+    for (let i = 0; i < towers.length; i++) if (towers[i].hp > 0) check('ENEMY', towers[i]);
+    for (let i = 0; i < allies.length; i++) if (allies[i].hp > 0) check('PLAYER', allies[i]);
+    return best;
+  }
+
+  function thrustStageTwo() {
+    const p = player;
+    if (p.mode !== 'thrust' || p.data.phase !== 0) return;
+    const a = axis(), v = vlen(p.vx, p.vy);
+    const backward = (v ? ((p.vx * a.x + p.vy * a.y) / v) : 1) < -0.35;
+    p.data.phase = 1; p.modeT = 0.29; p.modeDur = 0.29;
+    if (backward) { p.vx = a.x * 360; p.vy = a.y * 360; showToast('REACTION THRUST · REVERSE BURN'); }
+    else {
+      p.vx += a.x * 480; p.vy += a.y * 480;
+      const sp = vlen(p.vx, p.vy);
+      if (sp > 660) { p.vx *= 660 / sp; p.vy *= 660 / sp; }
+      showToast('REACTION THRUST · SECOND IGNITION');
+    }
+    effects.push({ x: p.x, y: p.y, r: 64, t: 0.4, c: '#83e3ad', kind: 'pulse' });
+    spawnParticles(p.x, p.y, 20, '#8fefc5');
+  }
+
+  function steerForeclosure(p, input, dt, rate = 0.82) {
+    if (!input.x && !input.y) return;
+    const used = p.data.turnUsed || 0, remaining = Math.PI / 6 - used;
+    if (remaining <= 0) return;
+    const current = Math.atan2(p.dir.y, p.dir.x), target = Math.atan2(input.y, input.x);
+    const delta = Math.atan2(Math.sin(target - current), Math.cos(target - current));
+    const turn = Math.sign(delta) * Math.min(Math.abs(delta), rate * dt, remaining);
+    p.data.turnUsed = used + Math.abs(turn);
+    p.dir = { x: Math.cos(current + turn), y: Math.sin(current + turn) };
+  }
+
+  function rewindSample(history, target) {
+    if (!history.length) return { x: player.x, y: player.y };
+    if (target <= history[0].t) return history[0];
+    if (target >= history[history.length - 1].t) return history[history.length - 1];
+    for (let i = 1; i < history.length; i++) {
+      if (history[i].t >= target) {
+        const a = history[i - 1], b = history[i];
+        const k = clamp((target - a.t) / Math.max(0.001, b.t - a.t), 0, 1);
+        return { x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k) };
+      }
+    }
+    return history[0];
+  }
+
+  function absorbEchoProjectile(b) {
+    if (b.team !== 'enemy') return false;
+    for (let i = 0; i < effects.length; i++) {
+      const e = effects[i];
+      if (e.kind === 'rewindEcho' && vlen(e.x - b.x, e.y - b.y) <= e.r + b.r) {
+        effects.splice(i, 1);
+        spawnParticles(e.x, e.y, 14, '#c2a4ff');
+        effects.push({ x: e.x, y: e.y, r: 56, t: 0.28, c: '#c2a4ff', kind: 'pulse' });
+        showToast('REWIND ECHO · SHOT ABSORBED');
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function segmentDistance(px, py, ax, ay, bx, by) {
+    const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+    const t = l2 ? clamp(((px - ax) * dx + (py - ay) * dy) / l2, 0, 1) : 0;
+    return vlen(px - ax - dx * t, py - ay - dy * t);
+  }
+  function detectIncomingShot(p, shot, horizon = 0.24) {
+    if (shot.team !== 'enemy') return false;
+    if ((p.x - shot.x) * shot.vx + (p.y - shot.y) * shot.vy <= 0) return false;
+    return segmentDistance(p.x, p.y, shot.x, shot.y, shot.x + shot.vx * horizon, shot.y + shot.vy * horizon) < p.r + shot.r + 18;
+  }
+  function triggerShutter(p, shot) {
+    if (p.mode !== 'shutterArmed') return false;
+    const d = norm0(shot.vx, shot.vy), base = { x: -d.y, y: d.x }, wish = moveInput();
+    let pick = base, best = -Infinity;
+    for (const dir of [base, { x: -base.x, y: -base.y }]) {
+      const test = { x: p.x, y: p.y, r: p.r, vx: 0, vy: 0 };
+      const col = moveCircle(test, dir.x * 102, dir.y * 102);
+      const score = vlen(test.x - p.x, test.y - p.y) + ((wish.x || wish.y) ? 12 * (wish.x * dir.x + wish.y * dir.y) : 0) - (col.wall ? 8 : 0);
+      if (score > best) { best = score; pick = dir; }
+    }
+    p.mode = 'shutterEvade'; p.modeT = 0.20; p.modeDur = 0.20;
+    p.vx = pick.x * 520; p.vy = pick.y * 520; p.inv = 0.21;
+    const source = shot.owner && shot.owner.hp > 0 ? shot.owner : towers.find(t => t.hp > 0) || null;
+    p.focus = source ? { target: source, t: 3 } : null;
+    effects.push({ x: p.x, y: p.y, r: 48, t: 0.2, c: '#fff3c6', kind: 'shutter' });
+    spawnParticles(p.x, p.y, 18, '#f7dfa0');
+    showToast('SHUTTER REFLEX! · SHOOT THE MARKED TARGET');
+    return true;
+  }
+
+  function dodgePressed(fromBuffer = false) {
+    if (restOn) return false;
+    if (player.mode === 'signal') { endSignal(); return true; }
+    if (player.mode === 'rewind') { endRewind(); return true; }
+    if (player.mode === 'doubleWindow') { beginSecondStep(); return true; }
+    if (player.mode === 'thrust') { thrustStageTwo(); return true; }
+    if (player.mode === 'crawl') { finishMode(0.12); return true; }
+    if (player.mode || player.rec > 0 || player.dodgeCD > 0) {
+      if (!fromBuffer) inputBuffer.dodge = 0.15;
+      return false;
+    }
+    inputBuffer.dodge = 0;
+
+    const a = axis(), kind = ci * 2 + slot, p = player;
+    switch (kind) {
+      case 0:
+        startMode('signal', 0.72, 4.4, a);
+        p.data.proj = { x: p.x, y: p.y, vx: a.x * 345, vy: a.y * 345 };
+        p.data.origin = { x: p.x, y: p.y };
+        break;
+      case 1:
+        startMode('rewind', 0.76, 4.9, a);
+        p.data.history = p.prev.filter(pt => simT - pt.t <= 1.05);
+        p.data.rewindStart = simT;
+        p.data.velocity = { vx: p.vx, vy: p.vy };
+        effects.push({ x: p.x, y: p.y, r: 33, t: 1.0, c: '#bda4f7', kind: 'rewindEcho' });
+        showToast('REWIND ECHO · HOLD SPACE / RELEASE TO STOP');
+        break;
+      case 2: {
+        // Knight's Move phases through walls
+        const end = knightLanding();
+        if (!end) break;
+        startMode('knight', 0.06, 3.9, a);
+        addTrail(p.x, p.y, colors[ci], 24, 0.5);
+        p.x = end.x; p.y = end.y; p.vx = 0; p.vy = 0;
+        spawnParticles(p.x, p.y, 16, colors[ci]);
+        showToast("KNIGHT'S MOVE · PHASED THROUGH WALL");
+        break;
+      }
+      case 3: {
+        const t = castleTarget();
+        if (!t) { showToast('CASTLING · NEED A SPELL, ENEMY OR ALLY WITHIN 300u'); return false; }
+        startMode('castleSwap', 0.17, 5.3, a);
+        const ox = p.x, oy = p.y;
+        p.x = t.x; p.y = t.y; t.ref.x = ox; t.ref.y = oy; p.vx = 0; p.vy = 0;
+        if (t.ref.staggerT !== undefined) t.ref.staggerT = 0.6;
+        spawnParticles(p.x, p.y, 18, colors[ci]);
+        addTrail(ox, oy, colors[ci], 20, 0.65);
+        showToast('CASTLING · SWAPPED & STAGGERED TARGET');
+        break;
+      }
+      case 4: startMode('fox', 0.34, 3.8, a); p.vx = a.x * 690; p.vy = a.y * 690; break;
+      case 5: startMode('proneDive', 0.2, 4.2, a); p.vx = a.x * 550; p.vy = a.y * 550; showToast('DEADWEIGHT · BULLETS PASS THROUGH'); break;
+      case 6: startMode('barge', 0.50, 5.1, a); p.vx = a.x * 135; p.vy = a.y * 135; break;
+      case 7: startMode('counter', 0.65, 4.3, a); p.vx = 0; p.vy = 0; showToast('COUNTERWEIGHT · BRACED FOR IMPACT'); break;
+      case 8: startMode('doubleFirst', 0.12, 2.4, a); p.vx = a.x * 650; p.vy = a.y * 650; break;
+      case 9: startMode('shutterArmed', 0.62, 4.8, a); p.vx *= 0.38; p.vy *= 0.38; showToast('SHUTTER REFLEX · ARMED'); break;
+      case 10: startMode('thrust', 0.36, 3.8, a); p.vx = a.x * 365; p.vy = a.y * 365; p.data.phase = 0; showToast('REACTION THRUST · SPACE AGAIN FOR 2ND STAGE'); break;
+      case 11: startMode('skim', 0.79, 4.2, a); p.vx = a.x * 555; p.vy = a.y * 555; break;
+    }
+    return true;
+  }
+
+  function endRewind() {
+    if (player.mode !== 'rewind') return;
+    const v = player.data.velocity || { vx: 0, vy: 0 };
+    finishMode(0.12); player.vx = v.vx; player.vy = v.vy;
+  }
+  function endSignal() {
+    if (player.mode !== 'signal') return;
+    const g = player.data.proj;
+    if (g) {
+      addTrail(player.x, player.y, colors[ci], 20, 0.6);
+      const ghostSp = vlen(g.vx, g.vy);
+      player.x = g.x; player.y = g.y;
+      player.vx = g.vx * 0.65; player.vy = g.vy * 0.65;
+      spawnParticles(g.x, g.y, 16, colors[ci]);
+    }
+    finishMode(0.16);
+  }
+  function beginSecondStep() {
+    const p = player, a = axis();
+    p.mode = 'doubleSecond'; p.modeT = 0.14; p.modeDur = 0.14;
+    p.vx = a.x * 670; p.vy = a.y * 670; p.secondReady = false;
+    spawnParticles(p.x, p.y, 10, colors[ci]);
+  }
+  function finishMode(recovery = 0.12, keepMomentum = false) {
+    const p = player;
+    p.mode = null; p.modeT = 0; p.rec = recovery;
+    p.data = { coastRecovery: keepMomentum };
+    if (!keepMomentum && ci !== 5 && ci !== 0) { p.vx *= 0.76; p.vy *= 0.76; }
+  }
+
+  function cancelWeaponHold() { mouse.down = false; weaponHold = 0; weaponChargeMode = false; }
+  function stopWeaponHold() {
+    const w = weaponNow();
+    if (!mouse.down) return;
+    mouse.down = false;
+    if (w.type === 'camera' && (weaponChargeMode || scopeActive())) {
+      fireFocusedCamera(Math.max(weaponHold, 0.15));
+    }
+    weaponHold = 0;
+    weaponChargeMode = false;
+  }
+  function beginReload() {
+    const w = weaponNow(), s = weaponState();
+    if (s.reloading > 0 || s.ammo < 0 || s.ammo === w.mag) return false;
+    if (w.type === 'drone' && player.drone) { showToast('DETONATE ACTIVE DRONE FIRST'); return false; }
+    s.reloading = w.reload;
+    showToast('RELOADING · ' + w.name.toUpperCase());
+    return true;
+  }
+  function autoReloadIfEmpty(w = weaponNow(), s = weaponState()) {
+    if (!(w.mag > 0) || s.ammo !== 0 || s.reloading > 0) return false;
+    s.reloading = w.reload;
+    showToast('AUTO RELOADING · ' + w.name.toUpperCase());
+    return true;
+  }
+  const dmgMultiplier = () => player.counterBuffT > 0 ? 1.30 : 1.0;
+
+  function spawnWeaponShot(speed, range, damage, r = 4, color = '#f4dda1', extra = {}) {
+    const a = extra.angleOverride ?? rawAim(), d = { x: Math.cos(a), y: Math.sin(a) }, p = player;
+    shots.push({
+      x: p.x + d.x * 22, y: p.y + d.y * 22, vx: d.x * speed, vy: d.y * speed, r, team: 'player',
+      t: Math.max(0, (Math.min(range, effectiveWeaponRange(weaponNow(), a)) - 22)) / speed,
+      damage: Math.round(damage * dmgMultiplier()), c: color, castleSpell: false, weaponShot: true, ...extra
+    });
+    camKick.x -= d.x * 3.5; camKick.y -= d.y * 3.5;
+    spawnParticles(p.x + d.x * 19, p.y + d.y * 19, 4, color);
+  }
+
+  function applyDamageToPlayer(dmg, label = '') {
+    const p = player;
+    if (p.inv > 0) return false;
+    if (restOn) cancelRestOnDamage();
+    if (p.sneakT > 0) endSneak('DAMAGE TAKEN');
+    p.hp = Math.max(0, p.hp - dmg);
+    p.damageFlash = 0.16;
+    addPopup(p.x, p.y, '-' + dmg, '#ff7a88');
+    spawnParticles(p.x, p.y, 8, '#fa7684');
+    if (p.hp === 0) {
+      p.hp = 100; p.x = 810; p.y = 575; p.vx = 0; p.vy = 0;
+      showToast((label ? label + ' · ' : '') + 'TEST RESET · HEALTH RESTORED');
+    }
+    return true;
+  }
+
+  function applyDamageToAlly(ally, dmg, sourceLabel = 'TEAM ATTACK') {
+    if (ally.hp <= 0) return false;
+    ally.hp = Math.max(0, ally.hp - dmg);
+    ally.damageFlash = 0.16;
+    addPopup(ally.x, ally.y, '-' + dmg, '#8ccde0');
+    spawnParticles(ally.x, ally.y, 8, '#8ccde0');
+    if (ally.hp === 0) { ally.respawn = 3.5; showToast(sourceLabel + ' · ALLY DOWN (RESPAWNING)'); }
+    return true;
+  }
+
+  function damageTower(t, dmg, label = '') {
+    t.hp = Math.max(0, t.hp - dmg);
+    t.flash = 0.12;
+    addPopup(t.x, t.y, (label ? label + ' -' : '-') + dmg, label ? '#fff099' : '#ffe09e');
+  }
+
+  function meleeAttack() {
+    const p = player, w = weaponNow();
+    if (mouse.castDown || p.castLock > 0 || p.fireCD > 0 || guardActive()) return false;
+    const spec = meleeProfiles[w.type], angle = rawAim();
+    if (!spec) return false;
+    p.fireCD = w.cool; meleeFlip *= -1; meleeCombo++;
+    const profile = { ...spec };
+    let finisher = false;
+    if (w.type === 'knife' && meleeCombo % 3 === 0) {
+      profile.motion = 'thrust'; profile.duration = 0.255; profile.arc = 0.18; profile.active = [0.22, 0.72]; profile.damage = 35; profile.lunge = 275;
+      finisher = true;
+    }
+    if (w.type === 'shovel' && meleeCombo % 2 === 0) {
+      profile.arc = 1.38; profile.duration = 0.50; profile.active = [0.26, 0.80]; profile.damage = 40; profile.lunge = 285;
+      finisher = true;
+    }
+    p.weaponLock = Math.max(p.weaponLock, profile.duration);
+    weaponFX.push({
+      kind: 'melee', type: w.type, profile, combo: meleeCombo, finisher, a: angle, r: w.range,
+      side: meleeFlip, t: profile.duration, life: profile.duration,
+      hits: [], impactFreeze: 0, lunged: false, braked: false, c: colors[ci]
+    });
+    return true;
+  }
+
+  function meleeAttackPose(fx, atU = null) {
+    const spec = fx.profile, u = atU === null ? clamp((fx.life - fx.t) / fx.life, 0, 1) : clamp(atU, 0, 1);
+    if (spec.motion === 'thrust') {
+      const shove = smoothStep01((u - 0.13) / 0.24) * (1 - smoothStep01((u - 0.59) / 0.30));
+      const base = fx.r * spec.reach * 0.54, extension = shove * fx.r * spec.reach * 0.46;
+      return { u, a: fx.a + fx.side * 0.035, extension, bladeReach: base + extension, power: shove, baseReach: base };
+    }
+    const begin = spec.motion === 'smash' ? 0.29 : spec.motion === 'whip' ? 0.22 : 0.18;
+    const end = spec.motion === 'smash' ? 0.69 : spec.motion === 'whip' ? 0.75 : 0.71;
+    const strike = smoothStep01((u - begin) / (end - begin));
+    const overshoot = clamp((u - end) / Math.max(0.01, 1 - end), 0, 1);
+    const a = fx.a + fx.side * ((strike * 2 - 1) * spec.arc + overshoot * spec.arc * 0.13);
+    const extension = spec.motion === 'whip' ? Math.sin(strike * Math.PI) * fx.r * 0.10 : 0;
+    return { u, a, extension, bladeReach: fx.r * spec.reach + extension, baseReach: fx.r * spec.reach, power: strike };
+  }
+
+  function meleeBladeSegment(fx, pose) {
+    const tip = pose.bladeReach;
+    const start = fx.profile.motion === 'thrust' ? Math.max(12, tip - fx.r * 0.36) : tip * meleeContactStarts[fx.type];
+    const ca = Math.cos(pose.a), sa = Math.sin(pose.a);
+    return { x1: player.x + ca * start, y1: player.y + sa * start, x2: player.x + ca * tip, y2: player.y + sa * tip };
+  }
+
+  function nearestSegmentPoint(x, y, seg) {
+    const dx = seg.x2 - seg.x1, dy = seg.y2 - seg.y1, length2 = dx * dx + dy * dy;
+    const t = length2 ? clamp(((x - seg.x1) * dx + (y - seg.y1) * dy) / length2, 0, 1) : 0;
+    const px = seg.x1 + dx * t, py = seg.y1 + dy * t;
+    return { x: px, y: py, dist: vlen(x - px, y - py) };
+  }
+
+  function flashClearPath(p, t) {
+    const steps = Math.max(2, Math.ceil(vlen(t.x - p.x, t.y - p.y) / 16));
+    for (let i = 1; i < steps; i++) {
+      const f = i / steps;
+      if (solidAt(p.x + (t.x - p.x) * f, p.y + (t.y - p.y) * f, 2)) return false;
+    }
+    return true;
+  }
+
+  function updateMeleeCollision(fx, previousU) {
+    const spec = fx.profile, [lo, hi] = spec.active;
+    const nowU = clamp((fx.life - fx.t) / fx.life, 0, 1);
+    if (!fx.lunged && nowU >= lo) {
+      fx.lunged = true;
+      const lunge = spec.lunge || 190;
+      player.vx += Math.cos(fx.a) * lunge; player.vy += Math.sin(fx.a) * lunge;
+    }
+    if (!fx.braked && nowU >= hi) { fx.braked = true; player.vx *= 0.38; player.vy *= 0.38; }
+
+    const from = Math.max(lo, previousU ?? nowU), to = Math.min(hi, nowU);
+    if (from > to) return;
+    const a0 = meleeAttackPose(fx, from).a, a1 = meleeAttackPose(fx, to).a;
+    const n = Math.max(1, Math.ceil(Math.max(Math.abs(a1 - a0) / 0.045, (to - from) / 0.023)));
+    const candidates = teamAttack ? [...towers, ...allies] : towers;
+
+    for (const target of candidates) {
+      if (target.hp <= 0 || fx.hits.includes(target)) continue;
+      let contact = null;
+      for (let k = 0; k <= n; k++) {
+        const u = from + (to - from) * (k / n), pose = meleeAttackPose(fx, u);
+        const nearest = nearestSegmentPoint(target.x, target.y, meleeBladeSegment(fx, pose));
+        if (nearest.dist <= target.r + spec.thickness * 0.5 && flashClearPath(player, target)) {
+          contact = { ...nearest, a: pose.a }; break;
+        }
+      }
+      if (!contact) continue;
+      fx.hits.push(target);
+      let damage = Math.round(spec.damage * dmgMultiplier());
+      let tag = fx.finisher ? 'FINISHER' : '';
+      if (fx.type === 'knife' && player.sneakT > 0) { damage += 22; tag = 'SNEAK'; endSneak('KNIFE STRIKE'); }
+
+      const kb = fx.type === 'mace' ? 14 : (fx.finisher ? 11 : 6);
+      const temp = { x: target.x, y: target.y, vx: 0, vy: 0, r: target.r };
+      moveCircle(temp, Math.cos(fx.a) * kb, Math.sin(fx.a) * kb);
+      target.x = temp.x; target.y = temp.y;
+
+      if (allies.includes(target)) applyDamageToAlly(target, damage, 'FRIENDLY MELEE');
+      else {
+        target.fire = Math.max(0.25, target.fire + 0.25);
+        damageTower(target, damage, tag);
+      }
+      camKick.x += Math.cos(fx.a) * (fx.finisher ? 4.5 : 2.5);
+      camKick.y += Math.sin(fx.a) * (fx.finisher ? 4.5 : 2.5);
+      spawnParticles(contact.x, contact.y, fx.type === 'mace' || fx.finisher ? 16 : 10, '#ffe4ac');
+      weaponFX.push({ kind: 'meleeImpact', x: contact.x, y: contact.y, a: contact.a, r: fx.type === 'mace' || fx.finisher ? 26 : 16, c: '#ffedc7', life: 0.18, t: 0.18 });
+      fx.impactFreeze = fx.type === 'mace' ? 0.050 : 0.027;
+    }
+  }
+
+  function applyDazzle(t) {
+    t.dazzled = 2;
+    t.dazzleT = 4.0;
+  }
+
+  function attackOnce(fromBuffer = false) {
+    if (restOn) return false;
+    const p = player, w = weaponNow(), s = weaponState();
+    if (mouse.castDown || p.castLock > 0 || p.fireCD > 0 || p.mode || p.rec > 0 || weaponSwapCD > 0) {
+      if (!fromBuffer) inputBuffer.attack = 0.14;
+      return false;
+    }
+    inputBuffer.attack = 0;
+    if (w.type === 'drone' && p.drone) { explodeDrone(); return true; }
+    if (s.reloading > 0) return false;
+    if (isMelee(w)) return meleeAttack();
+
+    p.weaponLock = Math.max(p.weaponLock, 0.20);
+    if (w.type === 'potion') { throwLockedPotion(); return true; }
+    if (w.type === 'camera' && scopeActive()) { weaponChargeMode = true; return true; }
+
+    if (w.type === 'extinguisher') {
+      if (guardActive()) return false;
+      if (s.ammo <= 0) { autoReloadIfEmpty(w, s); return false; }
+      s.ammo--; p.fireCD = w.cool;
+      const a = rawAim(), half = 0.39, reach = w.range;
+      const pool = teamAttack ? [...towers, ...allies] : towers;
+      for (const t of pool) {
+        if (t.hp <= 0) continue;
+        const dist = vlen(t.x - p.x, t.y - p.y);
+        const delta = Math.abs(Math.atan2(Math.sin(Math.atan2(t.y - p.y, t.x - p.x) - a), Math.cos(Math.atan2(t.y - p.y, t.x - p.x) - a)));
+        if (dist < reach + t.r && delta < half + 0.06 && flashClearPath(p, t)) {
+          const dmg = Math.round(6 * dmgMultiplier());
+          if (allies.includes(t)) applyDamageToAlly(t, dmg, 'FOAM SPRAY');
+          else { damageTower(t, dmg); t.fire += 0.20; }
+          effects.push({ x: t.x, y: t.y, r: 34, t: 0.9, c: '#89dfe0', kind: 'frost' });
+          spawnParticles(t.x, t.y, 2, '#b5e8df');
+        }
+      }
+      weaponFX.push({ kind: 'foamSpray', x: p.x, y: p.y, a, r: reach, arc: half, c: '#a9ebe2', t: 0.18, life: 0.18 });
+      autoReloadIfEmpty(w, s);
+      return true;
+    }
+
+    if (w.type === 'camera') {
+      if (s.ammo <= 0) { autoReloadIfEmpty(w, s); return false; }
+      s.ammo--; p.fireCD = w.cool;
+      const a = rawAim(), halfAngle = Math.PI * 55 / 180, radius = w.closeRange;
+      let hit = 0;
+      const pool = teamAttack ? [...towers, ...allies] : towers;
+      for (const t of pool) {
+        if (t.hp <= 0) continue;
+        const dist = vlen(t.x - p.x, t.y - p.y), ang = Math.atan2(t.y - p.y, t.x - p.x);
+        const delta = Math.abs(Math.atan2(Math.sin(ang - a), Math.cos(ang - a)));
+        if (dist <= radius + t.r && delta <= halfAngle + Math.asin(Math.min(0.98, t.r / Math.max(dist, t.r + 1))) && flashClearPath(p, t)) {
+          const dmg = Math.round((dist < 75 ? 42 : 25) * dmgMultiplier());
+          applyDazzle(t);
+          if (allies.includes(t)) applyDamageToAlly(t, dmg, 'CAMERA FLASH');
+          else { damageTower(t, dmg, 'DAZZLED'); t.fire = Math.max(t.fire, 1.6); }
+          spawnParticles(t.x, t.y, 14, '#fff1bd');
+          hit++;
+        }
+      }
+      weaponFX.push({ kind: 'cameraFlash', x: p.x, y: p.y, a, r: radius, arc: halfAngle, life: 0.32, t: 0.32, c: '#fff2bd' });
+      spawnParticles(p.x + Math.cos(a) * 25, p.y + Math.sin(a) * 25, 10, '#fff3dc');
+      showToast('WIDE FLASH · ' + hit + ' DAZZLED (Q TO PISTOL FOR +30% DMG)');
+      autoReloadIfEmpty(w, s);
+      return true;
+    }
+
+    if (w.type === 'drone') {
+      if (s.ammo <= 0) { autoReloadIfEmpty(w, s); return false; }
+      s.ammo--;
+      p.drone = { x: p.x, y: p.y, ox: p.x, oy: p.y, vx: 0, vy: 0, t: 3.8, maxRange: effectiveWeaponRange(w) };
+      p.fireCD = 0.25;
+      autoReloadIfEmpty(w, s);
+      showToast('DRONE ACTIVE · CONTACTS DETONATE AUTOMATICALLY');
+      return true;
+    }
+
+    if (s.ammo <= 0) { autoReloadIfEmpty(w, s); return false; }
+    s.ammo--; p.fireCD = w.cool;
+    autoReloadIfEmpty(w, s);
+
+    if (w.type === 'revolver') {
+      const moving = vlen(p.vx, p.vy) > 40 && !scopeActive() && !precisionWalk();
+      const spread = moving ? 0.055 : 0;
+      const angle = rawAim() + (Math.random() * 2 - 1) * spread;
+      if (moving) p.bloom = Math.min(0.10, (p.bloom || 0) + 0.045);
+      spawnWeaponShot(1650, w.range, 44, 4, '#ffe0a5', { projectileType: 'revolver', angleOverride: angle });
+    }
+    if (w.type === 'carbine') {
+      const baseSpread = scopeActive() ? 0.008 : 0.024;
+      const angle = rawAim() + (Math.random() * 2 - 1) * (baseSpread + (p.bloom || 0));
+      p.bloom = Math.min(0.14, (p.bloom || 0) + (scopeActive() ? 0.016 : 0.025));
+      spawnWeaponShot(1480, w.range, 12, 3, '#f4d39a', { projectileType: 'carbine', angleOverride: angle });
+    }
+    if (w.type === 'pistol') spawnWeaponShot(1320, w.range, 24, 4, '#ffce95', { projectileType: 'pistol' });
+    if (w.type === 'crossbow') {
+      const mode = p.enchant || 0, en = enchants[mode];
+      const moving = vlen(p.vx, p.vy) > 40 && !scopeActive() && !precisionWalk();
+      const spread = moving ? (Math.random() * 2 - 1) * 0.035 : 0;
+      if (mode === 0) spawnWeaponShot(1180, w.range, 68, 5, en.color, { projectileType: 'bolt', crossMode: 'PIERCING', pierce: 1, hitTargets: [], angleOverride: rawAim() + spread });
+      if (mode === 1) for (const off of [-0.14, 0, 0.14]) spawnWeaponShot(920, 520, 24, 5, en.color, { projectileType: 'bolt', crossMode: 'SCATTER', angleOverride: rawAim() + off });
+      if (mode === 2) spawnWeaponShot(880, 760, 28, 7, en.color, { projectileType: 'bolt', crossMode: 'SNARE', angleOverride: rawAim() + spread });
+      if (mode === 3) spawnWeaponShot(960, w.range, 45, 6, en.color, { projectileType: 'bolt', crossMode: 'RICOCHET', bounces: 2, bouncedOnce: false, angleOverride: rawAim() + spread });
+    }
+    return true;
+  }
+
+  function explodeDrone() {
+    const d = player.drone;
+    if (!d) return;
+    damageArea(d.x, d.y, 105, Math.round(75 * dmgMultiplier()), false, true);
+    effects.push({ x: d.x, y: d.y, r: 105, t: 0.4, c: '#e4b67a', kind: 'pulse' });
+    spawnParticles(d.x, d.y, 26, '#f7d19a');
+    player.drone = null; player.fireCD = 0.25;
+  }
+
+  function fireFocusedCamera(held) {
+    const w = weaponNow(), s = weaponState();
+    if (w.type !== 'camera' || s.reloading > 0 || player.mode || player.rec > 0 || player.fireCD > 0) return false;
+    if (s.ammo <= 0) { autoReloadIfEmpty(w, s); return false; }
+    const charge = clamp(held / 0.85, 0, 1);
+    player.weaponLock = Math.max(player.weaponLock, 0.22);
+    const a = rawAim(), range = w.range;
+    const halfAngle = 0.22 - charge * 0.13;
+    const damage = Math.round((30 + charge * 50) * dmgMultiplier());
+    let hit = 0;
+    const pool = teamAttack ? [...towers, ...allies] : towers;
+    for (const t of pool) {
+      if (t.hp <= 0) continue;
+      const dist = vlen(t.x - player.x, t.y - player.y), theta = Math.atan2(t.y - player.y, t.x - player.x);
+      const delta = Math.abs(Math.atan2(Math.sin(theta - a), Math.cos(theta - a)));
+      if (dist <= range + t.r && delta <= halfAngle + Math.asin(Math.min(0.98, t.r / Math.max(dist, t.r + 1))) && flashClearPath(player, t)) {
+        applyDazzle(t);
+        if (allies.includes(t)) applyDamageToAlly(t, damage, 'FOCUSED FLASH');
+        else { damageTower(t, damage, 'DAZZLED'); t.fire = Math.max(t.fire, 1.8); }
+        effects.push({ x: t.x, y: t.y, r: 38, t: 0.35, c: '#fff5c0', kind: 'pulse' });
+        spawnParticles(t.x, t.y, 18, '#fff2b5');
+        hit++;
+      }
+    }
+    s.ammo--;
+    player.fireCD = w.cool;
+    camKick.x -= Math.cos(a) * 6; camKick.y -= Math.sin(a) * 6;
+    weaponFX.push({ kind: 'cameraFlash', x: player.x, y: player.y, a, r: range, arc: halfAngle, focused: true, life: 0.42, t: 0.42, c: '#ffe9a9' });
+    spawnParticles(player.x + Math.cos(a) * 24, player.y + Math.sin(a) * 24, 14, '#fff6de');
+    autoReloadIfEmpty(w, s);
+    showToast('TELEPHOTO FLASH · ' + hit + ' DAZZLED · ' + damage + ' DMG');
+    return true;
+  }
+
+  function potionLandingPoint(w = weaponNow()) {
+    const cursor = cursorWorld(), dx = cursor.x - player.x, dy = cursor.y - player.y, dist = vlen(dx, dy);
+    const travel = Math.min(dist, w.range);
+    const dir = dist > 1e-5 ? { x: dx / dist, y: dy / dist } : { x: 1, y: 0 };
+    return { x: player.x + dir.x * travel, y: player.y + dir.y * travel };
+  }
+
+  function throwLockedPotion() {
+    const w = weaponNow(), s = weaponState();
+    if (s.reloading || player.rec || player.fireCD > 0) return;
+    if (s.ammo <= 0) { autoReloadIfEmpty(w, s); return; }
+    const phase = potionPhases[player.potionIdx % potionPhases.length];
+    const pt = potionLandingPoint(w);
+    s.ammo--; player.fireCD = w.cool; player.weaponLock = Math.max(player.weaponLock, 0.20);
+    autoReloadIfEmpty(w, s);
+    weaponFX.push({ kind: 'bottle', x: player.x, y: player.y, tx: pt.x, ty: pt.y, c: phase.color, phase: phase.kind, t: 0.25, life: 0.25 });
+    showToast('POTION THROWN · ' + phase.name);
+  }
+
+  function resolvePotion(fx) {
+    effects.push({ x: fx.tx, y: fx.ty, r: 80, t: 0.55, c: fx.c, kind: 'pulse' });
+    spawnParticles(fx.tx, fx.ty, 14, fx.c);
+    if (fx.phase === 'heal') {
+      if (vlen(player.x - fx.tx, player.y - fx.ty) <= 80) { player.hp = Math.min(100, player.hp + 34); addPopup(player.x, player.y, '+34 HP', '#7bdca4'); }
+      for (const a of allies) if (a.hp > 0 && vlen(a.x - fx.tx, a.y - fx.ty) <= 80) { a.hp = Math.min(a.maxHp, a.hp + 34); addPopup(a.x, a.y, '+34 HP', '#7bdca4'); }
+    } else if (fx.phase === 'haste') {
+      if (vlen(player.x - fx.tx, player.y - fx.ty) <= 85) { hasteT = 4.5; addPopup(player.x, player.y, 'HASTE!', '#f9d77c'); }
+    } else if (fx.phase === 'damage') {
+      damageArea(fx.tx, fx.ty, 88, Math.round(55 * dmgMultiplier()), false, true);
+    }
+  }
+
+  function endSneak(reason) {
+    if (player.sneakT <= 0) return;
+    player.sneakT = 0;
+    weaponStates[1][0].special = Math.max(weaponStates[1][0].special, 6.0);
+    spawnParticles(player.x, player.y, 10, '#f0d39c');
+    showToast('SNEAK REVEALED · ' + reason);
+  }
+
+  function specialMelee() {
+    const p = player, w = weaponNow(), s = weaponState(), angle = rawAim(), d = { x: Math.cos(angle), y: Math.sin(angle) };
+    if (p.mode || p.rec > 0 || p.castLock > 0 || mouse.castDown) return;
+    p.weaponLock = Math.max(p.weaponLock, 0.19);
+
+    if (w.type === 'crowbar') {
+      if (p.c4) {
+        if (p.c4.armed > 0) { showToast('C4 ARMING · ' + p.c4.armed.toFixed(1) + 's'); return; }
+        const bomb = p.c4; p.c4 = null; s.special = 6.0;
+        effects.push({ x: bomb.x, y: bomb.y, r: 122, t: 0.42, c: '#edc88a', kind: 'pulse' });
+        damageArea(bomb.x, bomb.y, 122, Math.round(75 * dmgMultiplier()), false, true);
+        spawnParticles(bomb.x, bomb.y, 28, '#f4d8aa');
+        showToast('C4 DETONATED · 122u BLAST');
+        return;
+      }
+      if (s.special > 0) { showToast('C4 RECHARGING · ' + s.special.toFixed(1) + 's'); return; }
+      const cursor = cursorWorld(), dist = Math.min(140, Math.max(42, vlen(cursor.x - p.x, cursor.y - p.y)));
+      let placed = null;
+      for (let r = dist; r >= 36; r -= 12) {
+        const tx = p.x + d.x * r, ty = p.y + d.y * r;
+        if (!solidAt(tx, ty, 14)) { placed = { x: tx, y: ty }; break; }
+      }
+      if (!placed) { showToast('C4 · NO SPACE TO TOSS CHARGE'); return; }
+      p.c4 = { x: placed.x, y: placed.y, armed: 0.4, life: 15 };
+      showToast('C4 TOSSED · R TO DETONATE');
+      return;
+    }
+
+    if (s.special > 0) { showToast('SPECIAL ON COOLDOWN'); return; }
+
+    if (w.type === 'extinguisher') {
+      if (s.ammo < 10 || s.reloading > 0) { showToast('PRESSURE BURST NEEDS 10 PRESSURE'); return; }
+      const reach = 225, cone = Math.PI * 53 / 180;
+      let knocked = 0, deflected = 0;
+      const pool = teamAttack ? [...towers, ...allies] : towers;
+      for (const t of pool) {
+        if (t.hp <= 0) continue;
+        const dx = t.x - p.x, dy = t.y - p.y, dist = vlen(dx, dy);
+        const delta = Math.abs(Math.atan2(Math.sin(Math.atan2(dy, dx) - angle), Math.cos(Math.atan2(dy, dx) - angle)));
+        if (dist > reach + t.r || delta > cone || !flashClearPath(p, t)) continue;
+        const displacement = 90 * (1 - Math.min(dist / reach, 1)) + 35;
+        const temp = { x: t.x, y: t.y, vx: 0, vy: 0, r: t.r };
+        moveCircle(temp, d.x * displacement, d.y * displacement);
+        t.x = temp.x; t.y = temp.y;
+        const dmg = Math.round(14 * dmgMultiplier());
+        if (allies.includes(t)) applyDamageToAlly(t, dmg, 'PRESSURE BURST');
+        else { damageTower(t, dmg); t.fire = Math.max(t.fire, 1.7); }
+        knocked++;
+        spawnParticles(t.x, t.y, 10, '#bcece1');
+      }
+      for (const shot of shots) {
+        if (shot.team !== 'enemy') continue;
+        const dx = shot.x - p.x, dy = shot.y - p.y, dist = vlen(dx, dy);
+        const delta = Math.abs(Math.atan2(Math.sin(Math.atan2(dy, dx) - angle), Math.cos(Math.atan2(dy, dx) - angle)));
+        if (dist > reach || delta > cone || !flashClearPath(p, shot)) continue;
+        const speed = Math.max(420, vlen(shot.vx, shot.vy));
+        shot.vx = d.x * speed; shot.vy = d.y * speed;
+        shot.team = 'player'; shot.owner = null; shot.damage = 22; shot.weaponShot = true; shot.c = '#bdece6';
+        deflected++;
+      }
+      s.ammo -= 10; s.special = 5.5;
+      autoReloadIfEmpty(w, s);
+      weaponFX.push({ kind: 'pressureBurst', x: p.x, y: p.y, a: angle, r: reach, arc: cone, c: '#b6e9e2', t: 0.32, life: 0.32 });
+      spawnParticles(p.x + d.x * 65, p.y + d.y * 65, 18, '#b6eee6');
+      showToast('PRESSURE BURST · ' + knocked + ' PUSHED / ' + deflected + ' DEFLECTED');
+      return;
+    }
+
+    if (w.type === 'shovel') {
+      if (crates.filter(b => b.placed).length >= 3) { showToast('MAXIMUM OF THREE DEPLOYED COVERS'); return; }
+      const x = p.x + d.x * 65, y = p.y + d.y * 65;
+      if (solidAt(x, y, 37)) { showToast('NO ROOM TO PLACE COVER'); return; }
+      crates.push({ x: x - 27, y: y - 17, w: 54, h: 34, placed: true });
+      s.special = 7;
+      spawnParticles(x, y, 14, '#c5b08a');
+      showToast('SHOVEL · EARTHWORK COVER');
+      return;
+    }
+
+    if (w.type === 'knife') {
+      if (p.sneakT > 0) { showToast('SNEAK ALREADY ACTIVE'); return; }
+      p.sneakT = 5.0;
+      spawnParticles(p.x, p.y, 14, '#b5d9e4');
+      showToast('SNEAK ACTIVE · REVEALED ON HIT / DAMAGE / SPELL');
+      return;
+    }
+
+    if (w.type === 'mace') {
+      damageArea(p.x + d.x * 52, p.y + d.y * 52, 110, Math.round(50 * dmgMultiplier()), false, false);
+      effects.push({ x: p.x, y: p.y, r: 120, t: 0.5, c: '#f7b77a', kind: 'pulse' });
+      s.special = 5.5;
+      showToast('MACE · 50 DMG GROUND SLAM');
+      return;
+    }
+  }
+
+  function pressReloadOrSpecial() {
+    if (restOn) return;
+    const w = weaponNow();
+    if (w.type === 'crossbow') {
+      player.enchant = (player.enchant + 1) % enchants.length;
+      showToast('CROSSBOW AUGMENT · ' + enchants[player.enchant].name);
+      updateWeaponUI();
+      return;
+    }
+    if (isMelee(w) || w.type === 'extinguisher') specialMelee();
+    else beginReload();
+  }
+
+  function magic(fromBuffer = false) {
+    if (restOn || !player) return false;
+    if (player.mode || player.rec > 0 || player.spellCD > 0 || player.weaponLock > 0 || mouse.down || weaponFX.some(f => f.kind === 'melee' && f.t > 0)) {
+      if (!fromBuffer) inputBuffer.spell = 0.14;
+      return false;
+    }
+    inputBuffer.spell = 0;
+    const s = book[spell];
+    if (!s) return false;
+    const p = player, pos = spellTargetPoint(s), ang = rawAim(), d = { x: Math.cos(ang), y: Math.sin(ang) }, c = colors[ci], maxR = s.range;
+    if (spellRequiresSight(s) && spellSightBlocked(p, pos)) { showToast(s.name.toUpperCase() + ' · LINE OF SIGHT BLOCKED'); return false; }
+    if (!spellAvailable(s)) { showToast('NO ' + (classBooks[ci].pact ? 'PACT' : 'LEVEL ' + s.level) + ' SPELL SLOTS · HOLD CTRL TO REST'); return false; }
+    const tx = maxR ? pos.x : p.x, ty = maxR ? pos.y : p.y;
+    if (['misty', 'illusion', 'hand', 'grease', 'faerie', 'darkness'].includes(s.fx) && maxR && solidAt(tx, ty, 13)) {
+      showToast('SPELL TARGET BLOCKED'); return false;
+    }
+    if (p.sneakT > 0) endSneak('SPELLCAST');
+    if (s.level > 0) {
+      if (classBooks[ci].pact) spellResources.slots[2]--;
+      else spellResources.slots[s.level]--;
+    }
+    const power = (spellResources.empowered ? 1.45 : 1) * dmgMultiplier();
+    if (spellResources.empowered && ci === 0 && spellResources.points >= 1) {
+      spellResources.points--;
+      showToast('EMPOWERED ' + s.name.toUpperCase());
+    }
+    spellResources.empowered = false;
+    p.spellCD = s.level === 2 ? 0.92 : s.level === 1 ? 0.68 : 0.29;
+    p.castLock = 0.24;
+
+    const burst = (x, y, r, dmg, color = c, selfHazard = false) => {
+      effects.push({ x, y, r, t: 0.28, c: color, kind: 'pulse' });
+      damageArea(x, y, r, Math.round(dmg * power), true, selfHazard);
+      spawnParticles(x, y, 8, color);
+    };
+    const fireBolt = (speed, damage, color = c, radius = 7) => {
+      shots.push({
+        x: p.x + d.x * 23, y: p.y + d.y * 23, vx: d.x * speed, vy: d.y * speed,
+        r: radius, team: 'player', castleSpell: true, t: Math.max(0.1, maxR / speed),
+        damage: Math.round(damage * power), c: color
+      });
+    };
+
+    switch (s.fx) {
+      case 'sliver': case 'whispers': case 'toll': case 'chill':
+        burst(tx, ty, s.fx === 'whispers' ? 78 : 54, s.fx === 'whispers' ? 29 : 19, '#a98eef'); break;
+      case 'bolt': case 'missile': case 'catapult': case 'flame':
+        fireBolt(s.fx === 'catapult' ? 780 : 1050, s.fx === 'missile' ? 32 : s.fx === 'catapult' ? 36 : 22, s.fx === 'flame' ? '#fff0b1' : '#e7bd75', 7); break;
+      case 'shock': case 'thunder':
+        burst(p.x + d.x * 65, p.y + d.y * 65, s.fx === 'thunder' ? 126 : 80, s.fx === 'thunder' ? 39 : 24, '#8adeff', false); break;
+      case 'hand': case 'illusion':
+        effects.push({ x: tx, y: ty, r: 25, t: 4, c: '#bda9ff', kind: 'decoy' }); break;
+      case 'ward':
+        p.inv = Math.max(p.inv, 1.6); effects.push({ x: p.x, y: p.y, r: 42, t: 1.6, c: '#e8cc81', kind: 'ward' }); break;
+      case 'heal':
+        p.hp = Math.min(100, p.hp + 32); addPopup(p.x, p.y, '+32 HP', '#9fffc8'); spawnParticles(p.x, p.y, 16, '#9fffc8'); break;
+      case 'mending':
+        p.hp = Math.min(100, p.hp + 10); addPopup(p.x, p.y, '+10 HP', '#9fffc8'); spawnParticles(p.x, p.y, 12, '#9fffc8'); break;
+      case 'aid':
+        p.hp = Math.min(100, p.hp + 28);
+        for (const a of allies) if (a.hp > 0) a.hp = Math.min(a.maxHp, a.hp + 28);
+        spawnParticles(p.x, p.y, 16, '#9fffc8');
+        effects.push({ x: p.x, y: p.y, r: 100, t: 1.2, c: '#90f6c2', kind: 'ward' }); break;
+      case 'guidance': case 'bless':
+        p.inv = Math.max(p.inv, 0.7); effects.push({ x: p.x, y: p.y, r: 100, t: 1.3, c: '#f0d58a', kind: 'ward' }); break;
+      case 'hex': case 'hold': case 'sleep': {
+        const pool = teamAttack ? [...towers, ...allies] : towers;
+        const t = pool.filter(t => t.hp > 0 && vlen(t.x - tx, t.y - ty) < 95 && !spellSightBlocked(p, t))
+                      .sort((a, b) => vlen(a.x - tx, a.y - ty) - vlen(b.x - tx, b.y - ty))[0];
+        if (t) {
+          if (allies.includes(t)) { if (s.fx === 'hex') applyDamageToAlly(t, 12, 'HEX CURSE'); }
+          else { t.fire += s.fx === 'hex' ? 1.2 : 3.1; if (s.fx === 'hex') damageTower(t, 12); }
+          spawnParticles(t.x, t.y, 14, '#c698e8');
+        } else effects.push({ x: tx, y: ty, r: 65, t: 0.3, c: '#c698e8', kind: 'pulse' });
+        break;
+      }
+      case 'misty':
+        if (!solidAt(tx, ty, p.r)) { p.x = tx; p.y = ty; p.vx = 0; p.vy = 0; spawnParticles(tx, ty, 18, '#d3b2ff'); } break;
+      case 'shatter': burst(tx, ty, 128, 44, '#af8bf5', true); break;
+      case 'darkness': effects.push({ x: tx, y: ty, r: 120, t: 4, c: '#6b5691', kind: 'gravity' }); break;
+      case 'faerie': effects.push({ x: tx, y: ty, r: 110, t: 4, c: '#b69cf0', kind: 'chain' }); damageArea(tx, ty, 100, 12, true, false); break;
+      case 'grease': effects.push({ x: tx, y: ty, r: 125, t: 4, c: '#88ded7', kind: 'frost' }); break;
+      case 'spiritual': burst(tx, ty, 90, 40, '#ead6a2', false); break;
+      case 'disguise': p.inv = Math.max(p.inv, 0.25); effects.push({ x: p.x, y: p.y, r: 22, t: 1.3, c: '#92d5d4', kind: 'ward' }); break;
+    }
+    refreshSpellUI();
+    return true;
+  }
+
+  function damageArea(x, y, r, dmg, checkSight = false, selfDamage = false) {
+    for (const t of towers) {
+      if (t.hp > 0 && vlen(t.x - x, t.y - y) < r && (!checkSight || !spellSightBlocked({ x, y }, t))) {
+        damageTower(t, dmg);
+        spawnParticles(t.x, t.y, 12, '#f5b65f');
+      }
+    }
+    if (teamAttack) {
+      for (const a of allies) {
+        if (a.hp > 0 && vlen(a.x - x, a.y - y) < r && (!checkSight || !spellSightBlocked({ x, y }, a))) {
+          applyDamageToAlly(a, Math.round(dmg), 'FRIENDLY BLAST');
+        }
+      }
+      if (selfDamage && vlen(player.x - x, player.y - y) < r && (!checkSight || !spellSightBlocked({ x, y }, player))) {
+        applyDamageToPlayer(Math.round(dmg * 0.65), 'SELF BLAST');
+      }
+    }
+  }
+
+  const deadweightPhasesBullets = (p = player) => ci === 2 && (p.mode === 'proneDive' || p.mode === 'crawl');
+
+  function friendlyBulletCollision(b) {
+    for (const t of towers) {
+      if (t.hp > 0 && vlen(t.x - b.x, t.y - b.y) < t.r + b.r) {
+        if (b.hitTargets?.includes(t)) continue;
+        let amount = b.damage || 14, label = '';
+        if (t.dazzled > 0 && t.dazzleT > 0) {
+          amount = Math.round(amount * 1.3);
+          t.dazzled--;
+          if (t.dazzled <= 0) t.dazzleT = 0;
+          label = 'DAZZLE';
+        }
+        if (player.focus && player.focus.target === t && player.focus.t > 0) {
+          amount += 20; player.focus = null; label = 'FOCUS';
+          effects.push({ x: t.x, y: t.y, r: 42, t: 0.3, c: '#ffe0a0', kind: 'pulse' });
+          showToast('SHUTTER FOCUS · +20 PRECISION DAMAGE');
+        }
+        damageTower(t, amount, label);
+        if (b.crossMode === 'SNARE') {
+          t.fire += 1.5;
+          effects.push({ x: t.x, y: t.y, r: 66, t: 3.4, c: '#89dfe0', kind: 'frost' });
+        }
+        spawnParticles(b.x, b.y, 6, '#f5cb83');
+        if (b.crossMode === 'PIERCING' && b.pierce > 0) { b.pierce--; b.hitTargets.push(t); return false; }
+        return true;
+      }
+    }
+    if (teamAttack) {
+      for (const a of allies) {
+        if (a.hp > 0 && vlen(a.x - b.x, a.y - b.y) < a.r + b.r) {
+          if (b.hitTargets?.includes(a)) continue;
+          let amount = b.damage || 14;
+          if (a.dazzled > 0 && a.dazzleT > 0) { amount = Math.round(amount * 1.3); a.dazzled--; }
+          applyDamageToAlly(a, amount, 'TEAM ATTACK');
+          if (b.crossMode === 'PIERCING' && b.pierce > 0) { b.pierce--; b.hitTargets.push(a); return false; }
+          return true;
+        }
+      }
+      if (b.bouncedOnce && !deadweightPhasesBullets(player) && vlen(player.x - b.x, player.y - b.y) < player.r + b.r) {
+        applyDamageToPlayer(Math.round((b.damage || 14) * 0.5), 'RICOCHET SELF-HIT');
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function hostileBulletCollision(b) {
+    const p = player;
+    if (teamAttack) {
+      for (const t of towers) {
+        if (t !== b.owner && t.hp > 0 && vlen(t.x - b.x, t.y - b.y) < t.r + b.r) {
+          damageTower(t, 9); spawnParticles(b.x, b.y, 6, '#ff9a88'); return true;
+        }
+      }
+      for (const a of allies) {
+        if (a.hp > 0 && vlen(a.x - b.x, a.y - b.y) < a.r + b.r) {
+          applyDamageToAlly(a, 9, 'HOSTILE FIRE'); return true;
+        }
+      }
+    }
+    if (deadweightPhasesBullets(p)) return false;
+    if (vlen(b.x - p.x, b.y - p.y) > 17 + b.r) return false;
+    if (p.inv > 0) return true;
+    if (p.sneakT > 0) endSneak('HIT BY PROJECTILE');
+
+    if (p.mode === 'counter') {
+      const wish = moveInput();
+      const d = (wish.x || wish.y) ? wish : { x: Math.cos(rawAim()), y: Math.sin(rawAim()) };
+      p.mode = 'recoil'; p.modeT = 0.28; p.modeDur = 0.28;
+      p.vx = d.x * 590; p.vy = d.y * 590; p.counterBuffT = 3.0; p.inv = 0.28;
+      effects.push({ x: p.x, y: p.y, r: 46, t: 0.32, c: '#ffd4a0', kind: 'pulse' });
+      spawnParticles(p.x, p.y, 20, colors[ci]);
+      showToast('COUNTERWEIGHT SURGE! · +30% DMG & +25% SPD (3s)');
+      return true;
+    }
+    if (p.mode === 'signal') return false;
+
+    let dmg = 9;
+    if (guardActive() && guard > 0) {
+      const a = aim();
+      const incoming = vlen(b.vx, b.vy) > 1 ? norm0(-b.vx, -b.vy) : norm0(b.x - p.x, b.y - p.y);
+      if (Math.cos(a) * incoming.x + Math.sin(a) * incoming.y >= Math.cos(BLOCK_HALF_ANGLE)) {
+        if (guardParryT > 0) {
+          b.vx = Math.cos(a) * 520; b.vy = Math.sin(a) * 520;
+          b.team = 'player'; b.owner = null; b.damage = 24; b.c = '#fff2a6'; b.t = 1.6;
+          addPopup(p.x, p.y, 'PARRY!', '#fff2a6');
+          spawnParticles(p.x + Math.cos(a) * 24, p.y + Math.sin(a) * 24, 14, '#fff2a6');
+          showToast('PERFECT PARRY · SHOT REFLECTED (24 DMG)');
+          return false;
+        }
+        dmg = 3; guard = Math.max(0, guard - 22);
+        addPopup(p.x, p.y, 'BLOCKED', '#eed59b');
+        spawnParticles(p.x + Math.cos(a) * 27, p.y + Math.sin(a) * 27, 6, '#eed59b');
+      }
+    }
+    applyDamageToPlayer(dmg);
+    return true;
+  }
+
+  function hostileMeleeHit(damage = 16) {
+    const p = player;
+    if (p.inv > 0) { showToast('MELEE STOPPED BY WARD'); return false; }
+    if (p.sneakT > 0) endSneak('HIT BY MELEE');
+    const dmg = Math.max(0, damage);
+    applyDamageToPlayer(dmg, 'MELEE PRACTICE HIT');
+    effects.push({ x: p.x, y: p.y, r: 40, t: 0.24, c: '#f19274', kind: 'pulse' });
+    showToast('MELEE PRACTICE HIT · -' + dmg + ' HP');
+    return true;
+  }
+
+  function updateWeapon(dt) {
+    if (player.sneakT > 0) {
+      player.sneakT = Math.max(0, player.sneakT - dt);
+      if (player.sneakT <= 0) { player.sneakT = 0.00001; endSneak('TIMEOUT'); }
+    }
+    player.counterBuffT = Math.max(0, (player.counterBuffT || 0) - dt);
+    guardParryT = Math.max(0, guardParryT - dt);
+    player.bloom = Math.max(0, (player.bloom || 0) - dt * (mouse.down ? 0.06 : 0.24));
+
+    const rPx = Math.round(24 + (player.bloom || 0) * 190);
+    ui.reticle.style.width = rPx + 'px';
+    ui.reticle.style.height = rPx + 'px';
+
+    if (player.c4) {
+      player.c4.armed = Math.max(0, player.c4.armed - dt);
+      player.c4.life -= dt;
+      if (player.c4.life <= 0) { player.c4 = null; weaponStates[0][1].special = 3.0; showToast('C4 EXPIRED · CHARGE LOST'); }
+    }
+    weaponSwapCD = Math.max(0, weaponSwapCD - dt);
+    hasteT = Math.max(0, hasteT - dt);
+    guard = Math.min(100, guard + (guardActive() ? 5 : 20) * dt);
+
+    for (let cIdx = 0; cIdx < weaponStates.length; cIdx++) {
+      const pair = weaponStates[cIdx];
+      for (let wIdx = 0; wIdx < pair.length; wIdx++) {
+        const s = pair[wIdx];
+        s.special = Math.max(0, s.special - dt);
+        if (s.reloading > 0) {
+          s.reloading = Math.max(0, s.reloading - dt);
+          if (s.reloading === 0) s.ammo = weaponCatalog[cIdx][wIdx].mag;
+        }
+      }
+    }
+
+    for (let i = weaponFX.length - 1; i >= 0; i--) {
+      const fx = weaponFX[i];
+      const previousU = fx.kind === 'melee' ? clamp((fx.life - fx.t) / fx.life, 0, 1) : 0;
+      if (fx.kind === 'melee' && fx.impactFreeze > 0) fx.impactFreeze -= dt;
+      else fx.t -= dt;
+      if (fx.kind === 'melee') updateMeleeCollision(fx, previousU);
+      if (fx.t <= 0) {
+        if (fx.kind === 'bottle') resolvePotion(fx);
+        weaponFX.splice(i, 1);
+      }
+    }
+
+    if (mouse.down && !player.mode && player.rec <= 0 && weaponSwapCD <= 0) {
+      const w = weaponNow(), s = weaponState();
+      if (isMelee(w) && !guardActive() && player.fireCD <= 0) {
+        meleeAttack();
+      } else if (w.type === 'camera' && (weaponChargeMode || scopeActive()) && s.reloading <= 0 && s.ammo > 0) {
+        weaponChargeMode = true;
+        weaponHold += dt;
+      } else if ((w.type === 'extinguisher' || w.type === 'carbine') && player.fireCD <= 0 && s.reloading <= 0) {
+        attackOnce();
+      }
+    }
+
+    if (player.drone) {
+      const d = player.drone;
+      d.t -= dt;
+      const cursor = cursorWorld(), v = norm0(cursor.x - d.x, cursor.y - d.y), sp = scopeActive() ? 400 : 340;
+      d.vx = lerp(d.vx, v.x * sp, 0.16); d.vy = lerp(d.vy, v.y * sp, 0.16);
+      const temp = { x: d.x, y: d.y, vx: d.vx, vy: d.vy, r: 8 };
+      const col = moveCircle(temp, d.vx * dt, d.vy * dt);
+      d.x = temp.x; d.y = temp.y;
+      addTrail(d.x, d.y, '#dfbd73', 7, 0.12);
+      const hitTarget = (teamAttack ? [...towers, ...allies] : towers).some(t => t.hp > 0 && vlen(t.x - d.x, t.y - d.y) <= t.r + 11);
+      if (hitTarget || d.t <= 0 || col.wall || vlen(d.x - d.ox, d.y - d.oy) > d.maxRange) explodeDrone();
+    }
+  }
+
+  function update(dt) {
+    tickRest(dt);
+    simT += dt;
+    const p = player, def = defs[ci];
+    p.weaponLock = Math.max(0, p.weaponLock - dt);
+    p.castLock = Math.max(0, p.castLock - dt);
+
+    if (inputBuffer.dodge > 0) { inputBuffer.dodge -= dt; dodgePressed(true); }
+    if (inputBuffer.attack > 0) { inputBuffer.attack -= dt; attackOnce(true); }
+    if (inputBuffer.spell > 0) { inputBuffer.spell -= dt; magic(true); }
+
+    updateWeapon(dt);
+
+    if (p.mode !== 'rewind') p.prev.push({ x: p.x, y: p.y, t: simT });
+    while (p.prev.length && simT - p.prev[0].t > 1.2) p.prev.shift();
+    if (p.focus) { p.focus.t -= dt; if (p.focus.t <= 0) p.focus = null; }
+    p.fireCD = Math.max(0, p.fireCD - dt);
+    p.firePosture = Math.max(0, p.firePosture - dt);
+    if (!restOn && mouse.down && !p.mode && p.rec <= 0 && !isMelee()) p.firePosture = 0.18;
+    p.spellCD = Math.max(0, p.spellCD - dt);
+    p.dodgeCD = Math.max(0, p.dodgeCD - dt);
+    p.rec = Math.max(0, p.rec - dt);
+    p.inv = Math.max(0, p.inv - dt);
+    p.damageFlash = Math.max(0, p.damageFlash - dt);
+
+    for (const a of allies) {
+      a.damageFlash = Math.max(0, a.damageFlash - dt);
+      if (a.dazzleT > 0) { a.dazzleT -= dt; if (a.dazzleT <= 0) a.dazzled = 0; }
+      if (a.hp <= 0 && a.respawn > 0) {
+        a.respawn -= dt;
+        if (a.respawn <= 0) { a.hp = a.maxHp; spawnParticles(a.x, a.y, 12, '#8ccde0'); showToast('ALLY RESPAWNED'); }
+      }
+    }
+
+    const inp = moveInput();
+    const mm = p.mode;
+
+    if (mm) {
+      p.modeT -= dt;
+      switch (mm) {
+        case 'signal': {
+          const g = p.data.proj, a = (inp.x || inp.y) ? inp : p.dir;
+          g.vx = lerp(g.vx, a.x * 345, 0.12); g.vy = lerp(g.vy, a.y * 345, 0.12);
+          const gg = { x: g.x, y: g.y, vx: g.vx, vy: g.vy, r: 14 };
+          moveCircle(gg, gg.vx * dt, gg.vy * dt);
+          const o = p.data.origin, off = norm0(gg.x - o.x, gg.y - o.y);
+          if (vlen(gg.x - o.x, gg.y - o.y) > 245) { gg.x = o.x + off.x * 245; gg.y = o.y + off.y * 245; }
+          g.x = gg.x; g.y = gg.y;
+          addTrail(g.x, g.y, colors[ci], 12, 0.24);
+          if (!keys.has('Space') || p.modeT <= 0) endSignal();
+          break;
+        }
+        case 'rewind': {
+          const past = rewindSample(player.data.history || [], (p.data.rewindStart || simT) - (p.modeDur - p.modeT) * 1.5);
+          const motion = moveCircle(p, past.x - p.x, past.y - p.y);
+          addTrail(p.x, p.y, colors[ci], 16, 0.4);
+          if (motion.wall || p.modeT <= 0 || !keys.has('Space')) endRewind();
+          break;
+        }
+        case 'shutterArmed':
+          applyGroundMovement(p, ci, inp, dt, def.speed * 0.66, true);
+          moveCircle(p, p.vx * dt, p.vy * dt);
+          if (p.modeT <= 0) { finishMode(0.12); showToast('SHUTTER REFLEX · NO THREAT'); }
+          break;
+        case 'shutterEvade': {
+          const motion = moveCircle(p, p.vx * dt, p.vy * dt);
+          p.vx *= Math.exp(-2 * dt); p.vy *= Math.exp(-2 * dt);
+          addTrail(p.x, p.y, colors[ci], 16, 0.18);
+          if (motion.wall || p.modeT <= 0) finishMode(0.12);
+          break;
+        }
+        case 'knight': case 'castleSwap':
+          if (p.modeT <= 0) finishMode(0.17);
+          break;
+        case 'fox': {
+          p.vx *= Math.exp(-2.9 * dt); p.vy *= Math.exp(-2.9 * dt);
+          const motion = moveCircle(p, p.vx * dt, p.vy * dt);
+          addTrail(p.x, p.y, colors[ci]);
+          // 28u proximity cover check for Foxhole Dive
+          let nearCover = motion.wall;
+          if (!nearCover) {
+            for (let r of rectangles) {
+              if (hitRect(p.x, p.y, p.r + 28, r)) { nearCover = true; break; }
+            }
+          }
+          if (nearCover) {
+            p.dodgeCD *= 0.40; p.foxReset = true;
+            showToast('FOXHOLE COVER PROXIMITY! · 60% COOLDOWN REFUNDED');
+            finishMode(0.18);
+          } else if (p.modeT <= 0) finishMode(0.27);
+          break;
+        }
+        case 'proneDive': {
+          const motion = moveCircle(p, p.vx * dt, p.vy * dt);
+          p.vx *= Math.exp(-8 * dt); p.vy *= Math.exp(-8 * dt);
+          addTrail(p.x, p.y, colors[ci], 17, 0.25);
+          if (motion.wall || p.modeT <= 0) { p.mode = 'crawl'; p.modeT = 1.55; p.vx = 0; p.vy = 0; }
+          break;
+        }
+        case 'crawl':
+          moveCircle(p, inp.x * 66 * dt, inp.y * 66 * dt);
+          addTrail(p.x, p.y, colors[ci], 11, 0.12);
+          if (p.modeT <= 0) finishMode(0.12);
+          break;
+        case 'barge': {
+          const speed = Math.min(695, vlen(p.vx, p.vy) + 1015 * dt);
+          steerForeclosure(p, inp, dt, 0.83);
+          p.vx = p.dir.x * speed; p.vy = p.dir.y * speed;
+          // Shallow wall scrape vs hard impact check
+          const testX = p.x + p.vx * dt, testY = p.y + p.vy * dt;
+          let hitBlock = false;
+          for (let r of rectangles) if (hitRect(testX, testY, p.r, r)) { hitBlock = true; break; }
+          if (hitBlock) {
+            const angleOfHit = Math.abs(Math.atan2(p.vy, p.vx) - Math.atan2(0, 1));
+            if (angleOfHit < 0.61) { // < 35 degrees shallow scrape
+              moveCircle(p, p.vx * dt, p.vy * dt, { breakCrate: true });
+              spawnParticles(p.x, p.y, 4, '#f8a56f');
+            } else {
+              finishMode(0.5); spawnParticles(p.x, p.y, 20, '#f8a56f'); showToast('WALL IMPACT · STAGGER');
+            }
+          } else {
+            moveCircle(p, p.vx * dt, p.vy * dt, { breakCrate: true });
+          }
+          addTrail(p.x, p.y, colors[ci], 18, 0.38);
+          // Ram enemies during Foreclosure for 32 DMG
+          const pool = teamAttack ? [...towers, ...allies] : towers;
+          for (const t of pool) {
+            if (t.hp > 0 && vlen(t.x - p.x, t.y - p.y) < p.r + t.r + 12) {
+              damageTower(t, 32, 'RAM');
+              spawnParticles(t.x, t.y, 14, '#ffb47a');
+            }
+          }
+          if (p.modeT <= 0) { p.mode = 'bargeCoast'; p.modeT = 0.46; showToast('FORECLOSURE · MOMENTUM PRESERVED'); }
+          break;
+        }
+        case 'bargeCoast': {
+          const speed = vlen(p.vx, p.vy);
+          steerForeclosure(p, inp, dt, 0.32);
+          p.vx = p.dir.x * speed; p.vy = p.dir.y * speed;
+          const motion = moveCircle(p, p.vx * dt, p.vy * dt, { breakCrate: true });
+          p.vx *= Math.exp(-2.05 * dt); p.vy *= Math.exp(-2.05 * dt);
+          addTrail(p.x, p.y, colors[ci], 16, 0.26);
+          if (motion.wall) { finishMode(0.36); showToast('COAST COLLISION'); }
+          else if (p.modeT <= 0) finishMode(0.15, true);
+          break;
+        }
+        case 'counter':
+          if (p.modeT <= 0) { finishMode(0.20); showToast('COUNTERWEIGHT · UNTRIGGERED (NO PENALTY)'); }
+          break;
+        case 'recoil':
+          moveCircle(p, p.vx * dt, p.vy * dt);
+          p.vx *= Math.exp(-5 * dt); p.vy *= Math.exp(-5 * dt);
+          addTrail(p.x, p.y, colors[ci]);
+          if (p.modeT <= 0) finishMode(0.14, true);
+          break;
+        case 'doubleFirst':
+          moveCircle(p, p.vx * dt, p.vy * dt);
+          p.vx *= Math.exp(-8 * dt); p.vy *= Math.exp(-8 * dt);
+          addTrail(p.x, p.y, colors[ci]);
+          if (p.modeT <= 0) { p.mode = 'doubleWindow'; p.modeT = 0.35; showToast('DOUBLE EXPOSURE · FLUID GLIDE WINDOW'); }
+          break;
+        case 'doubleWindow':
+          // Smooth stride glide during double exposure window
+          if (inp.x || inp.y) {
+            p.vx = lerp(p.vx, inp.x * def.speed * 0.75, 8 * dt);
+            p.vy = lerp(p.vy, inp.y * def.speed * 0.75, 8 * dt);
+          }
+          moveCircle(p, p.vx * dt, p.vy * dt);
+          if (p.modeT <= 0) finishMode(0);
+          break;
+        case 'doubleSecond':
+          moveCircle(p, p.vx * dt, p.vy * dt);
+          p.vx *= Math.exp(-7 * dt); p.vy *= Math.exp(-7 * dt);
+          addTrail(p.x, p.y, colors[ci]);
+          if (p.modeT <= 0) finishMode(0);
+          break;
+        case 'thrust':
+          if (p.data.phase === 0 && p.modeT <= 0) thrustStageTwo();
+          moveCircle(p, p.vx * dt, p.vy * dt);
+          p.vx *= Math.exp(-1.35 * dt); p.vy *= Math.exp(-1.35 * dt);
+          addTrail(p.x, p.y, colors[ci], 14, 0.26);
+          if (p.data.phase === 1 && p.modeT <= 0) finishMode(0.16);
+          break;
+        case 'skim': {
+          const s = vlen(p.vx, p.vy);
+          if (s > 1 && (inp.x || inp.y)) {
+            const now = Math.atan2(p.vy, p.vx), wanted = Math.atan2(inp.y, inp.x);
+            const turn = clamp(Math.atan2(Math.sin(wanted - now), Math.cos(wanted - now)), -2.45 * dt, 2.45 * dt);
+            p.vx = Math.cos(now + turn) * s; p.vy = Math.sin(now + turn) * s;
+          }
+          moveCircle(p, p.vx * dt, p.vy * dt, { bank: true });
+          p.vx *= Math.exp(-0.38 * dt); p.vy *= Math.exp(-0.38 * dt);
+          addTrail(p.x, p.y, colors[ci], 13, 0.2);
+          if (p.modeT <= 0) finishMode(0.22, true);
+          break;
+        }
+      }
+    } else if (p.rec <= 0 && !restOn) {
+      const precision = precisionWalk(), guarding = guardActive(), firing = p.firePosture > 0 && !isMelee();
+      const mult = (firing ? def.fireMult : 1) * (guarding ? 0.72 : 1);
+      const buffMult = (hasteT > 0 ? 1.22 : 1) * (p.counterBuffT > 0 ? 1.25 : 1);
+      const target = def.speed * mult * buffMult;
+      if (ci === 0) applyHoverMovement(p, inp, dt, target, precision, firing ? 0.72 : 1);
+      else applyGroundMovement(p, ci, inp, dt, target, precision);
+      moveCircle(p, p.vx * dt, p.vy * dt);
+    } else {
+      if (!restOn && (inp.x || inp.y)) {
+        const strain = groundMotion[ci].launch * 0.22;
+        p.vx += inp.x * strain * dt; p.vy += inp.y * strain * dt;
+      }
+      moveCircle(p, p.vx * dt, p.vy * dt);
+      const dragRate = p.data.coastRecovery ? 2.7 : (groundMotion[ci].recDrag || 10.5);
+      const drag = Math.exp(-dragRate * dt);
+      p.vx *= drag; p.vy *= drag;
+    }
+
+    // Hostile turrets
+    for (const t of towers) {
+      t.flash = Math.max(0, (t.flash || 0) - dt);
+      if (t.staggerT > 0) { t.staggerT -= dt; continue; }
+      if (t.dazzleT > 0) { t.dazzleT -= dt; if (t.dazzleT <= 0) t.dazzled = 0; }
+      if (t.hp <= 0) continue;
+      t.fire -= dt;
+      let decoy = null;
+      for (let i = 0; i < effects.length; i++) {
+        const e = effects[i];
+        if (e.kind === 'decoy' && e.t > 0 && vlen(e.x - t.x, e.y - t.y) < 550) { decoy = e; break; }
+      }
+      const aimTarget = decoy || p;
+      const dist = vlen(aimTarget.x - t.x, aimTarget.y - t.y);
+      let obscured = false;
+      for (let i = 0; i < effects.length; i++) {
+        const e = effects[i];
+        if (e.kind === 'gravity' && e.t > 0 && vlen(aimTarget.x - e.x, aimTarget.y - e.y) < e.r) { obscured = true; break; }
+      }
+      t.aimTarget = (dist < 780 && (decoy || p.sneakT <= 0) && !obscured) ? aimTarget : null;
+      if (t.fire <= 0 && t.aimTarget) {
+        const dir = norm(aimTarget.x - t.x, aimTarget.y - t.y);
+        let frost = false;
+        for (let i = 0; i < effects.length; i++) {
+          const e = effects[i];
+          if (e.kind === 'frost' && e.t > 0 && vlen(t.x - e.x, t.y - e.y) < e.r) { frost = true; break; }
+        }
+        if (frost) t.fire = 0.8;
+        else {
+          shots.push({ x: t.x, y: t.y, vx: dir.x * 310, vy: dir.y * 310, r: 6, team: 'enemy', t: 2.9, owner: t });
+          t.fire = 1.3 + Math.random() * 0.32;
+        }
+      }
+    }
+
+    if (p.mode === 'shutterArmed') {
+      let threat = null, bestD = Infinity;
+      for (let i = 0; i < shots.length; i++) {
+        const b = shots[i];
+        if (b.team === 'enemy' && detectIncomingShot(p, b, 0.24)) {
+          const d = vlen(b.x - p.x, b.y - p.y);
+          if (d < bestD) { bestD = d; threat = b; }
+        }
+      }
+      if (threat) triggerShutter(p, threat);
+    }
+
+    for (let i = shots.length - 1; i >= 0; i--) {
+      const b = shots[i], flight = Math.min(dt, Math.max(0, b.t));
+      const steps = Math.max(1, Math.ceil(vlen(b.vx, b.vy) * flight / 6));
+      let hit = false;
+      for (let j = 0; j < steps; j++) {
+        const ox = b.x, oy = b.y;
+        b.x += b.vx * flight / steps; b.y += b.vy * flight / steps;
+        if (absorbEchoProjectile(b)) { hit = true; break; }
+        if (solidAt(b.x, b.y, b.r)) {
+          if (b.crossMode === 'RICOCHET' && b.bounces > 0) {
+            const onX = solidAt(b.x, oy, b.r), onY = solidAt(ox, b.y, b.r);
+            if (onX || (!onX && !onY)) b.vx *= -1;
+            if (onY || (!onX && !onY)) b.vy *= -1;
+            b.bounces--; b.bouncedOnce = true; b.x = ox; b.y = oy;
+            spawnParticles(ox, oy, 6, '#cba7f4');
+            continue;
+          }
+          if (b.crossMode === 'SNARE') {
+            effects.push({ x: ox, y: oy, r: 60, t: 3.4, c: '#89dfe0', kind: 'frost' });
+            spawnParticles(ox, oy, 10, '#89dfe0');
+          }
+          hit = true; break;
+        }
+        if (b.team === 'player' ? friendlyBulletCollision(b) : hostileBulletCollision(b)) { hit = true; break; }
+      }
+      b.t -= dt;
+      if (hit || b.t <= 0) shots.splice(i, 1);
+    }
+
+    for (let i = effects.length - 1; i >= 0; i--) { effects[i].t -= dt; if (effects[i].t <= 0) effects.splice(i, 1); }
+    for (let i = trail.length - 1; i >= 0; i--) { trail[i].t -= dt; if (trail[i].t <= 0) trail.splice(i, 1); }
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const a = particles[i];
+      a.t -= dt; a.x += a.vx * dt; a.y += a.vy * dt; a.vx *= 0.91; a.vy *= 0.91;
+      if (a.t <= 0) particles.splice(i, 1);
+    }
+    for (let i = popups.length - 1; i >= 0; i--) {
+      const pp = popups[i];
+      pp.t -= dt; pp.y -= 36 * dt;
+      if (pp.t <= 0) popups.splice(i, 1);
+    }
+
+    camKick.x = lerp(camKick.x, 0, 14 * dt);
+    camKick.y = lerp(camKick.y, 0, 14 * dt);
+
+    if (toastTime > 0) { toastTime -= dt; if (toastTime <= 0) ui.toast.style.opacity = 0; }
+
+    uiSyncTimer += dt;
+    if (uiSyncTimer >= 0.05) {
+      uiSyncTimer = 0;
+      ui.speedText.textContent = Math.round(vlen(p.vx, p.vy)) + ' u/s';
+      ui.healthText.textContent = Math.ceil(p.hp) + ' / 100';
+      ui.hpFill.style.width = p.hp + '%';
+      ui.cooldownText.textContent = p.dodgeCD > 0 ? p.dodgeCD.toFixed(1) + 's' : (p.mode ? 'COMMITTED' : p.rec > 0 ? 'RECOVERY' : 'READY');
+      ui.cdFill.style.width = (100 * (1 - p.dodgeCD / Math.max(player.dodgeTotal, 0.001))) + '%';
+      const castState = book[spell] ? (p.spellCD > 0 ? p.spellCD.toFixed(1) + 's' : (spellAvailable(book[spell]) ? 'READY' : 'NO SLOTS')) : 'EMPTY';
+      ui.spellText.textContent = castState + ' (' + shortRestsLeft + ' SR)';
+      ui.spellFill.style.width = (p.spellCD > 0 ? 20 : 100) + '%';
+      const allyHp = allies[0] ? Math.ceil(allies[0].hp) : 0;
+      ui.turretText.textContent = towers.filter(t => t.hp > 0).length + ' / ' + allyHp + '%';
+      updateWeaponUI();
+    }
+  }
+
+  function renderMeleeModel(type) {
+    const metal = '#dce3dd', edge = '#fff0c6', shaft = '#866a4a', dark = '#4b515c';
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const line = (x1, y1, x2, y2, w, c) => { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); };
+    const poly = (pts, c, s) => {
+      ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
+      ctx.fillStyle = c; ctx.fill(); if (s) { ctx.strokeStyle = s; ctx.lineWidth = 1.5; ctx.stroke(); }
+    };
+    if (type === 'knife') {
+      line(12, 0, 25, 0, 7, '#4d3634'); line(20, -5, 20, 5, 2, '#e8c788');
+      poly([[24, -5], [43, -4], [49, 0], [43, 4], [24, 5]], metal, edge);
+    } else if (type === 'shovel') {
+      line(11, 0, 62, 0, 6, shaft); line(12, 0, 62, 0, 2, '#d4b88c');
+      poly([[60, -13], [81, -15], [92, -6], [93, 5], [81, 15], [60, 12]], dark, metal);
+    } else if (type === 'crowbar') {
+      line(12, 0, 76, 0, 7, '#77818a');
+      ctx.strokeStyle = '#b9c2c7'; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(75, 0); ctx.quadraticCurveTo(91, 0, 85, -16); ctx.stroke();
+    } else if (type === 'mace') {
+      line(12, 0, 52, 0, 7, shaft);
+      poly([[49, -13], [72, -15], [78, -8], [78, 9], [72, 16], [49, 13]], dark, metal);
+    }
+  }
+
+  function drawMeleeAttack(fx) {
+    const pose = meleeAttackPose(fx), u = pose.u, spec = fx.profile;
+    const visibleActive = u >= spec.active[0] && u <= spec.active[1];
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    if (spec.motion !== 'thrust' && visibleActive) {
+      const tailPose = meleeAttackPose(fx, Math.max(spec.active[0], u - 0.115));
+      const arcCols = fx.finisher ? [[27, 0.16, '#ffe588'], [14, 0.38, '#fff2b2'], [5, 0.85, '#ffffff']] : [[23, 0.085, '#fbe5a3'], [12, 0.22, '#edc989'], [4, 0.65, '#fff6ce']];
+      for (const [width, opacity, col] of arcCols) {
+        ctx.strokeStyle = col; ctx.globalAlpha = opacity; ctx.lineWidth = width;
+        ctx.beginPath(); ctx.arc(0, 0, pose.bladeReach, tailPose.a, pose.a, fx.side < 0); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+    const recoil = spec.motion === 'smash' ? 8 : 2;
+    ctx.rotate(pose.a);
+    ctx.translate(pose.extension - (u < 0.18 ? Math.sin(u / 0.18 * Math.PI) * recoil : 0), 0);
+    if (spec.motion === 'thrust' && pose.power > 0.1) {
+      ctx.globalAlpha = pose.power * (fx.finisher ? 0.65 : 0.38);
+      ctx.strokeStyle = fx.finisher ? '#ffffff' : '#fff1c5'; ctx.lineWidth = fx.finisher ? 13 : 9;
+      ctx.beginPath(); ctx.moveTo(21, 0); ctx.lineTo(pose.baseReach + pose.extension, 0); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    const scale = pose.baseReach / meleeModelTips[fx.type];
+    ctx.scale(scale, scale);
+    renderMeleeModel(fx.type);
+    ctx.restore();
+  }
+
+  function drawWeapon() {
+    const p = player, w = weaponNow();
+
+    if (w.type === 'camera' && (scopeActive() || weaponChargeMode)) {
+      const a = rawAim(), charge = clamp(weaponHold / 0.85, 0, 1);
+      const halfAngle = 0.22 - charge * 0.13, range = w.range;
+      ctx.save();
+      ctx.fillStyle = charge > 0 ? 'rgba(255, 240, 175, ' + (0.10 + charge * 0.18) + ')' : 'rgba(233, 200, 117, 0.08)';
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.arc(p.x, p.y, range, a - halfAngle, a + halfAngle); ctx.closePath(); ctx.fill();
+
+      ctx.strokeStyle = charge > 0.8 ? '#ffffff' : '#ffe299';
+      ctx.lineWidth = 1.5 + charge * 1.5;
+      ctx.setLineDash(charge > 0 ? [] : [8, 8]);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + Math.cos(a - halfAngle) * range, p.y + Math.sin(a - halfAngle) * range);
+      ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + Math.cos(a + halfAngle) * range, p.y + Math.sin(a + halfAngle) * range);
+      ctx.arc(p.x, p.y, range, a - halfAngle, a + halfAngle);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const pool = teamAttack ? [...towers, ...allies] : towers;
+      for (const t of pool) {
+        if (t.hp <= 0) continue;
+        const dist = vlen(t.x - p.x, t.y - p.y), theta = Math.atan2(t.y - p.y, t.x - p.x);
+        const delta = Math.abs(Math.atan2(Math.sin(theta - a), Math.cos(theta - a)));
+        if (dist <= range + t.r && delta <= halfAngle + Math.asin(Math.min(0.98, t.r / Math.max(dist, t.r + 1))) && flashClearPath(p, t)) {
+          ctx.strokeStyle = '#fff5b8'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(t.x, t.y, t.r + 9, 0, Math.PI * 2); ctx.stroke();
+        }
+      }
+      ctx.fillStyle = '#fff2bd'; ctx.font = 'bold 11px ui-monospace,monospace'; ctx.textAlign = 'center';
+      const dmgPreview = Math.round((30 + charge * 50) * dmgMultiplier());
+      ctx.fillText(charge > 0 ? 'CHARGING FLASH · ' + dmgPreview + ' DMG (RELEASE LMB)' : 'TELEPHOTO VIEWFINDER · HOLD LMB TO CHARGE', p.x + Math.cos(a) * 145, p.y + Math.sin(a) * 145 - 12);
+      ctx.restore();
+    } else if (scopeActive()) {
+      const a = rawAim(), length = effectiveWeaponRange(w, a);
+      ctx.globalAlpha = 0.6; ctx.strokeStyle = '#d5e6dd'; ctx.lineWidth = 1.4;
+      ctx.setLineDash([7, 9]);
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + Math.cos(a) * length, p.y + Math.sin(a) * length); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+    }
+
+    const attacking = weaponFX.find(f => f.kind === 'melee');
+    if (isMelee(w) && !attacking) {
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(aim() + 0.28);
+      const sc = w.range * meleeProfiles[w.type].reach / meleeModelTips[w.type];
+      ctx.scale(sc, sc); ctx.globalAlpha = 0.92; renderMeleeModel(w.type); ctx.restore();
+    }
+    if (guardActive()) {
+      const a = aim(), half = BLOCK_HALF_ANGLE, rad = 34, parrying = guardParryT > 0;
+      ctx.save();
+      ctx.fillStyle = parrying ? 'rgba(255,250,190,.28)' : (guard > 0 ? 'rgba(217,180,95,.15)' : 'rgba(225,100,100,.10)');
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.arc(p.x, p.y, rad, a - half, a + half); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = parrying ? '#ffffff' : (guard > 0 ? '#ffdc86' : '#d96b65'); ctx.lineWidth = parrying ? 6 : 5; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.arc(p.x, p.y, rad, a - half, a + half); ctx.stroke();
+      ctx.fillStyle = parrying ? '#ffffff' : '#ffedb9'; ctx.font = 'bold 10px ui-monospace,monospace'; ctx.textAlign = 'center';
+      ctx.fillText(parrying ? 'PARRY WINDOW' : (guard > 0 ? 'BLOCK' : 'GUARD BROKEN'), p.x + Math.cos(a) * 62, p.y + Math.sin(a) * 62 - 9);
+      ctx.restore();
+    }
+    if (w.type === 'camera') {
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(aim());
+      ctx.fillStyle = '#353d45'; ctx.strokeStyle = '#ead5aa'; ctx.lineWidth = 2;
+      ctx.fillRect(15, -12, 22, 24); ctx.strokeRect(15, -12, 22, 24);
+      ctx.fillStyle = '#222d38'; ctx.beginPath(); ctx.arc(27, 0, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+    if (w.type === 'potion') {
+      const ph = potionPhases[p.potionIdx % potionPhases.length], pt = potionLandingPoint(w);
+      ctx.save();
+      ctx.strokeStyle = ph.color; ctx.globalAlpha = 0.55; ctx.lineWidth = 1.8; ctx.setLineDash([6, 6]);
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, 80, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = ph.color; ctx.globalAlpha = 0.10;
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, 80, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#14191fe5'; ctx.fillRect(p.x - 44, p.y + 24, 88, 15);
+      ctx.strokeStyle = ph.color; ctx.lineWidth = 1.5; ctx.strokeRect(p.x - 44, p.y + 24, 88, 15);
+      ctx.fillStyle = ph.color; ctx.font = 'bold 10px ui-monospace,monospace'; ctx.textAlign = 'center';
+      ctx.fillText('E · ' + ph.name.split(' ')[0], p.x, p.y + 35);
+      ctx.restore();
+    }
+    for (const fx of weaponFX) {
+      if (fx.kind === 'melee') { drawMeleeAttack(fx); continue; }
+      const alpha = clamp(fx.t / fx.life, 0, 1);
+      ctx.save();
+      if (fx.kind === 'cameraFlash' && fx.focused) {
+        ctx.fillStyle = '#fff5cc'; ctx.globalAlpha = alpha * 0.65;
+        ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.arc(fx.x, fx.y, fx.r, fx.a - fx.arc, fx.a + fx.arc); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#ffffff'; ctx.globalAlpha = alpha * 0.95; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.lineTo(fx.x + Math.cos(fx.a) * fx.r, fx.y + Math.sin(fx.a) * fx.r); ctx.stroke();
+        ctx.strokeStyle = '#ffe58f'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(fx.x, fx.y, fx.r, fx.a - fx.arc, fx.a + fx.arc); ctx.stroke();
+      } else if (fx.kind === 'foamSpray' || fx.kind === 'pressureBurst' || fx.kind === 'cameraFlash') {
+        const reach = fx.r * (0.6 + 0.4 * (1 - alpha));
+        ctx.fillStyle = fx.c; ctx.globalAlpha = alpha * 0.35;
+        ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.arc(fx.x, fx.y, reach, fx.a - fx.arc, fx.a + fx.arc); ctx.closePath(); ctx.fill();
+        ctx.globalAlpha = alpha * 0.85; ctx.lineWidth = 4; ctx.strokeStyle = fx.c;
+        ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.arc(fx.x, fx.y, reach, fx.a - fx.arc, fx.a + fx.arc); ctx.stroke();
+      } else if (fx.kind === 'meleeImpact') {
+        ctx.globalAlpha = alpha; ctx.strokeStyle = '#fff0c0'; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(fx.x, fx.y, 3 + fx.r * (1 - alpha), 0, Math.PI * 2); ctx.stroke();
+      } else if (fx.kind === 'bottle') {
+        const t = 1 - alpha, x = lerp(fx.x, fx.tx, t), y = lerp(fx.y, fx.ty, t) - Math.sin(t * Math.PI) * 38;
+        ctx.globalAlpha = alpha; ctx.fillStyle = fx.c; ctx.fillRect(x - 5, y - 7, 10, 14);
+      }
+      ctx.restore();
+    }
+    if (p.drone) {
+      const d = p.drone;
+      ctx.fillStyle = '#eac87c'; ctx.strokeStyle = '#fff1c6'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(d.x, d.y, 11, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+    if (w.type === 'camera' && weaponChargeMode && weaponHold > 0) {
+      ctx.strokeStyle = '#fff0bc'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 31, -Math.PI / 2, -Math.PI / 2 + clamp(weaponHold / 0.85, 0, 1) * Math.PI * 2); ctx.stroke();
+    }
+    if (w.type === 'carbine') {
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(aim());
+      ctx.fillStyle = '#4b5153'; ctx.strokeStyle = '#dac59d'; ctx.lineWidth = 2;
+      ctx.fillRect(14, -5, 30, 10); ctx.strokeRect(14, -5, 30, 10);
+      ctx.fillStyle = '#b8b7a4'; ctx.fillRect(41, -2, 15, 4);
+      ctx.restore();
+    }
+    if (w.type === 'extinguisher') {
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(aim());
+      ctx.fillStyle = '#cb383e'; ctx.strokeStyle = '#fff3d6'; ctx.lineWidth = 2;
+      ctx.fillRect(12, -9, 23, 18); ctx.strokeRect(12, -9, 23, 18);
+      ctx.restore();
+    }
+    if (p.c4) {
+      ctx.save();
+      ctx.fillStyle = p.c4.armed > 0 ? '#8b8c88' : '#ddba74';
+      ctx.strokeStyle = '#fff0c4'; ctx.lineWidth = 2;
+      ctx.fillRect(p.c4.x - 12, p.c4.y - 9, 24, 18); ctx.strokeRect(p.c4.x - 12, p.c4.y - 9, 24, 18);
+      ctx.font = 'bold 9px ui-monospace'; ctx.textAlign = 'center'; ctx.fillStyle = '#141618';
+      ctx.fillText('C4', p.c4.x, p.c4.y + 3);
+      ctx.restore();
+    }
+  }
+
+  function draw(frameDt = 1 / 60) {
+    ctx.clearRect(0, 0, W, H);
+    const w = weaponNow(), look = scopeActive() || weaponChargeMode, dir = scopeLookDir();
+    const vw = W / viewZoom, vh = H / viewZoom;
+    const lead = Math.min(Math.max(0, w.range - Math.min(vw, vh) * 0.5), Math.min(vw, vh) * 0.36);
+    const baseX = player.x - vw * 0.5, baseY = player.y - vh * 0.5;
+    const toX = clamp(baseX + (look ? dir.x * lead : 0), 0, Math.max(0, world.w - vw));
+    const toY = clamp(baseY + (look ? dir.y * lead : 0), 0, Math.max(0, world.h - vh));
+    const follow = 1 - Math.exp(-10.2 * frameDt);
+    cam.x = lerp(cam.x, toX, follow);
+    cam.y = lerp(cam.y, toY, follow);
+
+    ctx.save();
+    ctx.scale(viewZoom, viewZoom);
+    ctx.translate(-(cam.x + camKick.x), -(cam.y + camKick.y));
+
+    ctx.drawImage(mapCache, 0, 0);
+
+    for (const r of crates) {
+      ctx.fillStyle = '#63523c'; ctx.fillRect(r.x, r.y, r.w, r.h);
+      ctx.strokeStyle = '#e2bd6c'; ctx.lineWidth = 2;
+      ctx.strokeRect(r.x + 5, r.y + 5, r.w - 10, r.h - 10);
+    }
+
+    for (const e of effects) {
+      const alpha = Math.min(0.65, e.t * 1.7);
+      ctx.globalAlpha = alpha; ctx.fillStyle = e.c; ctx.strokeStyle = e.c; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.r * (e.kind === 'pulse' ? 1 - e.t * 0.5 : 1), 0, Math.PI * 2);
+      if (['ward', 'frost', 'gravity'].includes(e.kind)) ctx.fill(); else ctx.stroke();
+      if (e.kind === 'rewindEcho') {
+        ctx.globalAlpha = alpha * 0.44;
+        ctx.beginPath(); ctx.arc(e.x, e.y, 14, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    if (player.focus && player.focus.target.hp > 0) {
+      const t = player.focus.target;
+      ctx.strokeStyle = '#f5e1a5'; ctx.lineWidth = 2; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.arc(t.x, t.y, t.r + 14, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#ffedbb'; ctx.font = 'bold 11px Segoe UI';
+      ctx.fillText('FOCUS +20', t.x - 31, t.y - t.r - 25);
+    }
+
+    for (const ally of allies) {
+      if (ally.hp <= 0) {
+        ctx.fillStyle = '#3d4c53'; ctx.fillRect(ally.x - 18, ally.y - 6, 36, 12);
+        ctx.fillStyle = '#9ec5d1'; ctx.font = '10px Segoe UI';
+        ctx.fillText('RESPAWN ' + ally.respawn.toFixed(1) + 's', ally.x - 34, ally.y - 14);
+        continue;
+      }
+      ctx.fillStyle = ally.damageFlash > 0 ? '#fff' : '#8ccde0';
+      ctx.beginPath(); ctx.arc(ally.x, ally.y, ally.r, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = teamAttack ? '#ffb3ba' : '#e4f9ff'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#283039'; ctx.fillRect(ally.x - 26, ally.y - 29, 52, 5);
+      ctx.fillStyle = '#7bdca4'; ctx.fillRect(ally.x - 26, ally.y - 29, 52 * (ally.hp / ally.maxHp), 5);
+      ctx.fillStyle = '#d4f5fa'; ctx.font = '11px Segoe UI';
+      ctx.fillText(ally.name + (teamAttack ? ' [FF]' : ''), ally.x - 38, ally.y - 34);
+    }
+
+    for (const t of towers) {
+      if (t.hp <= 0) {
+        ctx.fillStyle = '#53585b'; ctx.fillRect(t.x - 20, t.y - 7, 40, 14);
+        continue;
+      }
+      if (t.aimTarget && t.fire > 0 && t.fire < 0.42) {
+        const charge = 1 - t.fire / 0.42;
+        ctx.save();
+        ctx.strokeStyle = '#ff7682'; ctx.globalAlpha = 0.25 + charge * 0.55;
+        ctx.lineWidth = 1.5; ctx.setLineDash([6, 5]);
+        ctx.beginPath(); ctx.moveTo(t.x, t.y); ctx.lineTo(t.aimTarget.x, t.aimTarget.y); ctx.stroke();
+        ctx.restore();
+      }
+      if (t.dazzled > 0 && t.dazzleT > 0) {
+        ctx.strokeStyle = '#fff099'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.arc(t.x, t.y, t.r + 8, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#fff099'; ctx.font = 'bold 10px ui-monospace';
+        ctx.fillText('DAZZLED x' + t.dazzled, t.x - 28, t.y + t.r + 15);
+      }
+      ctx.fillStyle = t.flash > 0 ? '#fff' : '#d9747e';
+      ctx.beginPath(); ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#ffd4ca'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#283039'; ctx.fillRect(t.x - 29, t.y - 31, 58, 5);
+      ctx.fillStyle = '#e3a3a4'; ctx.fillRect(t.x - 29, t.y - 31, 58 * (t.hp / 100), 5);
+    }
+
+    for (const b of shots) {
+      ctx.strokeStyle = b.team === 'enemy' ? '#ff9a88' : (b.c || '#ffe1aa');
+      ctx.lineWidth = b.team === 'enemy' ? 3 : 2;
+      ctx.beginPath(); ctx.moveTo(b.x - b.vx * 0.025, b.y - b.vy * 0.025); ctx.lineTo(b.x, b.y); ctx.stroke();
+      ctx.fillStyle = b.team === 'enemy' ? '#ff8790' : (b.c || '#ffdf9a');
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+    }
+
+    for (const t of trail) {
+      ctx.globalAlpha = (t.t / t.life) * 0.27; ctx.fillStyle = t.color;
+      ctx.beginPath(); ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    for (const q of particles) {
+      ctx.globalAlpha = clamp(q.t * 3, 0, 1); ctx.fillStyle = q.color;
+      ctx.fillRect(q.x - 2, q.y - 2, 4, 4);
+    }
+    ctx.globalAlpha = 1;
+
+    if (ci === 1 && slot === 0 && !player.mode) {
+      const q = knightLanding();
+      for (const [nx, ny] of knightSquares) {
+        const x = player.x + nx * 72, y = player.y + ny * 72;
+        ctx.fillStyle = '#78d6e522'; ctx.strokeStyle = '#78d6e588'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      }
+      if (q) {
+        ctx.strokeStyle = '#ffe09e'; ctx.lineWidth = 3; ctx.setLineDash([6, 5]);
+        ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(q.corner.x, q.corner.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+        ctx.setLineDash([]); ctx.beginPath(); ctx.arc(q.x, q.y, 19, 0, Math.PI * 2); ctx.stroke();
+      }
+    }
+    if (ci === 1 && slot === 1 && !player.mode) {
+      ctx.strokeStyle = '#e8cc8166'; ctx.lineWidth = 1; ctx.setLineDash([8, 10]);
+      ctx.beginPath(); ctx.arc(player.x, player.y, 300, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+      const t = castleTarget();
+      if (t) {
+        ctx.strokeStyle = '#ffe09e'; ctx.lineWidth = 2; ctx.setLineDash([6, 6]);
+        ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(t.x, t.y); ctx.stroke();
+        ctx.setLineDash([]); ctx.beginPath(); ctx.arc(t.x, t.y, 24, 0, Math.PI * 2); ctx.stroke();
+      }
+    }
+
+    if (player.mode === 'signal' && player.data.proj) {
+      const g = player.data.proj;
+      ctx.strokeStyle = colors[ci]; ctx.globalAlpha = 0.7; ctx.lineWidth = 2; ctx.setLineDash([7, 6]);
+      ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(g.x, g.y); ctx.stroke();
+      ctx.setLineDash([]); ctx.fillStyle = colors[ci];
+      ctx.beginPath(); ctx.arc(g.x, g.y, 13, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    if (deadweightPhasesBullets()) {
+      ctx.save(); ctx.textAlign = 'center'; ctx.font = 'bold 12px ui-monospace,monospace';
+      ctx.fillStyle = '#a5e5ef'; ctx.fillText('BULLETS PHASE THROUGH', player.x, player.y + 50);
+      ctx.fillStyle = '#edb39c'; ctx.font = 'bold 10px ui-monospace,monospace';
+      ctx.fillText('MELEE STILL HITS', player.x, player.y + 63); ctx.restore();
+    }
+
+    if (player.counterBuffT > 0) {
+      ctx.save(); ctx.strokeStyle = '#f9c67f'; ctx.lineWidth = 2.5; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.arc(player.x, player.y, 29, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]); ctx.fillStyle = '#ffdca2'; ctx.font = 'bold 10px ui-monospace,monospace'; ctx.textAlign = 'center';
+      ctx.fillText('SURGE +30% (' + player.counterBuffT.toFixed(1) + 's)', player.x, player.y - 34); ctx.restore();
+    }
+
+    if (book[spell] && book[spell].range > 0) {
+      const selected = book[spell], target = spellTargetPoint(selected);
+      const obstructed = spellRequiresSight(selected) && spellSightBlocked(player, target);
+      const preview = keys.has('AltLeft') || keys.has('AltRight');
+      if (preview) {
+        ctx.lineWidth = 1; ctx.setLineDash([8, 11]); ctx.strokeStyle = '#d9b45f5c';
+        ctx.beginPath(); ctx.arc(player.x, player.y, selected.range, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      ctx.strokeStyle = obstructed ? '#f17084' : target.clamped ? '#f4d98b' : '#d9b45f99';
+      ctx.lineWidth = target.clamped ? 2 : 1.4;
+      ctx.beginPath(); ctx.arc(target.x, target.y, preview ? (selected.level ? 90 : 20) : 6, 0, Math.PI * 2); ctx.stroke();
+      if (target.clamped || obstructed) {
+        ctx.save(); ctx.fillStyle = obstructed ? '#ff8794' : '#f4d98b';
+        ctx.textAlign = 'center'; ctx.font = 'bold 10px ui-monospace,monospace';
+        ctx.fillText(obstructed ? 'NO LINE OF SIGHT' : 'MAX RANGE', target.x, target.y - 16); ctx.restore();
+      }
+    }
+
+    const ang = aim();
+    ctx.save();
+    ctx.globalAlpha = player.sneakT > 0 ? 0.40 : 1;
+    ctx.translate(player.x, player.y); ctx.rotate(ang);
+    ctx.fillStyle = player.damageFlash > 0 ? '#fff' : colors[ci];
+    if (player.mode === 'crawl' || player.mode === 'proneDive') {
+      ctx.beginPath(); ctx.ellipse(0, 0, 17, 7, 0, 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.strokeStyle = '#fff5d2'; ctx.lineWidth = 2; ctx.stroke();
+    if (!player.mode && player.rec <= 0) {
+      ctx.fillStyle = '#fff0c7';
+      ctx.fillRect(11, -3, isMelee() ? 7 : 17, isMelee() ? 5 : 6);
+    }
+    ctx.restore();
+
+    if (player.mode === 'counter') {
+      ctx.strokeStyle = '#f9c67f'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.arc(player.x, player.y, 28, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    drawWeapon();
+    ctx.strokeStyle = '#ead6ad'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, 22, -Math.PI * 0.5, -Math.PI * 0.5 + 2 * Math.PI * (1 - player.dodgeCD / Math.max(player.dodgeTotal, 0.001)));
+    ctx.stroke();
+
+    for (const pp of popups) {
+      ctx.save();
+      ctx.globalAlpha = clamp(pp.t / pp.life, 0, 1);
+      ctx.font = '900 12px system-ui, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillStyle = pp.color; ctx.fillText(pp.text, pp.x, pp.y);
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  function tick(t) {
+    if (!tick.prev) tick.prev = t;
+    const dt = clamp((t - tick.prev) / 1000, 0, 0.08);
+    tick.prev = t;
+    tick.acc = (tick.acc || 0) + dt;
+    let iter = 0;
+    while (tick.acc >= 1 / 60 && iter < 6) {
+      update(1 / 60);
+      tick.acc -= 1 / 60;
+      iter++;
+    }
+    draw(dt || 1 / 60);
+    requestAnimationFrame(tick);
+  }
+
+  addEventListener('mousemove', e => {
+    mouse.x = e.clientX; mouse.y = e.clientY;
+    ui.reticle.style.left = e.clientX + 'px'; ui.reticle.style.top = e.clientY + 'px';
+    ui.reticle.style.display = 'block';
+  });
+  addEventListener('mousedown', e => {
+    if (e.target !== canvas) return;
+    if (e.button === 0 && !mouse.down && !mouse.castDown && player.castLock <= 0) {
+      mouse.down = true; weaponHold = 0;
+      weaponChargeMode = weaponNow().type === 'camera' && scopeActive();
+      if (!weaponChargeMode) attackOnce();
+    }
+    if (e.button === 2) {
+      e.preventDefault();
+      if (!mouse.castDown) { mouse.castDown = true; if (!mouse.down) magic(); }
+    }
+  });
+  addEventListener('mouseup', e => {
+    if (e.button === 0) stopWeaponHold();
+    if (e.button === 2) mouse.castDown = false;
+  });
+  addEventListener('wheel', e => {
+    if (!book.length) return;
+    const dir = Math.sign(e.deltaY);
+    if (dir) { spell = (spell + dir + book.length) % book.length; refreshSpellUI(); }
+  }, { passive: true });
+  ui.helpToggle.addEventListener('click', () => document.body.classList.toggle('help-hidden'));
+  addEventListener('contextmenu', e => e.preventDefault());
+  addEventListener('blur', () => {
+    if (restOn) finishRest();
+    cancelWeaponHold(); mouse.castDown = false; keys.clear();
+    if (player.mode === 'signal') endSignal();
+    if (player.mode === 'rewind') endRewind();
+  });
+  addEventListener('keydown', e => {
+    if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'Backspace', 'Tab', 'ControlLeft', 'ControlRight'].includes(e.code)) {
+      e.preventDefault();
+    }
+    if (e.repeat) return;
+    keys.add(e.code);
+    if (e.code === 'ControlLeft' || e.code === 'ControlRight') { startRest(); return; }
+    if (/^F[1-6]$/.test(e.code)) { cancelWeaponHold(); chooseCharacter(Number(e.code.slice(1)) - 1); return; }
+    if (e.code === 'KeyZ') { chooseDodge(0); return; }
+    if (e.code === 'KeyX') { chooseDodge(1); return; }
+    if (e.code === 'KeyQ' || e.code === 'Tab') { cancelWeaponHold(); selectWeapon(1 - weaponSlot); return; }
+    if (e.code === 'KeyE') {
+      if (weaponNow().type === 'potion') {
+        player.potionIdx = (player.potionIdx + 1) % potionPhases.length;
+        showToast('REAGENT LOCKED · ' + potionPhases[player.potionIdx].name);
+        updateWeaponUI();
+        return;
+      }
+      if (isGuardWeapon() && guard > 0) guardParryT = 0.18;
+    }
+    if (e.code === 'KeyT') { toggleTeamAttack(); return; }
+    if (e.code === 'Space') { dodgePressed(); return; }
+    if (e.code === 'KeyR') { pressReloadOrSpecial(); return; }
+    if (e.code === 'KeyH') { document.body.classList.toggle('help-hidden'); return; }
+    if (e.code === 'KeyM') { hostileMeleeHit(); return; }
+    if (e.code === 'Backspace') { cancelWeaponHold(); resetWorld(); showToast('ARENA RESET'); return; }
+    if (/^Digit[0-9]$/.test(e.code)) {
+      const idx = e.code === 'Digit0' ? 9 : Number(e.code.slice(5)) - 1;
+      if (book[idx]) { spell = idx; updateUI(); }
+    }
+  });
+  addEventListener('keyup', e => {
+    keys.delete(e.code);
+    if (e.code === 'ControlLeft' || e.code === 'ControlRight') {
+      if (!keys.has('ControlLeft') && !keys.has('ControlRight')) finishRest();
+      return;
+    }
+    if (e.code === 'Space') {
+      if (player.mode === 'signal') endSignal();
+      if (player.mode === 'rewind') endRewind();
+    }
+  });
+
+  window.__lab = {
+    defs, dodgeBalance, groundMotion, applyHoverMovement,
+    get teamAttack() { return teamAttack; },
+    setTeamAttack: toggleTeamAttack,
+    get state() {
+      return {
+        character: ci, slot, spell, teamAttack,
+        precision: precisionWalk(), stance: stanceActive(),
+        speed: vlen(player.vx, player.vy), mode: player.mode, dodgeCD: player.dodgeCD,
+        hp: player.hp, x: player.x, y: player.y, vx: player.vx, vy: player.vy, rec: player.rec,
+        counterBuffT: player.counterBuffT, bloom: player.bloom, shortRestsLeft,
+        ally: { ...allies[0] }, turrets: towers.filter(t => t.hp > 0).length, shots: shots.length
+      };
+    },
+    spellCast: magic, castleTarget, knightLanding, rewindSample, detectIncomingShot,
+    steerForeclosure, deadweightPhasesBullets, hostileMeleeHit,
+    selectCharacter: chooseCharacter, selectDodge: chooseDodge, triggerDodge: dodgePressed,
+    step: update, reset: resetWorld
+  };
+
+  buildUI();
+  resetWorld();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
