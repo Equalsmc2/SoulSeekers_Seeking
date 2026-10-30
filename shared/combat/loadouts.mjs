@@ -1,0 +1,17 @@
+/** Source-aligned character identities, loadout labels/ranges and cooldowns from Party Lab V22.4.
+ * Ported server-safe combat approximations; advanced weapon specials and unique dodge choreography
+ * are intentionally not claimed as 1:1 V22.4 parity. */
+export const HEROES=[
+ {name:'ASYA',speed:216,hp:100,color:'#b391e4',dodges:[['Signal Loss',4.4],['Rewind Echo',4.9]],weapons:[['BombDrone_u_Pilot','drone',495,.35,2,2.8,75],['Crowbar + C4','crowbar',76,.43,0,0,28]],slots:[4,2],sp:3,spells:[['Mind Sliver',0,440,'damage'],['Fire Bolt',0,640,'damage'],['Shocking Grasp',0,120,'damage'],['Mage Hand',0,420,'decoy'],['Dissonant Whispers',1,490,'damage'],['Shield',1,0,'ward'],['Magic Missile',1,620,'damage'],['Thunderwave',1,0,'aoe'],['Misty Step',2,280,'blink'],['Hold Person',2,470,'hold']]},
+ {name:'ALEXANDRA',speed:238,hp:100,color:'#78d6e5',dodges:[["Knight's Move",3.9],['Castling',5.3]],weapons:[['Kitchen Knife','knife',58,.30,0,0,22],['Scoped Revolver','revolver',950,.65,6,1.85,44]],slots:[2,0],spells:[['Mage Hand',0,420,'decoy'],['Mind Sliver',0,440,'damage'],['Minor Illusion',0,420,'decoy'],['Disguise Self',1,0,'ward'],['Silent Image',1,410,'decoy'],['Sleep',1,390,'hold']]},
+ {name:'VETERAN',speed:181,hp:115,color:'#9da9ad',dodges:[['Foxhole Dive',3.8],['Deadweight',4.2]],weapons:[['Combat Shovel','shovel',82,.62,0,0,33],['M4 Carbine','carbine',690,.13,30,2.1,13]],slots:[0,2],spells:[['Eldritch Blast',0,720,'damage'],['Chill Touch',0,500,'damage'],['Hex',1,470,'hex'],['Armor of Agathys',1,0,'ward'],['Misty Step',2,280,'blink'],['Hold Person',2,470,'hold']]},
+ {name:'DEBTOR',speed:164,hp:145,color:'#e09a75',dodges:[['Foreclosure',5.1],['Counterweight',4.3]],weapons:[['Steel Mace','mace',95,.70,0,0,48],['Fire Extinguisher','extinguisher',230,.13,24,2.5,6]],slots:[0,2],spells:[['Eldritch Blast',0,720,'damage'],['Toll the Dead',0,450,'damage'],['Hex',1,470,'hex'],['Armor of Agathys',1,0,'ward'],['Shatter',2,530,'aoe'],['Darkness',2,400,'ward']]},
+ {name:'JEANETTE',speed:242,hp:100,color:'#e9c875',dodges:[['Double Exposure',2.4],['Shutter Reflex',4.8]],weapons:[['M1911 Pistol','pistol',495,.26,7,1.35,24],['Flash Camera','camera',760,1,5,2,1]],slots:[4,2],spells:[['Sacred Flame',0,540,'damage'],['Guidance',0,0,'ward'],['Thaumaturgy',0,380,'decoy'],['Cure Wounds',1,0,'heal'],['Guiding Bolt',1,640,'damage'],['Bless',1,0,'ward'],['Shield of Faith',1,0,'ward'],['Spiritual Weapon',2,520,'damage'],['Aid',2,0,'heal']]},
+ {name:'CHEMIST',speed:204,hp:100,color:'#77c7a2',dodges:[['Reaction Thrust',3.8],['Catalyst Skim',4.2]],weapons:[['Timing Potion','potion',540,.55,5,1.9,55],['Enchanted Crossbow','crossbow',980,.35,1,1.15,68]],slots:[3,0],spells:[['Fire Bolt',0,640,'damage'],['Mending',0,0,'heal'],['Cure Wounds',1,0,'heal'],['Faerie Fire',1,490,'hex'],['Grease',1,470,'hold'],['Catapult',1,650,'damage']]},
+].map((h,slot)=>({...h,slot,weapons:h.weapons.map(([name,type,range,cool,mag,reload,damage])=>({name,type,range,cool,mag,reload,damage})),spells:h.spells.map(([name,level,range,effect])=>({name,level,range,effect}))}));
+export const MONSTERS={
+ grunt:{cost:2,hp:85,speed:175,reach:75,damage:12,cooldown:.88,color:'#dd8d7b'},
+ ranger:{cost:3,hp:65,speed:150,reach:435,damage:10,cooldown:1.25,color:'#cfa16a'},
+ brute:{cost:5,hp:190,speed:105,reach:84,damage:23,cooldown:1.5,color:'#e07b70'},
+ stalker:{cost:4,hp:70,speed:255,reach:86,damage:16,cooldown:.6,color:'#bd8ce1'},
+};

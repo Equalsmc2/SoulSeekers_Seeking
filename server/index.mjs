@@ -16,14 +16,14 @@ const server=http.createServer((req,res)=>{
   const pathname=new URL(req.url,'http://localhost').pathname;
   if(pathname==='/health'){
     res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});
-    return res.end(JSON.stringify({status:'ok',game:'seeking',legacy:'R03.5',dungeon:'M1'}));
+    return res.end(JSON.stringify({status:'ok',game:'seeking',legacy:'R03.5',dungeon:'M2-playable'}));
   }
   let decoded;
   try{decoded=decodeURIComponent(pathname);}catch{res.writeHead(400);return res.end('Bad URL');}
   const full=path.resolve(root,'.'+(decoded.endsWith('/')?decoded+'index.html':decoded));
   // Static server is only for game assets, never server code/config/scripts.
   const rel=path.relative(root,full).replaceAll('\\','/');
-  if(rel.startsWith('..')||path.isAbsolute(rel)||rel.startsWith('server/')||rel.startsWith('tests/')||rel.startsWith('references/')||rel.startsWith('.')||((path.extname(full)==='.mjs'&&rel!=='shared/dungeon/rules.mjs')||!['.html','.js','.mjs','.css','.png','.svg','.ico'].includes(path.extname(full)))){res.writeHead(404);return res.end('Not found');}
+  if(rel.startsWith('..')||path.isAbsolute(rel)||rel.startsWith('server/')||rel.startsWith('tests/')||rel.startsWith('references/')||rel.startsWith('.')||((path.extname(full)==='.mjs'&&!['shared/dungeon/rules.mjs','shared/combat/loadouts.mjs'].includes(rel))||!['.html','.js','.mjs','.css','.png','.svg','.ico'].includes(path.extname(full)))){res.writeHead(404);return res.end('Not found');}
   fs.stat(full,(err,stat)=>{
     if(err||!stat.isFile()){res.writeHead(404);return res.end('Not found');}
     res.writeHead(200,{'Content-Type':MIME[path.extname(full)]||'application/octet-stream','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'});
@@ -38,6 +38,6 @@ server.on('upgrade',(req,socket,head)=>{
   if(!['/ws','/dungeon-ws'].includes(path)){socket.destroy();return;}
   wss.handleUpgrade(req,socket,head,ws=>(path==='/dungeon-ws'?dungeon:service).attach(ws));
 });
-server.listen(port,host,()=>console.log(`SoulSeekers R03.5 + Dungeon M1 game server running at http://localhost:${port} (WebSocket /ws)`));
+server.listen(port,host,()=>console.log(`SoulSeekers R03.5 + Dungeon M2 game server running at http://localhost:${port} (WebSocket /ws)`));
 function shutdown(){dungeon.stop();service.stop();for(const c of [...service.clients,...dungeon.clients])try{c.close(1001,'Server restarting');}catch{}server.close(()=>process.exit(0));setTimeout(()=>process.exit(0),1500).unref();}
 process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);
